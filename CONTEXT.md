@@ -28,5 +28,8 @@ A contiguous, inclusive span from a start page to an end page in one source PDF,
 **Fixed page-count group**:
 A consecutive group of source pages with the requested number of pages, except that the final group may be shorter.
 
+**Image-sized page**:
+A PDF page whose dimensions follow its image rather than a fixed paper size.
+
 **Digital signature**:
 A cryptographic signature associated with a PDF that can establish signer identity and whether signed content has changed. A drawn or scanned signature on a page is not a digital signature.
