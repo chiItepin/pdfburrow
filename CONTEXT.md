@@ -18,3 +18,6 @@ The inputs and operation settings the user is preparing for the selected tool. A
 
 **Download bundle**:
 A ZIP containing multiple outputs for download together.
+
+**Digital signature**:
+A cryptographic signature associated with a PDF that can establish signer identity and whether signed content has changed. A drawn or scanned signature on a page is not a digital signature.
