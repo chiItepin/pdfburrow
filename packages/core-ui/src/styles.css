@@ -1,0 +1,58 @@
+@import "tailwindcss" source(none);
+
+@source "./";
+@source "../../../apps/web/src";
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--border);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+:root {
+  color-scheme: light;
+  --background: #f6f8fa;
+  --foreground: #192c35;
+  --primary: #205b49;
+  --primary-foreground: #ffffff;
+  --secondary: #e6efeb;
+  --secondary-foreground: #193e31;
+  --muted: #edf1f3;
+  --muted-foreground: #52636d;
+  --accent: #dbe8e2;
+  --accent-foreground: #193e31;
+  --destructive: #b42318;
+  --border: #bdc9ce;
+  --ring: #205b49;
+  --radius: 0.5rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply m-0 bg-background font-sans text-foreground antialiased;
+  }
+
+  button:not(:disabled),
+  a {
+    -webkit-tap-highlight-color: transparent;
+  }
+}

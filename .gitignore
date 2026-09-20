@@ -1,0 +1,10 @@
+node_modules/
+common/temp/
+common/deploy/
+dist/
+*.tsbuildinfo
+.rush/
+rush-logs/
+playwright-report/
+test-results/
+.DS_Store

@@ -1,0 +1,40 @@
+{
+  "name": "@repo/core-ui",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": ["**/*.css"],
+  "exports": {
+    "./primitives/*": "./src/primitives/*.tsx",
+    "./components/*": "./src/components/*.tsx",
+    "./hooks/*": "./src/hooks/*.ts",
+    "./lib/*": "./src/lib/*.ts",
+    "./styles.css": "./src/styles.css"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json",
+    "lint": "eslint . --max-warnings 0",
+    "ui:add": "shadcn add"
+  },
+  "dependencies": {
+    "class-variance-authority": "0.7.1",
+    "cn": "0.3.0",
+    "radix-ui": "1.6.7"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@repo/tooling": "workspace:*",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "eslint": "9.39.5",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "shadcn": "4.21.0",
+    "tailwindcss": "4.3.3",
+    "typescript": "5.9.3"
+  }
+}

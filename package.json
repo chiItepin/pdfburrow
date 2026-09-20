@@ -1,0 +1,21 @@
+{
+  "name": "pdfburrow-workspace",
+  "private": true,
+  "packageManager": "pnpm@10.34.5",
+  "engines": {
+    "node": ">=22.14.0 <23 || >=24.0.0 <25"
+  },
+  "scripts": {
+    "setup": "node common/scripts/install-run-rush.js install",
+    "update": "node common/scripts/install-run-rush.js update",
+    "build": "node common/scripts/install-run-rush.js rebuild",
+    "typecheck": "node common/scripts/install-run-rush.js typecheck",
+    "lint": "node common/scripts/install-run-rush.js lint",
+    "dev": "cd apps/web && node ../../common/scripts/install-run-rushx.js dev",
+    "preview": "cd apps/web && node ../../common/scripts/install-run-rushx.js preview",
+    "ui:add": "cd packages/core-ui && node ../../common/scripts/install-run-rushx.js ui:add",
+    "test": "node --test tests/workspace.test.mjs",
+    "test:browser": "cd apps/web && node ../../common/scripts/install-run-rushx.js test:browser",
+    "check": "npm run typecheck && npm run lint && npm test && npm run build"
+  }
+}

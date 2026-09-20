@@ -1,0 +1,17 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/rush/v5/command-line.schema.json",
+  "commands": [
+    {
+      "commandKind": "bulk",
+      "name": "typecheck",
+      "summary": "Check every package without emitting JavaScript.",
+      "enableParallelism": true
+    },
+    {
+      "commandKind": "bulk",
+      "name": "lint",
+      "summary": "Lint every package and enforce import boundaries.",
+      "enableParallelism": true
+    }
+  ]
+}

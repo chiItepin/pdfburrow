@@ -1,0 +1,17 @@
+{
+  "extends": "@repo/tooling/typescript/base.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "types": ["react", "react-dom"],
+    "baseUrl": ".",
+    "paths": {
+      "@repo/core-ui/primitives/*": ["./src/primitives/*"],
+      "@repo/core-ui/components/*": ["./src/components/*"],
+      "@repo/core-ui/hooks/*": ["./src/hooks/*"],
+      "@repo/core-ui/lib/*": ["./src/lib/*"],
+      "@repo/core-ui/*": ["./src/*"]
+    }
+  },
+  "include": ["src"]
+}
