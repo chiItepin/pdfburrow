@@ -1,4 +1,4 @@
-export { Button } from "./primitives/button";
-export { ConfirmDiscard } from "./components/confirm-discard";
-export { PageFrame } from "./components/page-frame";
+export { Button } from "./primitives/Button";
+export { ConfirmDiscard } from "./components/ConfirmDiscard";
+export { PageFrame } from "./components/PageFrame";
 export { cn } from "./lib/utils";

@@ -4,6 +4,7 @@ import tseslint from "typescript-eslint";
 import reactHooks from "eslint-plugin-react-hooks";
 import jsxA11y from "eslint-plugin-jsx-a11y";
 import prettier from "eslint-config-prettier";
+import { filenameRules } from "./filename-rules.mjs";
 
 /** @param {"web" | "ui" | "engine" | "tooling"} layer */
 export const configFor = (layer) => {
@@ -72,6 +73,11 @@ export const configFor = (layer) => {
         "@typescript-eslint/consistent-type-imports": "error",
         "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
       },
+    },
+    {
+      files: ["**/*.tsx"],
+      plugins: { "repo-filenames": filenameRules },
+      rules: { "repo-filenames/tsx-pascal-case": "error" },
     },
     {
       files: ["src/**/*.{ts,tsx}"],

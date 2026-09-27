@@ -42,7 +42,7 @@ test("the development server serves compiled assets only and rejects document up
   expect(entry.headers()["content-type"]).toContain("text/javascript");
   expect(entry.headers()["cache-control"]).toBe("no-store");
   expect((await request.head("./assets/main.js")).status()).toBe(200);
-  expect((await request.get("./src/main.tsx")).status()).toBe(404);
+  expect((await request.get("./src/Main.tsx")).status()).toBe(404);
   expect((await request.get("./package.json")).status()).toBe(404);
   expect((await request.post("./", { data: "not a document upload endpoint" })).status()).toBe(405);
   expect((await request.get(`${baseURL}%2e%2e%2fpackage.json`)).status()).toBe(404);

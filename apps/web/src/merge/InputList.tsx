@@ -1,5 +1,5 @@
 import { Button } from "@repo/core-ui";
-import { InputCard } from "./input-card";
+import { InputCard } from "./InputCard";
 import type { useMergeWorkspace } from "./use-merge-workspace";
 
 type Workspace = ReturnType<typeof useMergeWorkspace>;

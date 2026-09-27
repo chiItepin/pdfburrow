@@ -23,7 +23,10 @@ use React, TypeScript, shadcn/ui, and a small esbuild build; do not add Vite.
 - Prefer named arrow-function bindings, including React components and hooks.
   Use descriptive verbs such as `validatePdf`, `removeFile`, and `requestDownload`.
   Use `use` for hooks, PascalCase for components/types, camelCase for values,
-  and descriptive kebab-case filenames except the app's `App.tsx` entry.
+  and PascalCase for every `.tsx` filename, including generated UI primitives
+  and the `Main.tsx` entry. ESLint's `repo-filenames/tsx-pascal-case` rule enforces
+  this without a barrel or entrypoint exception. Other source filenames remain
+  descriptive kebab-case; `.ts`, test, and tool configuration names are unchanged.
 - Prefer self-explanatory code over comments. Comments are rare and explain a
   non-obvious constraint, third-party workaround, or invariant, never narrate code.
   JSDoc needed to type-check JavaScript tooling is appropriate. Retain license
@@ -83,7 +86,8 @@ use React, TypeScript, shadcn/ui, and a small esbuild build; do not add Vite.
   parenthesized arrow parameters, LF, and a 100-column target. Run `npm run format`.
 - `npm run format:check` and `npm run lint` enforce formatting, recommended
   JavaScript/TypeScript rules, React Hooks, JSX accessibility, and package
-  boundaries. Generated/vendor files and lockfiles are not hand-reformatted.
+  boundaries and PascalCase TSX filenames. Generated/vendor files and lockfiles
+  are not hand-reformatted.
 - Tests must verify observable behavior and real PDF artifacts, not only a success
   state. Cover failures, cancellation, downloads, focus, repeated jobs, worker
   cleanup, and both development and production asset loading.

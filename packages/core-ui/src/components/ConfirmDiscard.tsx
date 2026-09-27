@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Button } from "../primitives/button";
+import { Button } from "../primitives/Button";
 export const ConfirmDiscard = ({
   open,
   description,

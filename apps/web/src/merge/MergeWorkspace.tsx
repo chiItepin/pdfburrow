@@ -1,8 +1,8 @@
 import { Button, ConfirmDiscard } from "@repo/core-ui";
-import { FilePicker } from "./file-picker";
-import { InputList } from "./input-list";
-import { MergeResult } from "./merge-result";
-import { PreservationNotice } from "./preservation-notice";
+import { FilePicker } from "./FilePicker";
+import { InputList } from "./InputList";
+import { MergeResult } from "./MergeResult";
+import { PreservationNotice } from "./PreservationNotice";
 import { useMergeWorkspace } from "./use-merge-workspace";
 
 export const MergeWorkspace = () => {

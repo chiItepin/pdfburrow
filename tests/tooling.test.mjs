@@ -41,3 +41,37 @@ test("web tooling uses React and esbuild without Vite and exposes formatter comm
   assert.ok(root.scripts["format:check"]);
   assert.ok(root.scripts.check.includes("format:check"));
 });
+
+test("filename lint requires PascalCase only for TSX files", async () => {
+  const eslint = new ESLint({
+    cwd: fileURLToPath(new URL("../", import.meta.url)),
+    overrideConfigFile: true,
+    overrideConfig: configFor("web"),
+  });
+  const invalid = [
+    "src/file-picker.tsx",
+    "src/filePicker.tsx",
+    "src/file_picker.tsx",
+    "src/main.tsx",
+    "src/index.tsx",
+    "src/File.Picker.tsx",
+  ];
+  const valid = [
+    "src/FilePicker.tsx",
+    "src/Main.tsx",
+    "src/App.tsx",
+    "src/PDFPreview2.tsx",
+    "src/use-draft.ts",
+    "src/index.ts",
+    "tests/workspace.spec.ts",
+    "scripts/build-options.mjs",
+  ];
+  for (const filename of [...invalid, ...valid]) {
+    const [result] = await eslint.lintText("export const value = 1;", { filePath: filename });
+    const errors = result.messages.filter(
+      (message) => message.ruleId === "repo-filenames/tsx-pascal-case",
+    );
+    assert.equal(errors.length, invalid.includes(filename) ? 1 : 0, filename);
+    if (errors.length) assert.equal(errors[0].severity, 2);
+  }
+});

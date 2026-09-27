@@ -20,7 +20,7 @@ if (!/^\/(?:[a-zA-Z0-9_-]+\/)*$/u.test(basePath)) {
 export const buildOptions = (development) => ({
   absWorkingDir: appDirectory,
   entryPoints: {
-    main: "src/main.tsx",
+    main: "src/Main.tsx",
     merge: "../../packages/pdf-engine/src/merge/index.ts",
     preview: "../../packages/pdf-engine/src/preview/index.ts",
     "merge.worker": "../../packages/pdf-engine/src/merge.worker.ts",

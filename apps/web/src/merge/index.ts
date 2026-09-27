@@ -1,1 +1,1 @@
-export { MergeWorkspace } from "./merge-workspace";
+export { MergeWorkspace } from "./MergeWorkspace";
