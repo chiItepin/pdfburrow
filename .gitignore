@@ -2,6 +2,7 @@ node_modules/
 common/temp/
 common/deploy/
 dist/
+.dev/
 *.tsbuildinfo
 .rush/
 rush-logs/

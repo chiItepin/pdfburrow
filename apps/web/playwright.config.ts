@@ -2,6 +2,7 @@ import { defineConfig, devices } from "@playwright/test";
 
 const basePath = process.env.PDFBURROW_BASE_PATH ?? "/pdfburrow/";
 const origin = "http://127.0.0.1:4173";
+const developmentOrigin = "http://127.0.0.1:4174";
 
 export default defineConfig({
   testDir: "./tests",
@@ -11,13 +12,30 @@ export default defineConfig({
   reporter: "list",
   use: { baseURL: `${origin}${basePath}`, trace: "retain-on-failure" },
   projects: [
-    { name: "desktop-chromium", use: { ...devices["Desktop Chrome"] } },
-    { name: "mobile-chromium", use: { ...devices["Pixel 7"] } },
+    {
+      name: "desktop-chromium",
+      testMatch: "workspace.spec.ts",
+      use: { ...devices["Desktop Chrome"] },
+    },
+    { name: "mobile-chromium", testMatch: "workspace.spec.ts", use: { ...devices["Pixel 7"] } },
+    {
+      name: "development-chromium",
+      testMatch: "development.spec.ts",
+      use: { ...devices["Desktop Chrome"], baseURL: `${developmentOrigin}${basePath}` },
+    },
   ],
-  webServer: {
-    command: "node ../../common/scripts/install-run-rushx.js preview --port 4173 --strictPort",
-    url: `${origin}${basePath}`,
-    reuseExistingServer: false,
-    timeout: 30_000,
-  },
+  webServer: [
+    {
+      command: "node ../../common/scripts/install-run-rushx.js preview --port 4173",
+      url: `${origin}${basePath}`,
+      reuseExistingServer: false,
+      timeout: 30_000,
+    },
+    {
+      command: "node ../../common/scripts/install-run-rushx.js dev --port 4174",
+      url: `${developmentOrigin}${basePath}`,
+      reuseExistingServer: false,
+      timeout: 30_000,
+    },
+  ],
 });
