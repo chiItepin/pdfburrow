@@ -46,7 +46,10 @@ never trigger a reload that could discard a document draft.
   first-page thumbnails do not establish export support or replace validation.
 - One required validation and one optional preview run at a time. Eight inputs
   are displayed per view; only that view's thumbnails are retained. This UI bound
-  is not a measured workload limit or virtualization threshold.
+  is not a measured workload limit or virtualization threshold. Drop an input on
+  **Previous files** or **Next files** to move it to the adjacent view's nearest
+  position; repeat to move farther. Navigation happens on drop, not while hovering,
+  so the native drag source stays mounted. Move up/down also works across views.
 - Generation pauses previews and locks editing. Cancel stops its disposable
   worker, then restores the unchanged draft. No elapsed-time generation cutoff
   or automatic retry is used.

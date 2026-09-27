@@ -273,3 +273,123 @@ test("corrupt and signature-bearing inputs fail visibly", async ({ page }) => {
   await expect(page.getByText(/Digital signatures detected/)).toBeVisible();
   await expect(page.getByRole("button", { name: "Merge PDFs", exact: true })).toBeDisabled();
 });
+
+test("native dragging crosses input-list pages without cancelling the drag", async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(isMobile, "Native HTML dragging requires a desktop pointer.");
+  const files = await Promise.all(
+    Array.from({ length: 9 }, async (_, index) => {
+      const document = await PDFDocument.create();
+      document.addPage([300 + index * 10, 500]);
+      return {
+        name: `input-${index + 1}.pdf`,
+        mimeType: "application/pdf",
+        buffer: Buffer.from(await document.save()),
+      };
+    }),
+  );
+  await page.goto("./");
+  await page.locator('input[type="file"]').setInputFiles(files);
+  await expect(page.getByText("Output: one PDF, 9 pages, in the order above.")).toBeVisible();
+  await page.getByRole("checkbox").check();
+  await page.evaluate(() => {
+    for (const type of ["dragstart", "dragend", "drop"]) {
+      document.addEventListener(type, (event) => {
+        if (event.isTrusted) {
+          document.documentElement.dataset.nativeDragEvent = type;
+        }
+      });
+    }
+  });
+
+  const dragAcrossPage = async (direction: "Next" | "Previous", position: number) => {
+    const target = page.getByRole("button", { name: `${direction} files`, exact: true });
+    await target.scrollIntoViewIfNeeded();
+    const source = page.getByRole("heading", { name: /^\d+\. input-8\.pdf$/ });
+    await source.scrollIntoViewIfNeeded();
+    const sourceBounds = await source.boundingBox();
+    const targetBounds = await target.boundingBox();
+    if (!sourceBounds || !targetBounds) {
+      throw new Error("The drag source and pagination drop target must be visible.");
+    }
+    await page.mouse.move(sourceBounds.x + 10, sourceBounds.y + 10);
+    await page.mouse.down();
+    await page.mouse.move(sourceBounds.x + 20, sourceBounds.y + 15);
+    await page.mouse.move(targetBounds.x + 10, targetBounds.y + 10, { steps: 10 });
+    await page.mouse.move(targetBounds.x + 15, targetBounds.y + 15);
+    await expect(page.locator("html")).toHaveAttribute("data-native-drag-event", "dragstart");
+    await expect(source).toBeAttached();
+    await page.mouse.up();
+    await expect(page.getByRole("status")).toContainText(
+      `input-8.pdf moved to position ${position} of 9.`,
+    );
+    await expect(page.locator("html")).toHaveAttribute("data-native-drag-event", "dragend");
+    await expect(page.getByRole("checkbox")).toBeChecked();
+    expect(await page.getByRole("listitem").count()).toBeLessThanOrEqual(8);
+    expect(await page.getByRole("img").count()).toBeLessThanOrEqual(8);
+  };
+
+  await dragAcrossPage("Next", 9);
+  await expect(page.getByRole("listitem")).toHaveCount(1);
+  await expect(page.getByRole("listitem")).toContainText("9. input-8.pdf");
+  await dragAcrossPage("Previous", 8);
+  await expect(page.getByRole("listitem")).toHaveCount(8);
+  await expect(page.getByRole("listitem").last()).toContainText("8. input-8.pdf");
+  await dragAcrossPage("Next", 9);
+  await merge(page);
+  const downloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Download PDF" }).click();
+  const download = await downloadPromise;
+  const output = await PDFDocument.load(await readFile((await download.path())!));
+  expect(output.getPages().map((item) => item.getWidth())).toEqual([
+    300, 310, 320, 330, 340, 350, 360, 380, 370,
+  ]);
+});
+
+test("cross-page keyboard ordering and file-upload drops remain independent", async ({ page }) => {
+  await page.goto("./");
+  await page
+    .locator('input[type="file"]')
+    .setInputFiles(
+      await Promise.all(Array.from({ length: 9 }, (_, index) => pdf(`input-${index + 1}.pdf`))),
+    );
+  await expect(page.getByText("Output: one PDF, 9 pages, in the order above.")).toBeVisible();
+  await page.getByRole("checkbox").check();
+  const down = page.getByRole("button", { name: "Move input-8.pdf down" });
+  await down.focus();
+  await page.keyboard.press("Enter");
+  await expect(down).toBeFocused();
+  await expect(page.getByRole("listitem")).toHaveCount(1);
+  await expect(page.getByRole("listitem")).toContainText("9. input-8.pdf");
+  const up = page.getByRole("button", { name: "Move input-8.pdf up" });
+  await up.focus();
+  await page.keyboard.press("Enter");
+  await expect(up).toBeFocused();
+  await expect(page.getByRole("listitem")).toHaveCount(8);
+  await expect(page.getByRole("listitem").last()).toContainText("8. input-8.pdf");
+  await expect(page.getByRole("checkbox")).toBeChecked();
+
+  const file = await pdf("uploaded.pdf");
+  const transfer = await page.evaluateHandle((bytes) => {
+    const data = new DataTransfer();
+    data.items.add(new File([new Uint8Array(bytes)], "uploaded.pdf", { type: "application/pdf" }));
+    return data;
+  }, Array.from(file.buffer));
+  const next = page.getByRole("button", { name: "Next files", exact: true });
+  await next.dispatchEvent("dragover", { dataTransfer: transfer });
+  await next.dispatchEvent("drop", { dataTransfer: transfer });
+  await expect(page.getByText("Files 1-8 of 9")).toBeVisible();
+  await expect(page.getByRole("checkbox")).toBeChecked();
+  const picker = page.getByRole("region", { name: "Add PDF files" });
+  await picker.dispatchEvent("dragover", { dataTransfer: transfer });
+  await picker.dispatchEvent("drop", { dataTransfer: transfer });
+  await transfer.dispose();
+  await expect(page.getByText("Output: one PDF, 10 pages, in the order above.")).toBeVisible();
+  await expect(page.getByRole("checkbox")).not.toBeChecked();
+  await next.click();
+  await expect(page.getByRole("listitem")).toHaveCount(2);
+  await expect(page.getByRole("listitem").first()).toContainText("9. input-9.pdf");
+  await expect(page.getByRole("listitem").last()).toContainText("10. uploaded.pdf");
+});
