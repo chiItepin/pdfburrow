@@ -1,0 +1,11 @@
+node_modules/
+common/temp/
+common/scripts/
+common/config/rush/pnpm-lock.yaml
+common/config/rush/repo-state.json
+dist/
+.dev/
+.rush/
+test-results/
+playwright-report/
+**/NOTICE.txt

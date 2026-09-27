@@ -15,7 +15,10 @@ const readJson = async (name) => JSON.parse(await readFile(path.join(root, name)
 test("Rush owns exactly the four approved packages and their dependency directions", async () => {
   const rush = await readJson("rush.json");
   assert.deepEqual(rush.projects.map((project) => project.packageName).sort(), [
-    "@repo/core-ui", "@repo/pdf-engine", "@repo/tooling", "@repo/web",
+    "@repo/core-ui",
+    "@repo/pdf-engine",
+    "@repo/tooling",
+    "@repo/web",
   ]);
   const allowedRuntime = {
     "@repo/web": ["@repo/core-ui", "@repo/pdf-engine"],
@@ -28,7 +31,9 @@ test("Rush owns exactly the four approved packages and their dependency directio
     assert.equal(pkg.name, project.packageName);
     assert.equal(pkg.private, true);
     assert.deepEqual(
-      Object.keys(pkg.dependencies ?? {}).filter((name) => name.startsWith("@repo/")).sort(),
+      Object.keys(pkg.dependencies ?? {})
+        .filter((name) => name.startsWith("@repo/"))
+        .sort(),
       allowedRuntime[pkg.name],
     );
     if (pkg.name !== "@repo/tooling") {
@@ -49,10 +54,7 @@ test("Rush owns exactly the four approved packages and their dependency directio
 test("UI exports, shadcn ownership, and Tailwind sources are explicit", async () => {
   const pkg = await readJson("packages/core-ui/package.json");
   assert.deepEqual(pkg.exports, {
-    "./primitives/*": "./src/primitives/*.tsx",
-    "./components/*": "./src/components/*.tsx",
-    "./hooks/*": "./src/hooks/*.ts",
-    "./lib/*": "./src/lib/*.ts",
+    ".": "./src/index.ts",
     "./styles.css": "./src/styles.css",
   });
   const shadcn = await readJson("packages/core-ui/components.json");
@@ -62,6 +64,10 @@ test("UI exports, shadcn ownership, and Tailwind sources are explicit", async ()
   const css = await readFile(path.join(root, "packages/core-ui/src/styles.css"), "utf8");
   assert.match(css, /@source "\.\/"/u);
   assert.match(css, /@source "\.\.\/\.\.\/\.\.\/apps\/web\/src"/u);
+  const engine = await readJson("packages/pdf-engine/package.json");
+  assert.equal(engine.exports["."], "./src/index.ts");
+  assert.equal(engine.exports["./merge"], "./src/merge/index.ts");
+  assert.equal(engine.exports["./preview"], "./src/preview/index.ts");
 });
 
 test("browser, worker and build-tool environments do not leak into each other", async () => {
@@ -76,14 +82,17 @@ test("browser, worker and build-tool environments do not leak into each other", 
   assert.deepEqual(node.compilerOptions.lib, ["ES2022"]);
   assert.deepEqual(node.compilerOptions.types, ["node"]);
   const project = await readJson("apps/web/config/rush-project.json");
-  assert.ok(project.operationSettings.find((operation) => operation.operationName === "build")
-    .dependsOnEnvVars.includes("PDFBURROW_BASE_PATH"));
+  assert.ok(
+    project.operationSettings
+      .find((operation) => operation.operationName === "build")
+      .dependsOnEnvVars.includes("PDFBURROW_BASE_PATH"),
+  );
 });
 
 for (const [layer, imports] of Object.entries({
   engine: ["react", "react-dom/client", "@repo/core-ui/primitives/button", "@repo/web"],
   ui: ["@repo/pdf-engine/diagnostics", "@repo/web"],
-  web: ["@repo/core-ui/src/lib/utils", "@repo/tooling/eslint"],
+  web: ["@repo/core-ui/src/lib/utils", "@repo/tooling/eslint", "@repo/core-ui/primitives/button"],
 })) {
   test(`lint rejects prohibited ${layer} imports`, async () => {
     const eslint = new ESLint({
@@ -93,7 +102,10 @@ for (const [layer, imports] of Object.entries({
     });
     for (const name of imports) {
       const [result] = await eslint.lintText(`import "${name}";`, { filePath: "src/check.ts" });
-      assert.ok(result.messages.some((message) => message.ruleId === "no-restricted-imports"), name);
+      assert.ok(
+        result.messages.some((message) => message.ruleId === "no-restricted-imports"),
+        name,
+      );
     }
   });
 }
@@ -107,13 +119,22 @@ test("runtime imports use declared dependencies and cannot escape package bounda
     for (const entry of entries.filter((name) => /\.(ts|tsx)$/u.test(name))) {
       const filename = path.join(folder, "src", entry);
       const source = ts.createSourceFile(
-        filename, await readFile(filename, "utf8"), ts.ScriptTarget.Latest, true,
+        filename,
+        await readFile(filename, "utf8"),
+        ts.ScriptTarget.Latest,
+        true,
       );
       const imports = [];
       function visit(node) {
-        if ((ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) && node.moduleSpecifier) {
+        if (
+          (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
+          node.moduleSpecifier
+        ) {
           imports.push(node.moduleSpecifier.text);
-        } else if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword) {
+        } else if (
+          ts.isCallExpression(node) &&
+          node.expression.kind === ts.SyntaxKind.ImportKeyword
+        ) {
           assert.ok(ts.isStringLiteral(node.arguments[0]), `Non-static import: ${filename}`);
           imports.push(node.arguments[0].text);
         }
@@ -122,15 +143,21 @@ test("runtime imports use declared dependencies and cannot escape package bounda
       visit(source);
       for (const specifier of imports) {
         if (specifier.startsWith(".")) {
-          assert.ok(path.resolve(path.dirname(filename), specifier).startsWith(`${folder}${path.sep}`));
+          assert.ok(
+            path.resolve(path.dirname(filename), specifier).startsWith(`${folder}${path.sep}`),
+          );
         } else if (specifier.startsWith("@/")) {
           assert.equal(pkg.name, "@repo/web");
         } else {
           const name = specifier.startsWith("@")
             ? specifier.split("/").slice(0, 2).join("/")
             : specifier.split("/")[0];
-          assert.ok(name === pkg.name || name in (pkg.dependencies ?? {}) || name in (pkg.peerDependencies ?? {}),
-            `${filename}: undeclared runtime dependency ${specifier}`);
+          assert.ok(
+            name === pkg.name ||
+              name in (pkg.dependencies ?? {}) ||
+              name in (pkg.peerDependencies ?? {}),
+            `${filename}: undeclared runtime dependency ${specifier}`,
+          );
           assert.ok(!specifier.includes("/src/"), `Private source import: ${specifier}`);
         }
       }

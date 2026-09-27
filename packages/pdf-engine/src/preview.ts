@@ -1,27 +1,33 @@
 import { getDocument, PDFWorker } from "pdfjs-dist";
-
 /** The caller serializes previews and releases returned object URLs. */
-export async function previewPdf(blob: Blob, signal: AbortSignal): Promise<Blob> {
+export const previewPdf = async (blob: Blob, signal: AbortSignal): Promise<Blob> => {
   signal.throwIfAborted();
-  const port = new Worker(new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url), { type: "module" });
+  const port = new Worker(new URL("./pdf.worker.min.js", import.meta.url), { type: "module" });
   const worker = PDFWorker.create({ port });
   const canvas = document.createElement("canvas");
   let task: ReturnType<typeof getDocument> | undefined;
   let fail: (error: Error) => void;
-  const failure = new Promise<never>((_, reject) => { fail = reject; });
+  const failure = new Promise<never>((_, reject) => {
+    fail = reject;
+  });
   const abort = () => fail(new DOMException("Preview cancelled.", "AbortError"));
   port.onerror = (event) => {
     event.preventDefault();
     fail(new Error("The local preview worker failed."));
   };
-  port.onmessageerror = () => fail(new Error("The local preview worker response could not be read."));
+  port.onmessageerror = () =>
+    fail(new Error("The local preview worker response could not be read."));
   signal.addEventListener("abort", abort, { once: true });
   const render = async () => {
     const bytes = await blob.arrayBuffer();
     signal.throwIfAborted();
     task = getDocument({
-      data: bytes, worker, useSystemFonts: false,
-      disableFontFace: true, useWasm: false, stopAtErrors: true,
+      data: bytes,
+      worker,
+      useSystemFonts: false,
+      disableFontFace: true,
+      useWasm: false,
+      stopAtErrors: true,
     });
     const pdf = await task.promise;
     signal.throwIfAborted();
@@ -33,7 +39,11 @@ export async function previewPdf(blob: Blob, signal: AbortSignal): Promise<Blob>
     await page.render({ canvas, viewport, background: "white" }).promise;
     signal.throwIfAborted();
     return await new Promise<Blob>((resolve, reject) => {
-      canvas.toBlob((image) => image ? resolve(image) : reject(new Error("Preview image could not be created.")), "image/png");
+      canvas.toBlob(
+        (image) =>
+          image ? resolve(image) : reject(new Error("Preview image could not be created.")),
+        "image/png",
+      );
     });
   };
   try {
@@ -48,4 +58,4 @@ export async function previewPdf(blob: Blob, signal: AbortSignal): Promise<Blob>
       canvas.width = canvas.height = 0;
     }
   }
-}
+};

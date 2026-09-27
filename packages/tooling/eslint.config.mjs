@@ -2,10 +2,11 @@ import js from "@eslint/js";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 import reactHooks from "eslint-plugin-react-hooks";
-import reactRefresh from "eslint-plugin-react-refresh";
+import jsxA11y from "eslint-plugin-jsx-a11y";
+import prettier from "eslint-config-prettier";
 
 /** @param {"web" | "ui" | "engine" | "tooling"} layer */
-export function configFor(layer) {
+export const configFor = (layer) => {
   const forbidden = {
     web: [],
     ui: ["@repo/web", "@repo/pdf-engine"],
@@ -14,25 +15,47 @@ export function configFor(layer) {
   }[layer];
 
   return tseslint.config(
-    { ignores: ["dist/**", "node_modules/**", ".rush/**"] },
+    {
+      ignores: [
+        "dist/**",
+        ".dev/**",
+        "node_modules/**",
+        ".rush/**",
+        "test-results/**",
+        "playwright-report/**",
+      ],
+    },
     js.configs.recommended,
     ...tseslint.configs.recommended,
+    prettier,
     {
-      languageOptions: {
-        globals: layer === "engine" ? globals.worker : globals.browser,
-      },
+      languageOptions: { globals: layer === "engine" ? globals.worker : globals.browser },
       rules: {
+        eqeqeq: ["error", "always"],
+        curly: ["error", "all"],
+        "no-var": "error",
+        "prefer-const": "error",
+        "prefer-arrow-callback": "error",
+        "object-shorthand": "error",
+        "no-duplicate-imports": ["error", { allowSeparateTypeImports: true }],
+        "no-implicit-coercion": "error",
+        "no-else-return": "error",
+        "max-depth": ["error", 4],
         "no-restricted-imports": [
           "error",
           {
             patterns: [
               {
                 group: ["@repo/*/src", "@repo/*/src/**"],
-                message: "Use the package's public source exports.",
+                message: "Import from an explicit package entry barrel.",
+              },
+              {
+                group: ["@repo/core-ui/*", "!@repo/core-ui/styles.css"],
+                message: "Import UI through @repo/core-ui.",
               },
               {
                 group: ["@repo/tooling", "@repo/tooling/**"],
-                message: "Tooling is development configuration, not runtime code.",
+                message: "Tooling is development-only configuration.",
               },
               ...forbidden.map((name) => ({
                 group: [name, `${name}/**`],
@@ -44,32 +67,37 @@ export function configFor(layer) {
       },
     },
     {
+      files: ["**/*.{ts,tsx}"],
+      rules: {
+        "@typescript-eslint/consistent-type-imports": "error",
+        "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
+      },
+    },
+    {
+      files: ["src/**/*.{ts,tsx}"],
+      rules: {
+        "func-style": ["error", "expression"],
+        "max-lines": ["error", { max: 300, skipBlankLines: true, skipComments: true }],
+      },
+    },
+    {
       files: ["**/*.mjs", "**/*config.ts"],
       languageOptions: { globals: globals.node },
       rules: { "no-restricted-imports": "off" },
     },
     ...(layer === "web" || layer === "ui"
-      ? tseslint.config(
+      ? [
           {
-            files: ["**/*.{ts,tsx}"],
-            plugins: { "react-hooks": reactHooks, "react-refresh": reactRefresh },
+            files: ["src/**/*.{ts,tsx}"],
+            plugins: { "react-hooks": reactHooks, "jsx-a11y": jsxA11y },
             rules: {
               ...reactHooks.configs.recommended.rules,
-              "react-refresh/only-export-components": [
-                "warn",
-                { allowConstantExport: true },
-              ],
+              ...jsxA11y.configs.recommended.rules,
             },
           },
-        )
-      : []),
-    ...(layer === "ui"
-      ? tseslint.config({
-          files: ["src/primitives/**/*.tsx"],
-          rules: { "react-refresh/only-export-components": "off" },
-        })
+        ]
       : []),
   );
-}
+};
 
 export default configFor("tooling");

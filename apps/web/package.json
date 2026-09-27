@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --host 127.0.0.1",
-    "preview": "vite preview --host 127.0.0.1",
-    "build": "tsc -p tsconfig.json && tsc -p tsconfig.node.json && vite build",
+    "dev": "node scripts/dev.mjs",
+    "preview": "node scripts/preview.mjs",
+    "build": "tsc -p tsconfig.json && tsc -p tsconfig.node.json && node scripts/build.mjs",
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.node.json && tsc -p tsconfig.test.json",
     "lint": "eslint . --max-warnings 0",
     "test:browser": "playwright test"
@@ -20,15 +20,14 @@
   "devDependencies": {
     "@playwright/test": "1.63.0",
     "@repo/tooling": "workspace:*",
-    "@tailwindcss/vite": "4.3.3",
+    "@tailwindcss/cli": "4.3.3",
     "@types/node": "22.20.4",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
-    "@vitejs/plugin-react": "4.7.0",
+    "esbuild": "0.28.2",
     "eslint": "9.39.5",
     "pdf-lib": "1.17.1",
     "tailwindcss": "4.3.3",
-    "typescript": "5.9.3",
-    "vite": "7.3.6"
+    "typescript": "5.9.3"
   }
 }

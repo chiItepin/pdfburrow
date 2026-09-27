@@ -4,10 +4,10 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./types": "./src/types.ts",
+    ".": "./src/index.ts",
     "./diagnostics": "./src/diagnostics.ts",
-    "./merge": "./src/merge.ts",
-    "./preview": "./src/preview.ts"
+    "./merge": "./src/merge/index.ts",
+    "./preview": "./src/preview/index.ts"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json && tsc -p tsconfig.worker.json",
