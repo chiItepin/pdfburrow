@@ -1,13 +1,12 @@
 # PDFBurrow
 
-A development foundation for an on-device PDF application. **Merge, split,
-extraction, and JPEG/PNG conversion are not implemented yet.** The current screen
-exercises shared UI and a lazy-loaded local worker without accepting documents.
+A development build with one working tool: **Merge PDFs**. Add local PDFs,
+arrange whole files, and explicitly download one merged PDF. **Split, extraction,
+and JPEG/PNG conversion are not implemented.**
 
 The [PDFBurrow MVP map](https://github.com/chiItepin/pdfburrow/issues/1) is the
-decision index. This workspace implements
-[Implement the approved Vite and shadcn workspace](https://github.com/chiItepin/pdfburrow/issues/13);
-it is not a release or a license selection.
+decision index. This workspace implements the merge feature and the shared
+workflow it needs, not the entire MVP. It is not a release or a license selection.
 
 ## Run locally
 
@@ -21,21 +20,64 @@ npm run dev
 ```
 
 Open the local URL printed by Vite (normally
-`http://127.0.0.1:5173/pdfburrow/`). The "Check local worker" action loads an engine
-diagnostic only when requested, starts a same-origin worker, then terminates it
-on response, error, cancellation, or timeout.
+`http://127.0.0.1:5173/pdfburrow/`). Select **Add PDFs** or drop files, wait for
+validation, arrange them with Move up/down or drag, acknowledge the preservation
+limitations, and select **Merge PDFs**. **Download PDF** appears after generation;
+downloads never start automatically.
 
 Do not run `npm install` or `pnpm install` at the repository root or within
 packages. Rush owns dependency installation and its workspace lockfile. The
 root package is only a command facade and intentionally has no dependencies.
 
+## Merge behavior and limitations
+
+- Each file contributes all its pages, in displayed file order. A single PDF is
+  also accepted. The writer copies page content, boxes, and rotation rather than
+  rasterizing pages. Outputs are named `<first-input-stem>-merged.pdf`, with
+  unsafe filename characters replaced and an empty-stem fallback of `document`.
+- Required worker validation rejects encrypted, zero-page, unparseable,
+  structurally invalid, form-bearing, and detected digitally signed inputs.
+  Rejected files remain visible and block merging until retried or removed.
+  No password bypass, repair, flattening, or silent skipping is implemented.
+- Every PDF input set requires explicit acknowledgement: this is page-focused
+  rewriting, not lossless preservation. Annotations and visible marks may change
+  or disappear; bookmarks, attachments, metadata, accessibility, and PDF/A
+  guarantees are not preserved. Detection is not exhaustive.
+- Adding/removing files clears acknowledgement; reordering does not.
+  First-page thumbnails are optional and do not establish export support.
+  Preview errors do not override successful required validation.
+- Originals live in an app-owned File registry, not document buffers in React
+  state. One required validation and one optional preview run at a time.
+  The list displays eight files per view with pagination; only that view's
+  thumbnails are retained. This is an initial UI bound, not a calibrated workload
+  limit or a measured virtualization threshold.
+- Generation pauses previews, locks editing, and remains cancellable by
+  terminating its disposable worker. There is no elapsed-time generation cutoff.
+  Cancel restores the unchanged draft. Failures retain inputs for explicit retry.
+- Editing results clears the previous output, with confirmation if no download
+  has been requested. Start over always confirms a nonempty workspace.
+  Reset releases app-held files, thumbnails, output URLs, and workers; it does not
+  overwrite source files, remove downloads, or promise forensic memory erasure.
+- Refreshing/closing the tab loses memory-only work. Leave warnings are best
+  effort. No documents are uploaded or automatically persisted. Static hosting
+  still receives requests for application assets; there is no offline/PWA promise.
+
+**Not release-ready:** safe resource limits and the complete browser/device
+matrix are not calibrated. Large/complex inputs may exhaust browser memory.
+`PdfLimits` provides explicit byte/count/page/output enforcement points for future
+measured values; the app does not supply guessed production limits. The full
+fixture matrix (including embedded/non-Latin fonts, real signed/encrypted PDFs,
+complex scans, and physical devices), aggregate parsed-memory accounting,
+delayed-job threshold and final scheduling calibration remain release gates in
+[Validate the MVP and prepare GitHub Pages release](https://github.com/chiItepin/pdfburrow/issues/10).
+
 ## Workspace
 
 | Package | Responsibility |
 | --- | --- |
-| `apps/web` (`@repo/web`) | React/Vite app, app-specific interactions and future downloads |
+| `apps/web` (`@repo/web`) | React/Vite merge workspace, file registry, preview URLs and downloads |
 | `packages/core-ui` (`@repo/core-ui`) | Shared generated primitives, compositions, hooks, utilities and styles |
-| `packages/pdf-engine` (`@repo/pdf-engine`) | React-free input/output types and local worker boundary |
+| `packages/pdf-engine` (`@repo/pdf-engine`) | React-free validation, PDF copying, worker execution and PDF.js preview lifecycle |
 | `packages/tooling` (`@repo/tooling`) | Development-only TypeScript and ESLint configuration |
 
 The app may depend on core-ui and pdf-engine. Neither library may depend on the
@@ -55,6 +97,11 @@ The app's `@/` alias is app-local.
 Import `@repo/core-ui/styles.css` exactly once from the app entry. It owns the
 theme and explicitly scans both app and shared UI sources with Tailwind.
 The development screen uses system fonts; it fetches no third-party fonts.
+The engine uses pdf-lib 1.17.1 (MIT) and PDF.js 5.7.284 (Apache-2.0), pinned
+through Rush. Upstream license texts ship in their installed packages. Complete
+redistribution notices, including transitive dependencies, must be assembled
+before a public release; adding these dependencies does not select the project's
+own license. Previews do not load remote document resources, fonts, CMaps or WASM.
 
 ## Dependencies and shadcn
 
@@ -98,16 +145,25 @@ apps/web/node_modules/.bin/playwright install chromium
 npm run test:browser
 ```
 
-`check` runs all package type/lint checks, workspace contract tests and the
-production build. Browser tests start and stop their own production preview on
-port 4173. They cover desktop/mobile Chromium layouts, keyboard operation,
-production Tailwind from both packages, lazy engine loading, local worker URLs,
-repeated checks, and visible failure/timeout recovery.
+`check` runs all package type/lint checks, workspace contract and PDF artifact
+tests, and the production build. Engine tests use Node's experimental TypeScript
+transform support. They compare actual output page count/order, all page boxes,
+rotation, and decoded text/vector content streams, and exercise rejection,
+warning, naming and supplied-limit boundaries.
+
+Browser tests start and stop their own production preview on port 4173 and
+development server on port 4174. The development smoke test exercises Rush's
+sibling-package worker URLs (Vite must explicitly allow the workspace root and
+pre-optimize lazy engine dependencies to avoid discarding a draft on reload).
+They cover desktop/mobile Chromium layouts, keyboard/focus operation, PDF downloads,
+first-page render equivalence, lazy local workers, validation and preview failures,
+forced synchronous-worker cancellation, confirmation, download retry, and 20
+repeated merge/download/reset cycles with app-owned worker/URL cleanup assertions.
 
 Chromium mobile emulation is not evidence for the final mobile-browser support
-policy. Actual document behavior, cancellation of generation, PDF.js previews,
-ZIP packaging, physical-device budgets, and release-level privacy/network
-evidence belong to subsequent tickets.
+policy. Synthetic fixtures and worker/URL counters do not establish full PDF
+compatibility, garbage-collection behavior, physical-device budgets, or
+release-level privacy/network evidence. ZIP packaging is not part of merge.
 
 ## Base paths and workers
 
@@ -131,8 +187,9 @@ Engine clients create workers via
 Keep that URL statically analyzable so Vite emits a local, hashed asset and
 rewrites its path for the configured base. Future assets should use module
 imports or `import.meta.env.BASE_URL`, never hard-coded root URLs or a CDN.
-Future generation and preview modules must retain separate lazy lifecycles;
-the diagnostic does not establish either job contract.
+Generation and preview modules have separate lazy lifecycles. PDF bytes are read
+inside the generation worker from cloned Blob references, preserving recoverable
+originals in the app. Optional PDF.js rendering uses its own local worker.
 
 The build output is `apps/web/dist`. No hosting workflow, backend, upload
 endpoint, analytics, document persistence, or Office engine is included.

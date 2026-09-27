@@ -5,12 +5,18 @@
   "type": "module",
   "exports": {
     "./types": "./src/types.ts",
-    "./diagnostics": "./src/diagnostics.ts"
+    "./diagnostics": "./src/diagnostics.ts",
+    "./merge": "./src/merge.ts",
+    "./preview": "./src/preview.ts"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json && tsc -p tsconfig.worker.json",
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.worker.json",
     "lint": "eslint . --max-warnings 0"
+  },
+  "dependencies": {
+    "pdf-lib": "1.17.1",
+    "pdfjs-dist": "5.7.284"
   },
   "devDependencies": {
     "@repo/tooling": "workspace:*",

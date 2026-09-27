@@ -35,7 +35,7 @@ test("Rush owns exactly the four approved packages and their dependency directio
       assert.equal(pkg.devDependencies["@repo/tooling"], "workspace:*");
     }
     if (pkg.name === "@repo/pdf-engine") {
-      assert.equal(pkg.dependencies, undefined);
+      assert.deepEqual(Object.keys(pkg.dependencies).sort(), ["pdf-lib", "pdfjs-dist"]);
       assert.equal(pkg.peerDependencies, undefined);
     }
   }

@@ -1,58 +1,215 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
+import { PDFDocument, PDFName, StandardFonts, degrees } from "pdf-lib";
+import { readFile } from "node:fs/promises";
 
-test("shared UI renders with production styles and keyboard access", async ({ page }) => {
-  const errors: string[] = [];
-  page.on("pageerror", (error) => errors.push(error.message));
+async function pdf(name: string, pages = 1, form = false) {
+  const document = await PDFDocument.create();
+  const font = await document.embedFont(StandardFonts.Helvetica);
+  for (let index = 0; index < pages; index++) {
+    const page = document.addPage([300 + index * 100, 500]);
+    page.setRotation(degrees(index * 90));
+    page.drawText(`${name} page ${index + 1}`, { x: 30, y: 100, font });
+  }
+  if (form) document.getForm().createTextField("name").addToPage(document.getPage(0));
+  return { name, mimeType: "application/pdf", buffer: Buffer.from(await document.save()) };
+}
+
+async function ready(page: Page, supplied?: Awaited<ReturnType<typeof pdf>>[]) {
+  const files = supplied ?? [await pdf("first.pdf"), await pdf("second.pdf", 2)];
+  await page.locator('input[type="file"]').setInputFiles(files);
+  await expect(page.getByText(`Output: one PDF, ${files.length === 2 ? 3 : 1} page`, { exact: false })).toBeVisible();
+}
+
+async function merge(page: Page) {
+  await page.getByRole("checkbox").check();
+  await page.getByRole("button", { name: "Merge PDFs", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Your merged PDF is ready" })).toBeFocused();
+}
+
+test("real merge downloads ordered pages and works locally without document requests", async ({ page, baseURL }) => {
+  const requests: { url: string; method: string }[] = [];
+  page.on("request", (request) => requests.push({ url: request.url(), method: request.method() }));
   await page.goto("./");
-  await expect(page.getByRole("heading", { name: "PDFBurrow", exact: true })).toBeVisible();
-  await expect(page.getByText("Merge, split, and image conversion", { exact: false })).toBeVisible();
-  const button = page.getByRole("button", { name: "Check local worker" });
-  await expect(button).toHaveCSS("background-color", "rgb(32, 91, 73)");
+  expect(requests.some((request) => request.url.includes("merge-"))).toBe(false);
+  await expect(page.getByRole("button", { name: "Add PDFs" })).toHaveCSS("background-color", "rgb(32, 91, 73)");
   await expect(page.getByRole("main")).toHaveCSS("max-width", "768px");
-  await expect(page.getByRole("heading", { name: "Workspace foundation" })).toHaveCSS("font-size", "20px");
   await page.keyboard.press("Tab");
-  await expect(button).toBeFocused();
+  await expect(page.getByRole("button", { name: "Add PDFs" })).toBeFocused();
+  await ready(page);
+  await page.getByRole("checkbox").check();
+  const up = page.getByRole("button", { name: "Move second.pdf up" });
+  await up.focus();
   await page.keyboard.press("Enter");
-  await expect(page.getByRole("status")).toHaveText("Local worker responded. No documents were processed.");
+  await expect(up).toBeFocused();
+  await expect(page.getByRole("checkbox")).toBeChecked();
+  await expect(page.getByRole("listitem").first()).toContainText("second.pdf");
+  await expect(page.getByRole("img", { name: "First page of second.pdf" })).toBeVisible();
+  const originalPreview = await page.getByRole("img", { name: "First page of second.pdf" }).evaluate(async (image: HTMLImageElement) =>
+    Array.from(new Uint8Array(await (await fetch(image.src)).arrayBuffer())));
+  await merge(page);
+  const downloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Download PDF" }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toBe("second-merged.pdf");
+  const output = await PDFDocument.load(await readFile((await download.path())!));
+  expect(output.getPageCount()).toBe(3);
+  expect(output.getPages().map((item) => item.getWidth())).toEqual([300, 400, 300]);
+  expect(output.getPages().map((item) => item.getRotation().angle)).toEqual([0, 90, 0]);
+  expect(requests.some((request) => request.url.includes("merge.worker-"))).toBe(true);
+  expect(requests.every((request) => request.method === "GET" && (request.url.startsWith(baseURL!) || request.url.startsWith("blob:")))).toBe(true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-  expect(errors).toEqual([]);
+  await page.getByRole("button", { name: "Start over" }).click();
+  await page.getByRole("button", { name: "Discard", exact: true }).click();
+  await page.locator('input[type="file"]').setInputFiles({
+    name: "merged.pdf", mimeType: "application/pdf", buffer: await readFile((await download.path())!),
+  });
+  const mergedPreview = page.getByRole("img", { name: "First page of merged.pdf" });
+  await expect(mergedPreview).toBeVisible();
+  expect(await mergedPreview.evaluate(async (image: HTMLImageElement) =>
+    Array.from(new Uint8Array(await (await fetch(image.src)).arrayBuffer())))).toEqual(originalPreview);
 });
 
-test("engine is lazy and the emitted worker loads locally under the configured base", async ({ page, baseURL }) => {
-  const requests: string[] = [];
-  page.on("request", (request) => requests.push(request.url()));
+test("unsupported input blocks merging and removal resets acknowledgement and preserves valid files", async ({ page }) => {
   await page.goto("./");
-  expect(requests.some((url) => url.includes("diagnostics"))).toBe(false);
-  await page.getByRole("button", { name: "Check local worker" }).click();
-  await expect(page.getByRole("status")).toHaveText("Local worker responded. No documents were processed.");
-  expect(requests.some((url) => url.includes("diagnostics.worker-"))).toBe(true);
-  expect(requests.some((url) => /\/diagnostics-[^/]+\.js$/u.test(url))).toBe(true);
-  expect(requests.every((url) => url.startsWith(baseURL!))).toBe(true);
-  await page.getByRole("button", { name: "Check local worker" }).click();
-  await expect(page.getByRole("status")).toHaveText("Local worker responded. No documents were processed.");
+  await ready(page, [await pdf("valid.pdf")]);
+  await page.getByRole("checkbox").check();
+  await page.locator('input[type="file"]').setInputFiles([await pdf("form.pdf", 1, true)]);
+  await expect(page.getByRole("checkbox")).not.toBeChecked();
+  await expect(page.getByText(/Interactive form fields detected/)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Merge PDFs", exact: true })).toBeDisabled();
+  await page.getByRole("button", { name: "Remove form.pdf" }).click();
+  await expect(page.getByRole("button", { name: "Remove valid.pdf" })).toBeFocused();
+  await expect(page.getByRole("listitem")).toHaveCount(1);
+  await merge(page);
 });
 
-test("worker loading failures are visible and recover on retry", async ({ page }) => {
-  await page.route("**/diagnostics.worker-*.js", (route) => route.abort());
+test("required worker failure can be explicitly retried without re-adding files", async ({ page }) => {
+  await page.route("**/merge.worker-*.js", (route) => route.abort());
   await page.goto("./");
-  await page.getByRole("button", { name: "Check local worker" }).click();
-  await expect(page.getByRole("status")).toContainText("could not load");
-  await expect(page.getByRole("button", { name: "Check local worker" })).toBeEnabled();
-  await page.unroute("**/diagnostics.worker-*.js");
-  await page.getByRole("button", { name: "Check local worker" }).click();
-  await expect(page.getByRole("status")).toHaveText("Local worker responded. No documents were processed.");
+  await page.locator('input[type="file"]').setInputFiles([await pdf("retry.pdf")]);
+  await expect(page.getByText(/local PDF worker failed/)).toBeVisible();
+  await page.unroute("**/merge.worker-*.js");
+  await page.getByRole("button", { name: "Retry validation of retry.pdf" }).click();
+  await expect(page.getByText("Output: one PDF, 1 page, in the order above.")).toBeVisible();
+  await merge(page);
 });
 
-test("worker timeouts are visible rather than leaving the control stuck", async ({ page }) => {
-  await page.route("**/diagnostics.worker-*.js", (route) =>
-    route.fulfill({ contentType: "text/javascript", body: "/* deliberately silent test worker */" }));
+test("cancellation stops synchronous worker execution and restores the unchanged draft", async ({ page }) => {
   await page.goto("./");
-  await page.clock.install();
-  const workerRequest = page.waitForRequest("**/diagnostics.worker-*.js");
-  await page.getByRole("button", { name: "Check local worker" }).click();
-  await workerRequest;
-  await expect(page.getByRole("button", { name: "Checking worker..." })).toBeDisabled();
-  await page.clock.fastForward(10_001);
-  await expect(page.getByRole("status")).toContainText("did not respond");
-  await expect(page.getByRole("button", { name: "Check local worker" })).toBeEnabled();
+  await ready(page);
+  await page.route("**/merge.worker-*.js", (route) => route.fulfill({
+    contentType: "text/javascript", body: "self.onmessage = () => { while (true) {} };",
+  }));
+  await page.getByRole("checkbox").check();
+  await page.getByRole("button", { name: "Merge PDFs", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Add PDFs" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Start over" })).toBeDisabled();
+  await page.getByRole("button", { name: "Cancel merge" }).click();
+  await expect(page.getByRole("status")).toContainText("Merge cancelled");
+  await expect(page.getByRole("heading", { name: "Your PDFs", exact: true })).toBeFocused();
+  await expect(page.getByRole("listitem")).toHaveCount(2);
+  await page.unroute("**/merge.worker-*.js");
+  await merge(page);
+});
+
+test("unsaved results and reset use safe discard confirmation", async ({ page }) => {
+  await page.goto("./");
+  await ready(page);
+  await merge(page);
+  await page.getByRole("button", { name: "Edit inputs" }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Keep working" })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("button", { name: "Edit inputs" })).toBeFocused();
+  await expect(page.getByRole("button", { name: "Download PDF" })).toBeVisible();
+  await page.getByRole("button", { name: "Edit inputs" }).click();
+  await page.getByRole("button", { name: "Discard", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Download PDF" })).toHaveCount(0);
+  await expect(page.getByRole("listitem")).toHaveCount(2);
+  await page.getByRole("button", { name: "Start over" }).click();
+  await page.getByRole("button", { name: "Discard", exact: true }).click();
+  await expect(page.getByRole("listitem")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Add PDFs" })).toBeFocused();
+});
+
+test("preview failures do not override required validation or prevent merging", async ({ page }) => {
+  await page.route("**/preview-*.js", (route) => route.abort());
+  await page.goto("./");
+  await ready(page, [await pdf("preview.pdf")]);
+  await expect(page.getByText("Preview unavailable", { exact: true })).toBeVisible();
+  await merge(page);
+});
+
+test("a failed preview worker does not hang the preview queue or block merging", async ({ page }) => {
+  await page.route("**/pdf.worker.min-*.js", (route) => route.abort());
+  await page.goto("./");
+  await ready(page, [await pdf("preview-worker.pdf")]);
+  await expect(page.getByText("Preview unavailable", { exact: true })).toBeVisible();
+  await merge(page);
+});
+
+test("repeated jobs release app-owned workers and URLs after reset", async ({ page }) => {
+  test.setTimeout(90_000);
+  await page.addInitScript(() => {
+    const activeWorkers = new Set<Worker>();
+    const OriginalWorker = window.Worker;
+    window.Worker = class extends OriginalWorker {
+      constructor(url: string | URL, options?: WorkerOptions) {
+        super(url, options);
+        activeWorkers.add(this);
+      }
+      terminate() { activeWorkers.delete(this); super.terminate(); }
+    };
+    const urls = new Set<string>();
+    const create = URL.createObjectURL.bind(URL);
+    const revoke = URL.revokeObjectURL.bind(URL);
+    URL.createObjectURL = (object) => { const url = create(object); urls.add(url); return url; };
+    URL.revokeObjectURL = (url) => { urls.delete(url); revoke(url); };
+    Object.defineProperty(window, "mergeResources", { get: () => ({ workers: activeWorkers.size, urls: urls.size }) });
+  });
+  const input = await pdf("repeat.pdf");
+  await page.goto("./");
+  for (let i = 0; i < 20; i++) {
+    await ready(page, [input]);
+    await merge(page);
+    const download = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Download PDF" }).click();
+    await download;
+    await page.getByRole("button", { name: "Start over" }).click();
+    await page.getByRole("button", { name: "Discard", exact: true }).click();
+    await expect.poll(() => page.evaluate(() => Reflect.get(window, "mergeResources"))).toEqual({ workers: 0, urls: 0 });
+  }
+});
+
+test("download failures retain the output for explicit retry", async ({ page }) => {
+  await page.goto("./");
+  await ready(page, [await pdf("download.pdf")]);
+  await merge(page);
+  await page.evaluate(() => {
+    const original = HTMLAnchorElement.prototype.click;
+    HTMLAnchorElement.prototype.click = function () {
+      HTMLAnchorElement.prototype.click = original;
+      throw new Error("Injected download error");
+    };
+  });
+  await page.getByRole("button", { name: "Download PDF" }).click();
+  await expect(page.getByRole("alert")).toContainText("still available");
+  const downloaded = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Download PDF" }).click();
+  expect((await downloaded).suggestedFilename()).toBe("download-merged.pdf");
+  await expect(page.getByRole("alert")).toHaveCount(0);
+});
+
+test("corrupt and signature-bearing inputs fail visibly", async ({ page }) => {
+  const signed = await PDFDocument.create();
+  signed.addPage();
+  signed.context.register(signed.context.obj({ Type: PDFName.of("Sig"), ByteRange: [0, 100, 200, 300] }));
+  await page.goto("./");
+  await page.locator('input[type="file"]').setInputFiles([
+    { name: "corrupt.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.7\nbad") },
+    { name: "signature.pdf", mimeType: "application/pdf", buffer: Buffer.from(await signed.save()) },
+  ]);
+  await expect(page.getByText(/could not pass structural validation/)).toBeVisible();
+  await expect(page.getByText(/Digital signatures detected/)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Merge PDFs", exact: true })).toBeDisabled();
 });
