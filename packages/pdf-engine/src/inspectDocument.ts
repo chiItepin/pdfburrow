@@ -1,6 +1,6 @@
 import type { PDFDocument, PDFObject } from "pdf-lib";
 import { PDFArray, PDFDict, PDFInvalidObject, PDFName, PDFRef, PDFStream } from "pdf-lib";
-import { PdfError } from "./pdf-error.ts";
+import { PdfError } from "./pdfError.ts";
 import type { PdfInfo } from "./types";
 
 export const inspectDocument = (document: PDFDocument): PdfInfo => {

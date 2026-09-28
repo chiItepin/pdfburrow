@@ -1,6 +1,6 @@
-import type { MergeJob } from "./types";
+import type { DocumentJob } from "../workspace/types";
 
-export const describeJobStatus = (job: MergeJob, notice: string) => {
+export const describeJobStatus = (job: DocumentJob, notice: string) => {
   if (job.phase === "cancelling") {
     return "Cancelling. Waiting for the worker to stop...";
   }

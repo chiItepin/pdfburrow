@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import { watch } from "node:fs";
-import { appDirectory } from "./build-options.mjs";
+import { appDirectory } from "./buildOptions.mjs";
 import { tailwindArguments, tailwindExecutable, watchApplication, writeHtml } from "./build.mjs";
 import { startServer } from "./server.mjs";
 
@@ -16,6 +16,9 @@ const tailwind = spawn(tailwindExecutable, [...tailwindArguments, "--watch=alway
 const htmlWatcher = watch(new URL("../index.html", import.meta.url), () => {
   void writeHtml().catch((error) => console.error("HTML rebuild failed:", error));
 });
+const disclosureWatcher = watch(new URL("../public/", import.meta.url), () => {
+  void writeHtml().catch((error) => console.error("Disclosure rebuild failed:", error));
+});
 let stopping = false;
 const stop = async () => {
   if (stopping) {
@@ -23,6 +26,7 @@ const stop = async () => {
   }
   stopping = true;
   htmlWatcher.close();
+  disclosureWatcher.close();
   tailwind.kill();
   server.close();
   await builder.dispose();

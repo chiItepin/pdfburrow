@@ -11,6 +11,10 @@ export const createFileRegistry = () => {
     releaseAll: () => {
       files.clear();
     },
+    usage: () => ({
+      count: files.size,
+      bytes: [...files.values()].reduce((sum, file) => sum + file.size, 0),
+    }),
   };
 };
 

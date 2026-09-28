@@ -1,12 +1,12 @@
 import { useEffect } from "react";
 import type { Dispatch, SetStateAction } from "react";
-import type { FileRegistry } from "./file-registry";
-import type { MergeInput } from "./types";
+import type { FileRegistry } from "./fileRegistry";
+import type { PdfInputRow } from "./types";
 
 export const useValidation = (
-  inputs: readonly MergeInput[],
+  inputs: readonly PdfInputRow[],
   files: FileRegistry,
-  setInputs: Dispatch<SetStateAction<MergeInput[]>>,
+  setInputs: Dispatch<SetStateAction<PdfInputRow[]>>,
   announce: (message: string) => void,
 ) => {
   const validationId = inputs.find((input) => input.status === "pending")?.id;
@@ -16,6 +16,17 @@ export const useValidation = (
     }
     const file = files.get(validationId);
     if (!file) {
+      setInputs((current) =>
+        current.map((input) =>
+          input.id === validationId
+            ? {
+                ...input,
+                status: "error",
+                message: "This input is no longer available. Remove it and add it again.",
+              }
+            : input,
+        ),
+      );
       return;
     }
     const controller = new AbortController();

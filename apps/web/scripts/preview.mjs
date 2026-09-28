@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import { basePath, outputDirectory } from "./build-options.mjs";
+import { basePath, outputDirectory } from "./buildOptions.mjs";
 import { startServer } from "./server.mjs";
 
 const builtBase = JSON.parse(await readFile(`${outputDirectory}/base-path.json`, "utf8"));

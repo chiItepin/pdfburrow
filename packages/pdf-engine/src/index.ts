@@ -9,3 +9,5 @@ export type {
   MergeRequest,
   PdfProgress,
 } from "./types";
+export type { BundleLimits, BundleRequest, BundleProgress } from "./bundleTypes";
+export type { ImagePreviewLimits } from "./imagePreview";

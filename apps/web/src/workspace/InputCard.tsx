@@ -1,8 +1,8 @@
 import { Button } from "@repo/core-ui";
-import type { MergeInput, MoveDirection, Thumbnail } from "./types";
+import type { PdfInputRow, MoveDirection, Thumbnail } from "./types";
 
 interface InputCardProps {
-  input: MergeInput;
+  input: PdfInputRow;
   index: number;
   total: number;
   editable: boolean;

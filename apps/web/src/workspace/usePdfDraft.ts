@@ -1,13 +1,13 @@
-import { useMemo, useRef, useState } from "react";
-import { createFileRegistry } from "./file-registry";
-import type { MergeInput, MoveDirection } from "./types";
-import { useValidation } from "./use-validation";
+import { useEffect, useRef, useState } from "react";
+import { createFileRegistry } from "./fileRegistry";
+import type { PdfInputRow, MoveDirection } from "./types";
+import { useValidation } from "./useValidation";
 
 const visibleFileCount = 8;
 
-export const useDraft = (announce: (message: string) => void) => {
-  const files = useMemo(() => createFileRegistry(), []);
-  const [inputs, setInputs] = useState<MergeInput[]>([]);
+export const usePdfDraft = (announce: (message: string) => void) => {
+  const [files] = useState(createFileRegistry);
+  const [inputs, setInputs] = useState<PdfInputRow[]>([]);
   const [acknowledged, setAcknowledged] = useState(false);
   const [windowIndex, setWindowIndex] = useState(0);
   const addButton = useRef<HTMLButtonElement>(null);
@@ -22,8 +22,10 @@ export const useDraft = (announce: (message: string) => void) => {
   const firstVisibleIndex = currentWindow * visibleFileCount;
   const visible = inputs.slice(firstVisibleIndex, firstVisibleIndex + visibleFileCount);
 
+  useEffect(() => () => files.releaseAll(), [files]);
+
   const addFiles = (added: FileList | readonly File[]) => {
-    const rows = Array.from(added, (file): MergeInput => {
+    const rows = Array.from(added, (file): PdfInputRow => {
       const id = crypto.randomUUID();
       files.retain(id, file);
       return { id, name: file.name, size: file.size, status: "pending" };

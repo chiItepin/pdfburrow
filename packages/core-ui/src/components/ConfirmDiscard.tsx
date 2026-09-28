@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 import { Button } from "../primitives/Button";
 export const ConfirmDiscard = ({
   open,
@@ -13,6 +13,8 @@ export const ConfirmDiscard = ({
 }) => {
   const dialog = useRef<HTMLDialogElement>(null);
   const keepButton = useRef<HTMLButtonElement>(null);
+  const titleId = useId();
+  const descriptionId = useId();
   useEffect(() => {
     if (open) {
       dialog.current?.showModal();
@@ -24,18 +26,18 @@ export const ConfirmDiscard = ({
   return (
     <dialog
       ref={dialog}
-      aria-labelledby="discard-title"
-      aria-describedby="discard-description"
+      aria-labelledby={titleId}
+      aria-describedby={descriptionId}
       onCancel={(event) => {
         event.preventDefault();
         onKeep();
       }}
       className="m-auto max-w-md rounded-lg border bg-background p-6 text-foreground shadow-xl backdrop:bg-black/40"
     >
-      <h2 id="discard-title" className="text-xl font-semibold">
+      <h2 id={titleId} className="text-xl font-semibold">
         Discard this work?
       </h2>
-      <p id="discard-description" className="my-4">
+      <p id={descriptionId} className="my-4">
         {description}
       </p>
       <div className="flex flex-wrap gap-3">
