@@ -6,6 +6,7 @@ import { planSplit } from "../packages/pdf-engine/src/selection.ts";
 import { splitDocuments } from "../packages/pdf-engine/src/splitDocuments.ts";
 import { inspectPdf } from "../packages/pdf-engine/src/pdf.ts";
 import { packageOutputs } from "../packages/pdf-engine/src/zip.ts";
+import { bundleFilename, createOutputStore } from "../apps/web/src/workspace/outputStore.ts";
 
 const require = createRequire(new URL("../packages/pdf-engine/package.json", import.meta.url));
 const { PDFDocument, PDFArray, StandardFonts, degrees, decodePDFRawStream } = require("pdf-lib");
@@ -242,6 +243,70 @@ test("filenames are deterministic, sanitized and unique beyond 999 outputs", () 
   );
   for (const index of [-1, 1001, 1.5, NaN]) {
     assert.throws(() => plan.outputAt(index), { code: "invalid" });
+  }
+});
+
+test("predicted filenames survive retention and ZIP packaging for leading-dot source names", async () => {
+  const source = await fixture(2);
+  for (const [name, stem] of [
+    [".report.pdf", "report"],
+    ["  . .report.PDF", "report"],
+    [".report. .pdf", "report"],
+    ["report.pdf", "report"],
+    [" ... .pdf", "document"],
+  ]) {
+    const input = { ...source, name };
+    for (const selection of [
+      selected([2, 1]),
+      ranges([
+        [2, 2],
+        [1, 1],
+      ]),
+      ranges(
+        [
+          [2, 2],
+          [1, 1],
+        ],
+        false,
+      ),
+      { mode: "fixed", size: 1 },
+      { mode: "every" },
+    ]) {
+      const plan = planSplit(name, 2, selection);
+      const predicted = Array.from(
+        { length: plan.outputCount },
+        (_, index) => plan.outputAt(index).filename,
+      );
+      const outputs = await splitDocuments({ input, selection, acknowledged: true }, () => {});
+      assert.deepEqual(
+        outputs.map((output) => output.suggestedFilename),
+        predicted,
+      );
+      const store = createOutputStore();
+      assert.deepEqual(
+        store.retain(outputs).map((output) => output.filename),
+        predicted,
+        name,
+      );
+      assert.equal(
+        predicted[0],
+        `${stem}-${plan.outputCount === 1 ? "extracted" : "split-001"}.pdf`,
+      );
+      assert.equal(plan.bundleName, `${stem}-split.zip`);
+      assert.equal(bundleFilename(plan.bundleName), plan.bundleName);
+      if (outputs.length > 1) {
+        const bundle = await packageOutputs(
+          { outputs: store.values(), filename: bundleFilename(plan.bundleName) },
+          () => {},
+        );
+        assert.equal(bundle.suggestedFilename, plan.bundleName);
+        assert.deepEqual(
+          Object.keys(unzipSync(new Uint8Array(await bundle.blob.arrayBuffer()))),
+          predicted,
+        );
+      }
+      store.clear();
+    }
   }
 });
 

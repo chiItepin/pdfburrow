@@ -187,6 +187,8 @@ test("calibrated-limit enforcement rejects above but permits at the boundary", a
 
 test("merge filenames are deterministic and filesystem-safe with an empty-stem fallback", () => {
   assert.equal(mergedFilename("report.pdf"), "report-merged.pdf");
+  assert.equal(mergedFilename(".report.pdf"), "report-merged.pdf");
+  assert.equal(mergedFilename("  . .report.PDF"), "report-merged.pdf");
   assert.equal(mergedFilename(".pdf"), "document-merged.pdf");
   assert.equal(mergedFilename("bad/:*name.PDF"), "bad___name-merged.pdf");
   assert.equal(mergedFilename("... .pdf"), "document-merged.pdf");
