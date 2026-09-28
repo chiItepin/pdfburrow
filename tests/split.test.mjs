@@ -246,9 +246,21 @@ test("filenames are deterministic, sanitized and unique beyond 999 outputs", () 
   }
 });
 
-test("predicted filenames survive retention and ZIP packaging for leading-dot source names", async () => {
+test("predicted filenames survive retention and ZIP packaging for sanitized source names", async () => {
   const source = await fixture(2);
   for (const [name, stem] of [
+    ["CON.foo.pdf", "_CON.foo"],
+    ["prn.pdf", "_prn"],
+    ["Aux.notes.PDF", "_Aux.notes"],
+    ["NUL.pdf", "_NUL"],
+    ["com1.foo.pdf", "_com1.foo"],
+    ["COM9.pdf", "_COM9"],
+    ["lpt1.pdf", "_lpt1"],
+    ["LPT9.foo.pdf", "_LPT9.foo"],
+    ["CONTRACT.pdf", "CONTRACT"],
+    ["COM10.pdf", "COM10"],
+    ["LPT0.foo.pdf", "LPT0.foo"],
+    ["\u00a0 . CON.foo.pdf", "_CON.foo"],
     [".report.pdf", "report"],
     ["  . .report.PDF", "report"],
     [".report. .pdf", "report"],

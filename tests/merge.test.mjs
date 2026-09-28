@@ -189,6 +189,9 @@ test("merge filenames are deterministic and filesystem-safe with an empty-stem f
   assert.equal(mergedFilename("report.pdf"), "report-merged.pdf");
   assert.equal(mergedFilename(".report.pdf"), "report-merged.pdf");
   assert.equal(mergedFilename("  . .report.PDF"), "report-merged.pdf");
+  assert.equal(mergedFilename("CON.foo.pdf"), "_CON.foo-merged.pdf");
+  assert.equal(mergedFilename("con.pdf"), "_con-merged.pdf");
+  assert.equal(mergedFilename("COM10.pdf"), "COM10-merged.pdf");
   assert.equal(mergedFilename(".pdf"), "document-merged.pdf");
   assert.equal(mergedFilename("bad/:*name.PDF"), "bad___name-merged.pdf");
   assert.equal(mergedFilename("... .pdf"), "document-merged.pdf");

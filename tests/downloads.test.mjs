@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import test from "node:test";
 import { packageOutputs } from "../packages/pdf-engine/src/zip.ts";
+import { safeFilenameStem } from "../packages/pdf-engine/src/pdfFilename.ts";
 import { bundleFilename, createOutputStore } from "../apps/web/src/workspace/outputStore.ts";
 import { createFileRegistry } from "../apps/web/src/workspace/fileRegistry.ts";
 
@@ -155,6 +156,32 @@ test("output storage keeps names consistent and resources until explicit downloa
   assert.deepEqual(store.usage(), { count: 0, bytes: 0, bundleBytes: 0 });
   assert.throws(() => store.requestPdf(0), /No output/);
   assert.throws(() => store.retain([]), /no PDFs/);
+});
+
+test("shared filename normalization handles reserved stems and stays stable on repeated calls", () => {
+  const reserved = [
+    "CON",
+    "prn",
+    "AuX",
+    "NUL",
+    ...Array.from({ length: 9 }, (_, index) => `COM${index + 1}`),
+    ...Array.from({ length: 9 }, (_, index) => `lpt${index + 1}`),
+  ];
+  for (const extension of [".pdf", ".zip"]) {
+    for (const name of reserved) {
+      for (const suffix of ["", ".notes"]) {
+        const stem = `${name}${suffix}`;
+        for (const prefix of ["", " . .", "\u00a0 . "]) {
+          const normalized = safeFilenameStem(`${prefix}${stem}${extension}`, extension);
+          assert.equal(normalized, `_${stem}`);
+          assert.equal(safeFilenameStem(`${normalized}${extension}`, extension), normalized);
+        }
+      }
+    }
+    for (const name of ["CONTRACT", "COM0", "COM10", "LPT0", "LPT10"]) {
+      assert.equal(safeFilenameStem(`${name}.notes${extension}`, extension), `${name}.notes`);
+    }
+  }
 });
 
 test("file registry reports raw retained bytes and releases originals on abandonment", () => {

@@ -184,6 +184,8 @@ output retains its numbered name and downloads directly, without a ZIP. Multiple
 offer individual PDFs plus an explicitly prepared `<source>-split.zip`; ZIP entries match
 individual filenames. Sanitization and collision handling follow the shared download rules.
 Leading dots and spaces are stripped from source stems before predicting or generating filenames.
+Reserved device stems such as `CON.foo` are prefixed with `_`. Planning, generation, PDF downloads,
+and ZIP naming share the same sanitizer so retention does not change predicted names.
 
 Generation is a lazy local worker and rewrites pages without rasterizing them. Cancellation
 terminates the worker and retains source/settings; a failed job never publishes partial outputs.

@@ -53,6 +53,8 @@ use React, TypeScript, shadcn/ui, and a small esbuild build; do not add Vite.
   Do not combine preview libraries and PDF generation in an eager root barrel.
   `@repo/pdf-engine/selection` is a lightweight, React-free planner shared by the
   split settings preview and worker; it does not load PDF libraries on the main thread.
+  `@repo/pdf-engine/filename` is the dependency-free sanitizer shared by planning,
+  generation, and download storage. Keep filename normalization in this single implementation.
 - Use explicit named exports in package/feature entry barrels. Avoid `export *`,
   barrels in every folder, cross-package `/src/` imports, and internal imports
   through the package's own barrel (which can create cycles).
