@@ -4,6 +4,9 @@ PDFBurrow processes documents on the user's device to produce downloadable PDFs.
 
 ## Language
 
+**On-device processing**:
+Document work performed on the user's device without PDFBurrow uploading inputs, filenames, previews, or outputs. This does not imply offline availability or an absence of website-hosting requests.
+
 **Input**:
 An original document or image supplied by the user for processing.
 

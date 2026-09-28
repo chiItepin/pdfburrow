@@ -6,7 +6,8 @@ Add local PDFs, arrange whole files, and explicitly download one merged PDF.
 
 The [PDFBurrow MVP map](https://github.com/chiItepin/pdfburrow/issues/1) is the
 decision index. This workspace implements merge and the shared workflow it needs,
-not the entire MVP. It is not a release or a license selection.
+not the entire MVP. It is not a release; the selected project license has not yet
+been added.
 
 ## Run locally
 
@@ -144,10 +145,13 @@ replace the output directory atomically and revalidate fixed-name entry assets
 rather than applying immutable caching to them.
 
 The engine uses pdf-lib 1.17.1 (MIT) and PDF.js 5.7.284 (Apache-2.0); installed
-packages retain upstream license texts. Complete redistribution notices and an
-owner-selected project license remain required before release. The shadcn
-attribution is retained in `packages/core-ui/NOTICE.txt`.
+packages retain upstream license texts. The owner selected MIT for PDFBurrow,
+attributed to PDFBurrow contributors; adding the project license and complete
+redistribution notices remains required before release. The shadcn attribution
+is retained in `packages/core-ui/NOTICE.txt`.
 
 No hosting workflow, backend, analytics, document persistence, or Office engine
-is included. Publication and licensing remain with
+is included. On-device processing is the primary product promise; it does not
+imply offline availability or an absence of hosting requests. Licensing, privacy,
+and owner approval for every release commit are governed by
 [Decide licensing, privacy claims, and release readiness](https://github.com/chiItepin/pdfburrow/issues/7).
