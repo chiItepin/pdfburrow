@@ -34,5 +34,12 @@ A consecutive group of source pages with the requested number of pages, except t
 **Image-sized page**:
 A PDF page whose dimensions follow its image rather than a fixed paper size.
 
+**Markup**:
+A user-added overlay on a PDF page: freehand ink, a rectangular highlight, a text note, or a visual signature. Editing markup does not mean editing the PDF's original text or pre-existing annotations.
+_Avoid_: Marker
+
+**Visual signature**:
+A visible representation of a person's signature placed on a PDF page. It is markup, not a cryptographic signature or proof of signer identity.
+
 **Digital signature**:
 A cryptographic signature associated with a PDF that can establish signer identity and whether signed content has changed. A drawn or scanned signature on a page is not a digital signature.
