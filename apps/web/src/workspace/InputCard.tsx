@@ -7,6 +7,7 @@ interface InputCardProps {
   total: number;
   editable: boolean;
   checking: boolean;
+  reorderable?: boolean;
   thumbnail?: Thumbnail;
   onMove: (id: string, target: number, direction?: MoveDirection) => void;
   onRemove: (id: string) => void;
@@ -19,6 +20,7 @@ export const InputCard = ({
   total,
   editable,
   checking,
+  reorderable = true,
   thumbnail,
   onMove,
   onRemove,
@@ -26,17 +28,17 @@ export const InputCard = ({
 }: InputCardProps) => (
   <li
     className="rounded-lg border bg-white p-4"
-    draggable={editable}
+    draggable={editable && reorderable}
     onDragStart={(event) => event.dataTransfer.setData("application/x-pdfburrow", input.id)}
     onDragOver={(event) => {
-      if (editable) {
+      if (editable && reorderable) {
         event.preventDefault();
       }
     }}
     onDrop={(event) => {
       event.preventDefault();
       const id = event.dataTransfer.getData("application/x-pdfburrow");
-      if (id) {
+      if (id && editable && reorderable) {
         onMove(id, index);
       }
     }}
@@ -81,26 +83,30 @@ export const InputCard = ({
       </div>
     </div>
     <div className="mt-3 flex flex-wrap gap-2">
-      <Button
-        id={`up-${input.id}`}
-        variant="outline"
-        disabled={!editable}
-        aria-disabled={index === 0}
-        aria-label={`Move ${input.name} up`}
-        onClick={() => onMove(input.id, index - 1, "up")}
-      >
-        Move up
-      </Button>
-      <Button
-        id={`down-${input.id}`}
-        variant="outline"
-        disabled={!editable}
-        aria-disabled={index === total - 1}
-        aria-label={`Move ${input.name} down`}
-        onClick={() => onMove(input.id, index + 1, "down")}
-      >
-        Move down
-      </Button>
+      {reorderable && (
+        <>
+          <Button
+            id={`up-${input.id}`}
+            variant="outline"
+            disabled={!editable}
+            aria-disabled={index === 0}
+            aria-label={`Move ${input.name} up`}
+            onClick={() => onMove(input.id, index - 1, "up")}
+          >
+            Move up
+          </Button>
+          <Button
+            id={`down-${input.id}`}
+            variant="outline"
+            disabled={!editable}
+            aria-disabled={index === total - 1}
+            aria-label={`Move ${input.name} down`}
+            onClick={() => onMove(input.id, index + 1, "down")}
+          >
+            Move down
+          </Button>
+        </>
+      )}
       <Button
         id={`remove-${input.id}`}
         variant="ghost"
@@ -113,6 +119,7 @@ export const InputCard = ({
       {input.status === "error" && (
         <Button
           variant="outline"
+          disabled={!editable}
           aria-label={`Retry validation of ${input.name}`}
           onClick={() => onRetry(input.id)}
         >

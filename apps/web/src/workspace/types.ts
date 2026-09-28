@@ -15,6 +15,7 @@ export type DocumentTask = (context: {
 }) => Promise<Outcome<readonly PdfOutput[]>>;
 
 export type MoveDirection = "up" | "down";
+export type DiscardAction = "reset" | "edit";
 export interface Thumbnail {
   url?: string;
   error?: string;

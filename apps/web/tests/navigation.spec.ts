@@ -35,10 +35,8 @@ test("tool-first entry, bookmarks and local disclosures are truthful and base-aw
   }
   await page.goto("./#/split");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Split / Extract");
-  await expect(
-    page.getByText("Not available in this development build", { exact: true }),
-  ).toBeVisible();
-  await expect(page.locator('input[type="file"]')).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Add PDF", exact: true })).toBeEnabled();
+  await expect(page.locator('input[type="file"]')).not.toHaveAttribute("multiple");
   await page.goto("./#/images");
   await page.reload();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Images to PDF");
@@ -59,11 +57,11 @@ test("tool changes keep work by default and discard it only after confirmation",
   await page.keyboard.press("Escape");
   await expect(home).toBeFocused();
   await expect(page.getByRole("listitem")).toHaveCount(1);
-  await page.getByRole("link", { name: "Split / Extract (not available)", exact: true }).click();
+  await page.getByRole("link", { name: "Split / Extract", exact: true }).click();
   await page.getByRole("button", { name: "Discard", exact: true }).click();
   await expect(page).toHaveURL(/#\/split$/);
   await expect(page.getByRole("heading", { level: 1 })).toBeFocused();
-  await page.getByRole("button", { name: "Open Merge PDFs" }).click();
+  await page.getByRole("link", { name: "Merge PDFs", exact: true }).click();
   await expect(page.getByRole("listitem")).toHaveCount(0);
   expect(page.url()).not.toContain("private-document");
   expect(await page.evaluate(() => JSON.stringify(history.state))).not.toContain(
@@ -88,7 +86,7 @@ test("Back and Forward preserve history entries when a dirty navigation is refus
   await page.goForward();
   await expect(page).toHaveURL(/#\/merge$/);
   await expect(page.getByRole("listitem")).toHaveCount(0);
-  await page.getByRole("link", { name: "Split / Extract (not available)", exact: true }).click();
+  await page.getByRole("link", { name: "Split / Extract", exact: true }).click();
   await page.goBack();
   await addPdf(page);
   await page.goForward();

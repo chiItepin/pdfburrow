@@ -11,3 +11,10 @@ export type {
 } from "./types";
 export type { BundleLimits, BundleRequest, BundleProgress } from "./bundleTypes";
 export type { ImagePreviewLimits } from "./imagePreview";
+export type {
+  PageRange,
+  SplitSelection,
+  SplitRequest,
+  SplitOutputPlan,
+  SplitPlan,
+} from "./splitTypes";

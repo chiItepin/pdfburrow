@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef } from "react";
+import { useLayoutEffect, useId, useRef } from "react";
 import { Button } from "../primitives/Button";
 export const ConfirmDiscard = ({
   open,
@@ -15,7 +15,7 @@ export const ConfirmDiscard = ({
   const keepButton = useRef<HTMLButtonElement>(null);
   const titleId = useId();
   const descriptionId = useId();
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (open) {
       dialog.current?.showModal();
       keepButton.current?.focus();

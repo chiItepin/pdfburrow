@@ -1,6 +1,17 @@
 import { expect, test } from "@playwright/test";
 import { PDFDocument } from "pdf-lib";
 import { readFile } from "node:fs/promises";
+import { addSplitSource, downloadSplit, generateSplit } from "./fixtures/splitHelpers";
+
+test("development split workers produce real numbered PDFs", async ({ page }) => {
+  await page.goto("./#/split");
+  await addSplitSource(page, 1);
+  await page.getByRole("radio", { name: "Every page", exact: true }).check();
+  await generateSplit(page);
+  const output = await downloadSplit(page);
+  expect(output.name).toBe("report-split-001.pdf");
+  expect((await PDFDocument.load(output.bytes)).getPageCount()).toBe(1);
+});
 
 test("React development builds load local workers and produce a downloadable PDF", async ({
   page,

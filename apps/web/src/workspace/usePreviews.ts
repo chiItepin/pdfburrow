@@ -4,7 +4,8 @@ export const usePreviews = (
   ids: readonly string[],
   getFile: (id: string) => File | undefined,
   paused: boolean,
-  render: (file: File, signal: AbortSignal) => Promise<Blob>,
+  render: (file: File, signal: AbortSignal, id: string) => Promise<Blob>,
+  sourceId?: string,
 ) => {
   const cache = useRef(new Map<string, Thumbnail>());
   const [thumbnails, setThumbnails] = useState(new Map<string, Thumbnail>());
@@ -30,13 +31,13 @@ export const usePreviews = (
           if (cache.current.has(id)) {
             continue;
           }
-          const file = getFile(id);
+          const file = getFile(sourceId ?? id);
           if (!file) {
             continue;
           }
           let thumbnail: Thumbnail;
           try {
-            const blob = await render(file, controller.signal);
+            const blob = await render(file, controller.signal, id);
             if (controller.signal.aborted) {
               return;
             }
@@ -56,7 +57,7 @@ export const usePreviews = (
       })();
     }
     return () => controller.abort();
-  }, [key, getFile, paused, render]);
+  }, [key, getFile, paused, render, sourceId]);
   useEffect(() => {
     const current = cache.current;
     return () => {

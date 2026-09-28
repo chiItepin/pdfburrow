@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useFocusAfterCommit } from "@repo/core-ui";
 import { createFileRegistry } from "./fileRegistry";
 import type { PdfInputRow, MoveDirection } from "./types";
 import { useValidation } from "./useValidation";
@@ -11,6 +12,7 @@ export const usePdfDraft = (announce: (message: string) => void) => {
   const [acknowledged, setAcknowledged] = useState(false);
   const [windowIndex, setWindowIndex] = useState(0);
   const addButton = useRef<HTMLButtonElement>(null);
+  const focusAfterCommit = useFocusAfterCommit();
   const validationId = useValidation(inputs, files, setInputs, announce);
   const ready = inputs.length > 0 && inputs.every((input) => input.status === "ready");
   const pageCount = inputs.reduce(
@@ -49,8 +51,8 @@ export const usePdfDraft = (announce: (message: string) => void) => {
     setWindowIndex(
       Math.floor(Math.max(0, Math.min(index, remaining.length - 1)) / visibleFileCount),
     );
-    requestAnimationFrame(() =>
-      next ? document.getElementById(`remove-${next.id}`)?.focus() : addButton.current?.focus(),
+    focusAfterCommit(() =>
+      next ? document.getElementById(`remove-${next.id}`) : addButton.current,
     );
   };
 
@@ -71,7 +73,7 @@ export const usePdfDraft = (announce: (message: string) => void) => {
     setInputs(reordered);
     setWindowIndex(Math.floor(target / visibleFileCount));
     announce(`${input.name} moved to position ${target + 1} of ${inputs.length}.`);
-    requestAnimationFrame(() => document.getElementById(`${control}-${id}`)?.focus());
+    focusAfterCommit(() => document.getElementById(`${control}-${id}`));
   };
 
   const retryValidation = (id: string) => {
