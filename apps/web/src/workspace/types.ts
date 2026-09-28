@@ -15,10 +15,10 @@ export type DocumentTask = (context: {
 }) => Promise<Outcome<readonly PdfOutput[]>>;
 
 export type MoveDirection = "up" | "down";
-export interface Thumbnail {
-  url?: string;
-  error?: string;
-}
+export type Thumbnail =
+  | { state: "queued" | "rendering" | "paused" }
+  | { state: "ready"; url: string }
+  | { state: "error"; message: string };
 
 export interface OutputSummary {
   readonly filename: string;

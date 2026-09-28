@@ -27,7 +27,7 @@ export const FileDropzone = ({
   return (
     <section
       aria-label={regionLabel}
-      className="my-5 rounded-lg border-2 border-dashed bg-white p-6"
+      className="my-5 rounded-lg border-2 border-dashed bg-card p-6 text-card-foreground"
       onDragOver={(event) => event.preventDefault()}
       onDrop={(event) => {
         event.preventDefault();

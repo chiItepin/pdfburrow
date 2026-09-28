@@ -1,9 +1,32 @@
 import { build, context } from "esbuild";
 import { execFile } from "node:child_process";
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { basename } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
-import { appDirectory, basePath, buildOptions, outputDirectory } from "./buildOptions.mjs";
+import {
+  appDirectory,
+  basePath,
+  buildOptions,
+  outputDirectory,
+  pdfJsDirectory,
+} from "./buildOptions.mjs";
+
+const copyPreviewAssets = async () => {
+  const destination = `${outputDirectory}/assets/pdfjs`;
+  await mkdir(destination, { recursive: true });
+  await Promise.all(
+    [
+      "wasm/jbig2_nowasm_fallback.js",
+      "wasm/openjpeg_nowasm_fallback.js",
+      "wasm/LICENSE_JBIG2",
+      "wasm/LICENSE_PDFJS_JBIG2",
+      "wasm/LICENSE_OPENJPEG",
+      "wasm/LICENSE_PDFJS_OPENJPEG",
+      "LICENSE",
+    ].map((file) => copyFile(`${pdfJsDirectory}/${file}`, `${destination}/${basename(file)}`)),
+  );
+};
 
 export const tailwindExecutable = fileURLToPath(
   new URL("../node_modules/.bin/tailwindcss", import.meta.url),
@@ -33,11 +56,12 @@ export const writeHtml = async () => {
 
 export const buildApplication = async () => {
   await rm(`${outputDirectory}/assets`, { recursive: true, force: true });
-  await Promise.all([build(buildOptions(false)), buildStyles(), writeHtml()]);
+  await Promise.all([build(buildOptions(false)), buildStyles(), writeHtml(), copyPreviewAssets()]);
   await writeFile(`${outputDirectory}/base-path.json`, JSON.stringify(basePath));
 };
 
 export const watchApplication = async () => {
+  await copyPreviewAssets();
   await writeHtml();
   await buildStyles();
   const builder = await context(buildOptions(true));

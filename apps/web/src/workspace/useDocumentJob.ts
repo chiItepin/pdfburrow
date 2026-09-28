@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { toast } from "@repo/core-ui";
 import type { DocumentJob, DocumentTask } from "./types";
 import { useDownloads } from "./useDownloads";
 
@@ -42,6 +43,10 @@ export const useDocumentJob = (announce: (message: string) => void) => {
       } else {
         downloads.retain(outcome.value);
         setJob({ phase: "complete" });
+        toast.success(outcome.value.length === 1 ? "Your PDF is ready." : "Your PDFs are ready.", {
+          id: "document-job",
+          description: "Choose Download to save your output.",
+        });
       }
     } catch {
       if (controller.current === active) {
@@ -75,6 +80,7 @@ export const useDocumentJob = (announce: (message: string) => void) => {
     },
     editDraft: () => {
       if (!locked) {
+        toast.dismiss("document-job");
         downloads.clear();
         setJob({ phase: "editing" });
       }
