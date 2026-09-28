@@ -27,6 +27,7 @@ export const previewPdf = async (blob: Blob, signal: AbortSignal): Promise<Blob>
       useSystemFonts: false,
       disableFontFace: true,
       useWasm: false,
+      wasmUrl: new URL("./pdfjs/", import.meta.url).href,
       stopAtErrors: true,
     });
     const pdf = await task.promise;

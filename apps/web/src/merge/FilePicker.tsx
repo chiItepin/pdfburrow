@@ -22,8 +22,10 @@ export const FilePicker = ({ disabled, buttonRef, onAddFiles }: FilePickerProps)
         Your documents stay on your device. No uploads.
       </p>
       <p className="mt-2 text-sm text-muted-foreground">
-        Or drop PDF files here. Encrypted PDFs, interactive forms, and digital signatures are not
-        supported.
+        Or drop PDF files here. PDFs only; PNG and JPEG conversion is not available yet.
+      </p>
+      <p className="mt-2 text-sm text-muted-foreground">
+        Encrypted PDFs, interactive forms, and digital signatures are not supported.
       </p>
     </FileDropzone>
   );

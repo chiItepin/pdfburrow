@@ -1,10 +1,12 @@
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
+import { dirname } from "node:path";
 import { reactCompiler } from "./reactCompiler.mjs";
 
 const requireEngine = createRequire(
   new URL("../../../packages/pdf-engine/package.json", import.meta.url),
 );
+export const pdfJsDirectory = dirname(requireEngine.resolve("pdfjs-dist/package.json"));
 
 export const appDirectory = fileURLToPath(new URL("../", import.meta.url));
 const isDevelopment = process.argv[1] === fileURLToPath(new URL("./dev.mjs", import.meta.url));

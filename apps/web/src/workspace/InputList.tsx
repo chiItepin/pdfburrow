@@ -8,12 +8,16 @@ export const InputList = ({
   draft,
   editable,
   previews,
+  previewsPaused,
+  retryPreview,
   moveFile,
   removeFile,
 }: {
   draft: ReturnType<typeof usePdfDraft>;
   editable: boolean;
   previews: ReadonlyMap<string, Thumbnail>;
+  previewsPaused: boolean;
+  retryPreview: (id: string) => void;
   moveFile: (id: string, target: number, direction?: MoveDirection) => void;
   removeFile: (id: string) => void;
 }) => {
@@ -48,9 +52,11 @@ export const InputList = ({
             editable={editable}
             checking={input.id === draft.validationId}
             thumbnail={previews.get(input.id)}
+            previewsPaused={previewsPaused}
             onMove={moveFile}
             onRemove={removeFile}
             onRetry={draft.retryValidation}
+            onRetryPreview={retryPreview}
           />
         ))}
       </ol>

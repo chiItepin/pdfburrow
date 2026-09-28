@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Button } from "@repo/core-ui";
+import { Button, Progress, Spinner } from "@repo/core-ui";
 import type { useDownloads } from "./useDownloads";
 
 export const OutputDownloads = ({
@@ -69,6 +69,7 @@ export const OutputDownloads = ({
                 : void downloads.prepareBundle(bundleName)
             }
           >
+            {downloads.busy && <Spinner aria-hidden="true" />}
             {packaging.phase === "ready" ? "Download ZIP" : "Prepare ZIP for all PDFs"}
           </Button>
           {packaging.phase === "ready" && (
@@ -78,6 +79,15 @@ export const OutputDownloads = ({
           )}
           {downloads.busy && (
             <>
+              {packaging.phase === "packaging" && packaging.progress && (
+                <Progress
+                  className="mt-3"
+                  aria-label="PDFs packaged"
+                  value={packaging.progress.completed}
+                  max={packaging.progress.total}
+                  aria-valuetext={`${packaging.progress.completed} of ${packaging.progress.total} PDFs packaged`}
+                />
+              )}
               <p role="status" className="mt-2">
                 {packaging.phase === "cancelling"
                   ? "Cancelling. Waiting for the ZIP worker to stop..."
