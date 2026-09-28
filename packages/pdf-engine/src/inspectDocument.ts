@@ -1,6 +1,7 @@
 import type { PDFDocument, PDFObject } from "pdf-lib";
 import { PDFArray, PDFDict, PDFInvalidObject, PDFName, PDFRef, PDFStream } from "pdf-lib";
 import { PdfError } from "./pdfError.ts";
+import { inspectPageTree } from "./inspectPageTree.ts";
 import type { PdfInfo } from "./types";
 
 export const inspectDocument = (document: PDFDocument): PdfInfo => {
@@ -10,6 +11,7 @@ export const inspectDocument = (document: PDFDocument): PdfInfo => {
       "Encrypted PDFs are not supported. Use an unencrypted source copy.",
     );
   }
+  const pageCount = inspectPageTree(document);
   const warnings = new Set<string>();
   const pending: PDFObject[] = document.context
     .enumerateIndirectObjects()
@@ -41,7 +43,9 @@ export const inspectDocument = (document: PDFDocument): PdfInfo => {
     } else if (object instanceof PDFStream) {
       pending.push(object.dict);
     } else if (object instanceof PDFArray) {
-      pending.push(...object.asArray());
+      for (const item of object.asArray()) {
+        pending.push(item);
+      }
     } else if (object instanceof PDFDict) {
       const type = object.lookup(PDFName.of("Type"))?.toString();
       const fieldType = object.lookup(PDFName.of("FT"))?.toString();
@@ -99,6 +103,9 @@ export const inspectDocument = (document: PDFDocument): PdfInfo => {
     warnings.add("Source metadata is not guaranteed to be preserved.");
   }
   const pages = document.getPages();
+  if (pages.length !== pageCount) {
+    throw new PdfError("invalid", "Required PDF page checks could not account for every page.");
+  }
   if (!pages.length) {
     throw new PdfError("invalid", "This PDF has no pages.");
   }

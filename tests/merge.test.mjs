@@ -191,3 +191,35 @@ test("merge filenames are deterministic and filesystem-safe with an empty-stem f
   assert.equal(mergedFilename("bad/:*name.PDF"), "bad___name-merged.pdf");
   assert.equal(mergedFilename("... .pdf"), "document-merged.pdf");
 });
+
+test("merge enforces combined input limits at and above each configured boundary", async () => {
+  const input = await fixture();
+  const inputs = [input, input];
+  const limits = {
+    inputCount: 2,
+    perInputBytes: input.blob.size,
+    totalInputBytes: input.blob.size * 2,
+    totalPages: 4,
+  };
+  const result = await mergeDocuments({ inputs, acknowledged: true, limits }, () => {});
+  assert.equal((await PDFDocument.load(await result.blob.arrayBuffer())).getPageCount(), 4);
+  for (const [key, label] of [
+    ["inputCount", /Input count/],
+    ["perInputBytes", /input bytes/],
+    ["totalInputBytes", /Total input bytes/],
+    ["totalPages", /Total pages/],
+  ]) {
+    const progress = [];
+    await assert.rejects(
+      mergeDocuments(
+        { inputs, acknowledged: true, limits: { ...limits, [key]: limits[key] - 1 } },
+        (value) => progress.push(value),
+      ),
+      label,
+    );
+    if (key !== "totalPages") {
+      assert.equal(progress.length, 0, "Known input limits fail before parsing/copying.");
+    }
+    assert.ok(progress.every((value) => value.phase !== "saving"));
+  }
+});

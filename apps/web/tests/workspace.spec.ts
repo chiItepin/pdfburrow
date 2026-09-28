@@ -33,6 +33,7 @@ async function merge(page: Page) {
 test("real merge downloads ordered pages and works locally without document requests", async ({
   page,
   baseURL,
+  browserName,
 }) => {
   const requests: { url: string; method: string }[] = [];
   page.on("request", (request) => requests.push({ url: request.url(), method: request.method() }));
@@ -45,7 +46,10 @@ test("real merge downloads ordered pages and works locally without document requ
   );
   await expect(page.getByRole("main")).toHaveCSS("max-width", "1152px");
   await page.getByRole("link", { name: "Images to PDF (not available)", exact: true }).focus();
-  await page.keyboard.press("Tab");
+  // macOS WebKit uses Option-Tab to include buttons in native keyboard navigation.
+  await page.keyboard.press(
+    browserName === "webkit" && process.platform === "darwin" ? "Alt+Tab" : "Tab",
+  );
   await expect(page.getByRole("button", { name: "Add PDFs" })).toBeFocused();
   await ready(page);
   await page.getByRole("checkbox").check();
@@ -153,7 +157,8 @@ test("unsaved results and reset use safe discard confirmation", async ({ page })
   await page.goto("./#/merge");
   await ready(page);
   await merge(page);
-  await page.getByRole("button", { name: "Edit inputs" }).click();
+  await page.getByRole("button", { name: "Edit inputs" }).focus();
+  await page.keyboard.press("Enter");
   await expect(page.getByRole("dialog")).toBeVisible();
   await expect(page.getByRole("button", { name: "Keep working" })).toBeFocused();
   await page.keyboard.press("Escape");

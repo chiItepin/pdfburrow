@@ -90,6 +90,9 @@ tickets; shared infrastructure does not claim those tools are complete.
   characters replaced and an empty-stem fallback of `document`.
 - Required worker validation rejects encrypted, zero-page, unparseable,
   structurally invalid, form-bearing, and detected digitally signed inputs.
+  Page-tree checks reject missing/unknown children, repeated or cyclic references,
+  inconsistent parents, and incorrect page counts before the writer can silently
+  omit pages. Valid nested trees retain inherited page geometry and resources.
   Rejected files remain visible and block merging until retried or removed.
   No password bypass, repair, flattening, or silent skipping is implemented.
 - Every PDF input set requires acknowledgement: this is page-focused rewriting,
@@ -159,7 +162,7 @@ approved primitives through `core-ui`'s barrel. Do not overwrite customizations.
 ```sh
 npm run format
 npm run check
-apps/web/node_modules/.bin/playwright install chromium
+apps/web/node_modules/.bin/playwright install chromium firefox webkit
 npm run test:browser
 ```
 
@@ -168,7 +171,7 @@ tests, and a production build. Browser tests use separate production and
 development servers on ports 4173 and 4174.
 
 Tests inspect real output counts/order, all page boxes/rotation, decoded
-text/vector streams, first-page render equivalence, keyboard/focus behavior,
+text/vector streams, every-page render equivalence, keyboard/focus behavior,
 local workers, error recovery, cancellation, download retry, and repeated
 merge/download/reset and ZIP packaging cycles with worker/URL cleanup assertions.
 Shared download tests use a test-only consumer of the common hooks, never a hidden
@@ -176,6 +179,27 @@ production conversion tool. Routing tests cover direct links, refresh, manual
 hash changes, guarded Back/Forward, safe discard, and processing locks. Synthetic
 fixtures and Chromium mobile emulation do not establish complete compatibility,
 physical-device memory budgets, or release-level privacy evidence.
+
+Merge workflow and downloaded-artifact checks run in Playwright's Chromium,
+Firefox, and WebKit, plus Chromium mobile emulation. These browser builds are
+not evidence for the complete current/previous-major or physical-device matrix.
+The preservation fixtures include subset-embedded Greek/Cyrillic/accented text,
+mixed page boxes, rotations and user units, ordinary vectors, an image-only scan,
+and warning-bearing links/attachments. An independent PDF.js reader checks the
+download's exact text and every page's rendered pixels against the sources;
+annotation rendering is excluded because annotation preservation is not promised.
+The test-only font comes from PDF.js's installed `standard_fonts`, with its
+`LICENSE_LIBERATION`; fontkit and the fixture font are not added to application assets.
+
+`tests/fixtures` contains generated, non-user PDFs: actual RC4-encrypted documents
+with an empty and a nonempty opening password, and a detached CMS-signed document.
+PDF.js independently opens the encrypted fixtures with the expected credentials;
+the app rejects both, with no password/bypass path. Regenerate these fixtures with
+`node tests/fixtures/generateProtectedPdfs.mjs` when needed (requires OpenSSL).
+The generator verifies the detached signature and removes its temporary private
+key. The self-signed certificate is test data, not a trusted identity; these cases
+do not establish exhaustive encryption/signature detection. The normal test run
+uses the saved fixtures and does not require OpenSSL.
 
 ## Production build and base paths
 
