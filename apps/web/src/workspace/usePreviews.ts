@@ -8,8 +8,8 @@ export const usePreviews = (
   render: (file: File, signal: AbortSignal) => Promise<Blob>,
 ) => {
   const cache = useRef(new Map<string, Thumbnail>());
+  const requestRetry = useRef<((id: string) => void) | null>(null);
   const [thumbnails, setThumbnails] = useState(new Map<string, Thumbnail>());
-  const [attempt, setAttempt] = useState(0);
   const key = JSON.stringify(ids);
   useEffect(() => {
     const visible: string[] = JSON.parse(key);
@@ -27,14 +27,17 @@ export const usePreviews = (
         visible.map((id) => [id, cache.current.get(id) ?? { state: paused ? "paused" : "queued" }]),
       ),
     );
-    if (!paused) {
-      void (async () => {
-        for (const id of visible) {
-          if (controller.signal.aborted) {
-            return;
-          }
-          if (cache.current.has(id)) {
-            continue;
+    let running = false;
+    const renderPending = async () => {
+      if (running || paused || controller.signal.aborted) {
+        return;
+      }
+      running = true;
+      try {
+        while (!controller.signal.aborted) {
+          const id = visible.find((id) => !cache.current.has(id));
+          if (id === undefined) {
+            break;
           }
           const file = getFile(id);
           if (!file) {
@@ -67,10 +70,24 @@ export const usePreviews = (
           cache.current.set(id, thumbnail);
           setThumbnails((current) => new Map(current).set(id, thumbnail));
         }
-      })();
-    }
-    return () => controller.abort();
-  }, [key, getFile, paused, render, attempt]);
+      } finally {
+        running = false;
+      }
+    };
+    requestRetry.current = (id) => {
+      if (paused || !visible.includes(id) || cache.current.get(id)?.state !== "error") {
+        return;
+      }
+      cache.current.delete(id);
+      setThumbnails((current) => new Map(current).set(id, { state: "queued" }));
+      void renderPending();
+    };
+    void renderPending();
+    return () => {
+      requestRetry.current = null;
+      controller.abort();
+    };
+  }, [key, getFile, paused, render]);
   useEffect(() => {
     const current = cache.current;
     return () => {
@@ -83,11 +100,7 @@ export const usePreviews = (
     };
   }, []);
   const retry = (id: string) => {
-    if (paused || !ids.includes(id) || cache.current.get(id)?.state !== "error") {
-      return;
-    }
-    cache.current.delete(id);
-    setAttempt((current) => current + 1);
+    requestRetry.current?.(id);
   };
   return { thumbnails, retry };
 };

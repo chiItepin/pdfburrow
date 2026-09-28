@@ -107,8 +107,9 @@ tickets; shared infrastructure does not claim those tools are complete.
   first-page thumbnails do not establish export support or replace validation.
 - File cards use shared shadcn Attachment components with uncropped page previews.
   Queued, rendering, paused, and failed previews have distinct feedback.
-  **Retry preview** retries only that thumbnail without changing validation,
-  input order, or acknowledgement. Validation retry remains a separate action.
+  **Retry preview** queues only that thumbnail without restarting an in-flight
+  preview or changing validation, input order, or acknowledgement. Validation
+  retry remains a separate action.
 - PDF.js image decoders for JBIG2/CCITT scans and JPEG 2000 are shipped locally
   with their license texts in `assets/pdfjs/`, in both development and production.
   The no-WebAssembly preview mode still requires these JavaScript decoder assets;
