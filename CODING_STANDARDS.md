@@ -24,9 +24,14 @@ use React, TypeScript, shadcn/ui, and a small esbuild build; do not add Vite.
   Use descriptive verbs such as `validatePdf`, `removeFile`, and `requestDownload`.
   Use `use` for hooks, PascalCase for components/types, camelCase for values,
   and PascalCase for every `.tsx` filename, including generated UI primitives
-  and the `Main.tsx` entry. ESLint's `repo-filenames/tsx-pascal-case` rule enforces
-  this without a barrel or entrypoint exception. Other source filenames remain
-  descriptive kebab-case; `.ts`, test, and tool configuration names are unchanged.
+  and the `Main.tsx` entry. Use camelCase for all project-owned non-component
+  source, test, and build-script filenames: `usePdfDraft.ts`, `workerClient.test.mjs`,
+  and `buildOptions.mjs`, never snake_case or kebab-case.
+  ESLint's `repo-filenames/tsx-pascal-case` and
+  `repo-filenames/non-component-camel-case` rules enforce these conventions.
+  Conventional `.test`, `.spec`, `.worker`, `.config`, and `.d` suffixes are allowed;
+  names such as `eslint.config.mjs` and `playwright.config.ts` stay unchanged.
+  Do not rename generated/vendor files such as the Rush bootstrap scripts.
 - Prefer self-explanatory code over comments. Comments are rare and explain a
   non-obvious constraint, third-party workaround, or invariant, never narrate code.
   JSDoc needed to type-check JavaScript tooling is appropriate. Retain license
@@ -43,7 +48,8 @@ use React, TypeScript, shadcn/ui, and a small esbuild build; do not add Vite.
 - Import shared UI from the explicit `@repo/core-ui` barrel. It exports only the
   supported components/utilities; the stylesheet is a separate side-effect entry.
 - Use `@repo/pdf-engine` for types and capability barrels
-  `@repo/pdf-engine/merge` and `@repo/pdf-engine/preview` for lazy runtime APIs.
+  `@repo/pdf-engine/merge`, `@repo/pdf-engine/preview`,
+  `@repo/pdf-engine/image-preview`, and `@repo/pdf-engine/bundle` for lazy runtime APIs.
   Do not combine preview libraries and PDF generation in an eager root barrel.
 - Use explicit named exports in package/feature entry barrels. Avoid `export *`,
   barrels in every folder, cross-package `/src/` imports, and internal imports
@@ -63,6 +69,11 @@ use React, TypeScript, shadcn/ui, and a small esbuild build; do not add Vite.
 - Hooks must respect React's recommended lint rules. Effects synchronize with
   external systems and clean up their work; derive state during rendering when
   possible. Keep original files and output buffers outside render state.
+- React Compiler owns render memoization. Do not manually import `useMemo` or
+  `useCallback`; lint rejects them. Use lazy state initialization or refs for
+  persistent resource ownership, not memoization as a lifecycle guarantee.
+  Do not weaken cleanup/error handling to make code optimizable: unsupported
+  compiler patterns retain ordinary React behavior and produce build diagnostics.
 - Every action must work by keyboard without dragging. Preserve focus, safe
   confirmation defaults, noninterrupting progress, and descriptive accessible
   names. Optional previews must not become required validation.
@@ -71,7 +82,10 @@ use React, TypeScript, shadcn/ui, and a small esbuild build; do not add Vite.
 
 - Rush owns dependency installation and the lockfile. Change the owning package
   manifest, then run `npm run update`. Never install at the repository root.
-- esbuild bundles React/TypeScript and explicit local worker entries. Tailwind's
+- Babel runs React Compiler on app and shared UI TypeScript before esbuild bundles
+  it, in both development and production. The React-free engine and worker entries
+  bypass the compiler; lazy capabilities and emitted asset URLs remain separate.
+  Tailwind's
   CLI builds the shared stylesheet. Development uses watched builds and manual
   refresh, not automatic reload that could discard a document draft.
 - Support both `/pdfburrow/` and `/` via `PDFBURROW_BASE_PATH`. Keep assets and
@@ -86,7 +100,8 @@ use React, TypeScript, shadcn/ui, and a small esbuild build; do not add Vite.
   parenthesized arrow parameters, LF, and a 100-column target. Run `npm run format`.
 - `npm run format:check` and `npm run lint` enforce formatting, recommended
   JavaScript/TypeScript rules, React Hooks, JSX accessibility, and package
-  boundaries and PascalCase TSX filenames. Generated/vendor files and lockfiles
+  boundaries, PascalCase TSX filenames, and camelCase non-component filenames.
+  Generated/vendor files and lockfiles
   are not hand-reformatted.
 - Tests must verify observable behavior and real PDF artifacts, not only a success
   state. Cover failures, cancellation, downloads, focus, repeated jobs, worker

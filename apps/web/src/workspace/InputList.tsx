@@ -1,19 +1,24 @@
 import { Button } from "@repo/core-ui";
 import type { DragEvent } from "react";
 import { InputCard } from "./InputCard";
-import type { useMergeWorkspace } from "./use-merge-workspace";
-
-type Workspace = ReturnType<typeof useMergeWorkspace>;
+import type { usePdfDraft } from "./usePdfDraft";
+import type { MoveDirection, Thumbnail } from "./types";
 
 export const InputList = ({
   draft,
-  execution,
+  editable,
   previews,
   moveFile,
   removeFile,
-}: Pick<Workspace, "draft" | "execution" | "previews" | "moveFile" | "removeFile">) => {
+}: {
+  draft: ReturnType<typeof usePdfDraft>;
+  editable: boolean;
+  previews: ReadonlyMap<string, Thumbnail>;
+  moveFile: (id: string, target: number, direction?: MoveDirection) => void;
+  removeFile: (id: string) => void;
+}) => {
   const canDrop = (event: DragEvent<HTMLButtonElement>) =>
-    execution.editable && event.dataTransfer.types.includes("application/x-pdfburrow");
+    editable && event.dataTransfer.types.includes("application/x-pdfburrow");
   const allowDrop = (event: DragEvent<HTMLButtonElement>) => {
     if (canDrop(event)) {
       event.preventDefault();
@@ -33,14 +38,14 @@ export const InputList = ({
 
   return (
     <>
-      <ol className="space-y-3" start={draft.firstVisibleIndex + 1} aria-label="PDF merge order">
+      <ol className="space-y-3" start={draft.firstVisibleIndex + 1} aria-label="PDF input order">
         {draft.visible.map((input, offset) => (
           <InputCard
             key={input.id}
             input={input}
             index={draft.firstVisibleIndex + offset}
             total={draft.inputs.length}
-            editable={execution.editable}
+            editable={editable}
             checking={input.id === draft.validationId}
             thumbnail={previews.get(input.id)}
             onMove={moveFile}

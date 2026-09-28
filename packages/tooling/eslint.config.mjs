@@ -4,7 +4,7 @@ import tseslint from "typescript-eslint";
 import reactHooks from "eslint-plugin-react-hooks";
 import jsxA11y from "eslint-plugin-jsx-a11y";
 import prettier from "eslint-config-prettier";
-import { filenameRules } from "./filename-rules.mjs";
+import { filenameRules } from "./filenameRules.mjs";
 
 /** @param {"web" | "ui" | "engine" | "tooling"} layer */
 export const configFor = (layer) => {
@@ -45,6 +45,17 @@ export const configFor = (layer) => {
         "no-restricted-imports": [
           "error",
           {
+            paths:
+              layer === "web" || layer === "ui"
+                ? [
+                    {
+                      name: "react",
+                      importNames: ["useMemo", "useCallback"],
+                      message:
+                        "React Compiler handles memoization. Use state or refs for persistent resource ownership.",
+                    },
+                  ]
+                : [],
             patterns: [
               {
                 group: ["@repo/*/src", "@repo/*/src/**"],
@@ -75,8 +86,15 @@ export const configFor = (layer) => {
       },
     },
     {
-      files: ["**/*.tsx"],
+      files: ["**/*.{ts,tsx,mts,cts,js,mjs,cjs}"],
       plugins: { "repo-filenames": filenameRules },
+    },
+    {
+      files: ["**/*.{ts,mts,cts,js,mjs,cjs}"],
+      rules: { "repo-filenames/non-component-camel-case": "error" },
+    },
+    {
+      files: ["**/*.tsx"],
       rules: { "repo-filenames/tsx-pascal-case": "error" },
     },
     {

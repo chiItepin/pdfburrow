@@ -1,12 +1,15 @@
 import { Button, ConfirmDiscard } from "@repo/core-ui";
 import { FilePicker } from "./FilePicker";
-import { InputList } from "./InputList";
+import { InputList } from "../workspace/InputList";
 import { MergeResult } from "./MergeResult";
 import { PreservationNotice } from "./PreservationNotice";
-import { useMergeWorkspace } from "./use-merge-workspace";
+import type { useMergeWorkspace } from "./useMergeWorkspace";
 
-export const MergeWorkspace = () => {
-  const workspace = useMergeWorkspace();
+export const MergeWorkspace = ({
+  workspace,
+}: {
+  workspace: ReturnType<typeof useMergeWorkspace>;
+}) => {
   const { draft, execution, focus, capable, confirmation } = workspace;
   const { draftHeading, resultHeading, jobError } = focus;
   const { job, locked, editable } = execution;
@@ -34,69 +37,76 @@ export const MergeWorkspace = () => {
         <p className="mt-2 text-sm text-muted-foreground">
           Whole files are merged in displayed order. Page sizes and rotations are kept.
         </p>
-        <FilePicker
-          disabled={!editable || !capable}
-          buttonRef={draft.addButton}
-          onAddFiles={workspace.addFiles}
-        />
-        <InputList
-          draft={draft}
-          execution={execution}
-          previews={workspace.previews}
-          moveFile={workspace.moveFile}
-          removeFile={workspace.removeFile}
-        />
-        {draft.inputs.length > 0 && (
-          <PreservationNotice
-            disabled={!editable}
-            acknowledged={draft.acknowledged}
-            onAcknowledge={draft.setAcknowledged}
-          />
-        )}
-        <p className="mt-4 text-sm">
-          {draft.ready
-            ? `Output: one PDF, ${draft.pageCount} page${draft.pageCount === 1 ? "" : "s"}, in the order above.`
-            : draft.inputs.length
-              ? "Resolve input errors and wait for validation before merging."
-              : "Add PDFs to get started."}
-        </p>
-        {job.phase !== "complete" && (
-          <div className="mt-4 flex flex-wrap gap-3">
-            <Button
-              size="lg"
-              disabled={!draft.ready || !draft.acknowledged || locked || !capable}
-              onClick={workspace.mergeFiles}
-            >
-              {job.phase === "error" ? "Retry merge" : "Merge PDFs"}
-            </Button>
-            {locked && (
-              <Button
-                size="lg"
-                variant="outline"
-                disabled={job.phase === "cancelling"}
-                onClick={execution.cancelMerge}
-              >
-                Cancel merge
-              </Button>
-            )}
+        <div className="mt-4 grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
+          <div className="min-w-0">
+            <FilePicker
+              disabled={!editable || !capable}
+              buttonRef={draft.addButton}
+              onAddFiles={workspace.addFiles}
+            />
+            <InputList
+              draft={draft}
+              editable={editable}
+              previews={workspace.previews}
+              moveFile={workspace.moveFile}
+              removeFile={workspace.removeFile}
+            />
           </div>
-        )}
-        <p role="status" aria-live="polite" className="mt-4 min-h-6 text-sm">
-          {workspace.status}
-        </p>
-        {job.phase === "error" && (
-          <p ref={jobError} tabIndex={-1} role="alert" className="mt-3 text-destructive">
-            {job.message}
-          </p>
-        )}
+          <section className="min-w-0 lg:pt-5" aria-labelledby="settings-heading">
+            <h3 id="settings-heading" className="text-lg font-semibold">
+              Merge settings
+            </h3>
+            {draft.inputs.length > 0 && (
+              <PreservationNotice
+                disabled={!editable}
+                acknowledged={draft.acknowledged}
+                onAcknowledge={draft.setAcknowledged}
+              />
+            )}
+            <p className="mt-4 text-sm">
+              {draft.ready
+                ? `Output: one PDF, ${draft.pageCount} page${draft.pageCount === 1 ? "" : "s"}, in the order above.`
+                : draft.inputs.length
+                  ? "Resolve input errors and wait for validation before merging."
+                  : "Add PDFs to get started."}
+            </p>
+            {job.phase !== "complete" && (
+              <div className="mt-4 flex flex-wrap gap-3">
+                <Button
+                  size="lg"
+                  disabled={!draft.ready || !draft.acknowledged || locked || !capable}
+                  onClick={workspace.mergeFiles}
+                >
+                  {job.phase === "error" ? "Retry merge" : "Merge PDFs"}
+                </Button>
+                {locked && (
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    disabled={job.phase === "cancelling"}
+                    onClick={execution.cancel}
+                  >
+                    Cancel merge
+                  </Button>
+                )}
+              </div>
+            )}
+            <p role="status" aria-live="polite" className="mt-4 min-h-6 text-sm">
+              {workspace.status}
+            </p>
+            {job.phase === "error" && (
+              <p ref={jobError} tabIndex={-1} role="alert" className="mt-3 text-destructive">
+                {job.message}
+              </p>
+            )}
+          </section>
+        </div>
       </section>
       {job.phase === "complete" && (
         <MergeResult
-          job={job}
           pageCount={draft.pageCount}
           headingRef={resultHeading}
-          downloadError={execution.downloadError}
-          onDownload={execution.downloadPdf}
+          downloads={execution.downloads}
           onEdit={workspace.requestEdit}
         />
       )}

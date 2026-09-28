@@ -2,7 +2,7 @@ import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
 import { createServer } from "node:http";
 import { extname, resolve, sep } from "node:path";
-import { basePath, outputDirectory } from "./build-options.mjs";
+import { basePath, outputDirectory } from "./buildOptions.mjs";
 
 const contentTypes = new Map([
   [".html", "text/html; charset=utf-8"],

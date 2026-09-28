@@ -3,7 +3,7 @@ import { execFile } from "node:child_process";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
-import { appDirectory, basePath, buildOptions, outputDirectory } from "./build-options.mjs";
+import { appDirectory, basePath, buildOptions, outputDirectory } from "./buildOptions.mjs";
 
 export const tailwindExecutable = fileURLToPath(
   new URL("../node_modules/.bin/tailwindcss", import.meta.url),
@@ -25,6 +25,10 @@ export const writeHtml = async () => {
   await mkdir(outputDirectory, { recursive: true });
   const template = await readFile(new URL("../index.html", import.meta.url), "utf8");
   await writeFile(`${outputDirectory}/index.html`, template.replaceAll("%BASE_PATH%", basePath));
+  for (const name of ["privacy.html", "notices.html"]) {
+    const page = await readFile(new URL(`../public/${name}`, import.meta.url), "utf8");
+    await writeFile(`${outputDirectory}/${name}`, page.replaceAll("%BASE_PATH%", basePath));
+  }
 };
 
 export const buildApplication = async () => {

@@ -1,4 +1,6 @@
-import type { WorkerMessage, WorkerRequest, WorkerValue } from "./protocol";
+import type { WorkerRequest, WorkerValue } from "./protocol";
+import { runWorker } from "./workerClient";
+import type { WorkerOptions } from "./workerClient";
 import type {
   MergeRequest,
   Outcome,
@@ -8,79 +10,14 @@ import type {
   PdfOutput,
   PdfProgress,
 } from "./types";
-interface RunOptions {
-  readonly signal?: AbortSignal;
-  readonly onProgress?: (progress: PdfProgress) => void;
-}
-const run = (request: WorkerRequest, options: RunOptions): Promise<Outcome<WorkerValue>> => {
-  return new Promise((resolve) => {
-    if (options.signal?.aborted) {
-      resolve({ kind: "cancelled" });
-      return;
-    }
-    let worker: Worker;
-    try {
-      worker = new Worker(new URL("./merge.worker.js", import.meta.url), {
-        type: "module",
-        name: "pdfburrow-merge",
-      });
-    } catch {
-      resolve({
-        kind: "failure",
-        code: "worker",
-        message: "A local PDF worker could not start. Use a browser with module workers and retry.",
-      });
-      return;
-    }
-    let finished = false;
-    const finish = (result: Outcome<WorkerValue>) => {
-      if (finished) {
-        return;
-      }
-      finished = true;
-      worker.terminate();
-      options.signal?.removeEventListener("abort", abort);
-      resolve(result);
-    };
-    const abort = () => finish({ kind: "cancelled" });
-    worker.onmessage = (event: MessageEvent<WorkerMessage>) => {
-      if (finished) {
-        return;
-      }
-      if (event.data.type === "progress") {
-        options.onProgress?.(event.data.progress);
-      } else {
-        finish(event.data.result);
-      }
-    };
-    worker.onerror = (event) => {
-      event.preventDefault();
-      finish({
-        kind: "failure",
-        code: "worker",
-        message:
-          "The local PDF worker failed. Your inputs are retained. Retry, or try fewer files.",
-      });
-    };
-    worker.onmessageerror = () =>
-      finish({
-        kind: "failure",
-        code: "worker",
-        message: "The local worker response could not be read. Retry the operation.",
-      });
-    options.signal?.addEventListener("abort", abort, { once: true });
-    try {
-      worker.postMessage(request);
-    } catch {
-      finish({
-        kind: "failure",
-        code: "worker",
-        message:
-          "The PDF inputs could not be sent to the local worker. Remove the affected files and add them again.",
-      });
-    }
-  });
-};
+type RunOptions = WorkerOptions<PdfProgress>;
+const run = (request: WorkerRequest, options: RunOptions) =>
+  runWorker<WorkerRequest, WorkerValue, PdfProgress>(
+    new URL("./merge.worker.js", import.meta.url),
+    "pdfburrow-merge",
+    request,
+    options,
+  );
 export const validatePdf = async (
   input: PdfInput,
   options: RunOptions & {

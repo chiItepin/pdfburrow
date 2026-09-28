@@ -36,14 +36,15 @@ test("real merge downloads ordered pages and works locally without document requ
 }) => {
   const requests: { url: string; method: string }[] = [];
   page.on("request", (request) => requests.push({ url: request.url(), method: request.method() }));
-  await page.goto("./");
+  await page.goto("./#/merge");
   expect(requests.some((request) => request.url.includes("merge.js"))).toBe(false);
   expect(requests.some((request) => request.url.includes("preview.js"))).toBe(false);
   await expect(page.getByRole("button", { name: "Add PDFs" })).toHaveCSS(
     "background-color",
     "rgb(32, 91, 73)",
   );
-  await expect(page.getByRole("main")).toHaveCSS("max-width", "768px");
+  await expect(page.getByRole("main")).toHaveCSS("max-width", "1152px");
+  await page.getByRole("link", { name: "Images to PDF (not available)", exact: true }).focus();
   await page.keyboard.press("Tab");
   await expect(page.getByRole("button", { name: "Add PDFs" })).toBeFocused();
   await ready(page);
@@ -99,7 +100,7 @@ test("real merge downloads ordered pages and works locally without document requ
 test("unsupported input blocks merging and removal resets acknowledgement and preserves valid files", async ({
   page,
 }) => {
-  await page.goto("./");
+  await page.goto("./#/merge");
   await ready(page, [await pdf("valid.pdf")]);
   await page.getByRole("checkbox").check();
   await page.locator('input[type="file"]').setInputFiles([await pdf("form.pdf", 1, true)]);
@@ -116,9 +117,9 @@ test("required worker failure can be explicitly retried without re-adding files"
   page,
 }) => {
   await page.route("**/merge.worker.js", (route) => route.abort());
-  await page.goto("./");
+  await page.goto("./#/merge");
   await page.locator('input[type="file"]').setInputFiles([await pdf("retry.pdf")]);
-  await expect(page.getByText(/local PDF worker failed/)).toBeVisible();
+  await expect(page.getByText(/local worker failed/)).toBeVisible();
   await page.unroute("**/merge.worker.js");
   await page.getByRole("button", { name: "Retry validation of retry.pdf" }).click();
   await expect(page.getByText("Output: one PDF, 1 page, in the order above.")).toBeVisible();
@@ -128,7 +129,7 @@ test("required worker failure can be explicitly retried without re-adding files"
 test("cancellation stops synchronous worker execution and restores the unchanged draft", async ({
   page,
 }) => {
-  await page.goto("./");
+  await page.goto("./#/merge");
   await ready(page);
   await page.route("**/merge.worker.js", (route) =>
     route.fulfill({
@@ -149,7 +150,7 @@ test("cancellation stops synchronous worker execution and restores the unchanged
 });
 
 test("unsaved results and reset use safe discard confirmation", async ({ page }) => {
-  await page.goto("./");
+  await page.goto("./#/merge");
   await ready(page);
   await merge(page);
   await page.getByRole("button", { name: "Edit inputs" }).click();
@@ -172,7 +173,7 @@ test("preview failures do not override required validation or prevent merging", 
   page,
 }) => {
   await page.route("**/preview.js", (route) => route.abort());
-  await page.goto("./");
+  await page.goto("./#/merge");
   await ready(page, [await pdf("preview.pdf")]);
   await expect(page.getByText("Preview unavailable", { exact: true })).toBeVisible();
   await merge(page);
@@ -182,7 +183,7 @@ test("a failed preview worker does not hang the preview queue or block merging",
   page,
 }) => {
   await page.route("**/pdf.worker.min.js", (route) => route.abort());
-  await page.goto("./");
+  await page.goto("./#/merge");
   await ready(page, [await pdf("preview-worker.pdf")]);
   await expect(page.getByText("Preview unavailable", { exact: true })).toBeVisible();
   await merge(page);
@@ -220,7 +221,7 @@ test("repeated jobs release app-owned workers and URLs after reset", async ({ pa
     });
   });
   const input = await pdf("repeat.pdf");
-  await page.goto("./");
+  await page.goto("./#/merge");
   for (let i = 0; i < 20; i++) {
     await ready(page, [input]);
     await merge(page);
@@ -236,7 +237,7 @@ test("repeated jobs release app-owned workers and URLs after reset", async ({ pa
 });
 
 test("download failures retain the output for explicit retry", async ({ page }) => {
-  await page.goto("./");
+  await page.goto("./#/merge");
   await ready(page, [await pdf("download.pdf")]);
   await merge(page);
   await page.evaluate(() => {
@@ -260,7 +261,7 @@ test("corrupt and signature-bearing inputs fail visibly", async ({ page }) => {
   signed.context.register(
     signed.context.obj({ Type: PDFName.of("Sig"), ByteRange: [0, 100, 200, 300] }),
   );
-  await page.goto("./");
+  await page.goto("./#/merge");
   await page.locator('input[type="file"]').setInputFiles([
     { name: "corrupt.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.7\nbad") },
     {
@@ -290,7 +291,7 @@ test("native dragging crosses input-list pages without cancelling the drag", asy
       };
     }),
   );
-  await page.goto("./");
+  await page.goto("./#/merge");
   await page.locator('input[type="file"]').setInputFiles(files);
   await expect(page.getByText("Output: one PDF, 9 pages, in the order above.")).toBeVisible();
   await page.getByRole("checkbox").check();
@@ -349,7 +350,7 @@ test("native dragging crosses input-list pages without cancelling the drag", asy
 });
 
 test("cross-page keyboard ordering and file-upload drops remain independent", async ({ page }) => {
-  await page.goto("./");
+  await page.goto("./#/merge");
   await page
     .locator('input[type="file"]')
     .setInputFiles(

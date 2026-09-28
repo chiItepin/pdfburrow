@@ -1,5 +1,5 @@
 import { inspectPdf, mergeDocuments } from "./pdf";
-import { PdfError } from "./pdf-error";
+import { PdfError } from "./pdfError";
 import type { WorkerMessage, WorkerRequest, WorkerValue } from "./protocol";
 const send = (message: WorkerMessage) => {
   self.postMessage(message);

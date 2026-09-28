@@ -1,27 +1,10 @@
 import { EncryptedPDFError, PDFDocument } from "pdf-lib";
-import { inspectDocument } from "./inspect-document.ts";
-import { PdfError } from "./pdf-error.ts";
+import { inspectDocument } from "./inspectDocument.ts";
+import { PdfError } from "./pdfError.ts";
+import { enforceLimit } from "./resourceLimits.ts";
 import type { MergeRequest, PdfInfo, PdfInput, PdfLimits, PdfOutput, PdfProgress } from "./types";
 
-export const enforceLimit = (
-  value: number,
-  maximum: number | undefined,
-  label: string,
-  remedy: string,
-) => {
-  if (maximum === undefined) {
-    return;
-  }
-  if (!Number.isFinite(maximum) || maximum <= 0) {
-    throw new PdfError("limit", `The configured ${label} limit is invalid.`);
-  }
-  if (value > maximum) {
-    throw new PdfError(
-      "limit",
-      `${label}: ${value} exceeds the configured limit of ${maximum}. ${remedy}`,
-    );
-  }
-};
+export { enforceLimit } from "./resourceLimits.ts";
 
 const validateInputLimits = (inputs: readonly PdfInput[], limits: PdfLimits) => {
   if (!inputs.length) {

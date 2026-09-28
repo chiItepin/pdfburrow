@@ -7,7 +7,9 @@
     ".": "./src/index.ts",
     "./diagnostics": "./src/diagnostics.ts",
     "./merge": "./src/merge/index.ts",
-    "./preview": "./src/preview/index.ts"
+    "./preview": "./src/preview/index.ts",
+    "./bundle": "./src/bundle/index.ts",
+    "./image-preview": "./src/image-preview/index.ts"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json && tsc -p tsconfig.worker.json",
@@ -15,6 +17,7 @@
     "lint": "eslint . --max-warnings 0"
   },
   "dependencies": {
+    "fflate": "0.8.2",
     "pdf-lib": "1.17.1",
     "pdfjs-dist": "5.7.284"
   },

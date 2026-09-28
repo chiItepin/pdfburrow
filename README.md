@@ -1,11 +1,11 @@
 # PDFBurrow
 
-A React + TypeScript development build with one working tool: **Merge PDFs**.
+A React + TypeScript local document workspace with one working tool: **Merge PDFs**.
 Add local PDFs, arrange whole files, and explicitly download one merged PDF.
 **Split, extraction, and JPEG/PNG conversion are not implemented.**
 
 The [PDFBurrow MVP map](https://github.com/chiItepin/pdfburrow/issues/1) is the
-decision index. This workspace implements merge and the shared workflow it needs,
+decision index. This workspace implements merge and the shared file-to-download workflow,
 not the entire MVP. It is not a release; the selected project license has not yet
 been added.
 
@@ -19,15 +19,68 @@ npm run setup
 npm run dev
 ```
 
-Open `http://127.0.0.1:5173/pdfburrow/`. Select **Add PDFs** or drop files, wait
+Open `http://127.0.0.1:5173/pdfburrow/` and choose **Merge PDFs**, or bookmark
+`http://127.0.0.1:5173/pdfburrow/#/merge`. Select **Add PDFs** or drop files, wait
 for validation, arrange them with Move up/down or drag, acknowledge the
 preservation limitations, and select **Merge PDFs**. **Download PDF** appears
 after generation; downloads never start automatically.
 
-Vite is no longer used. esbuild bundles React/TypeScript and the local workers;
+Vite is no longer used. React Compiler runs through Babel on app and shared UI
+TypeScript, then esbuild bundles it and the local workers;
 Tailwind's CLI compiles the shared shadcn theme. Development watches source files
 in a separate `.dev` output directory. Refresh manually when ready: source edits
 never trigger a reload that could discard a document draft.
+
+React Compiler targets React 19 in both development and production. It optimizes
+eligible components and hooks without manual `useMemo`/`useCallback`; unsupported
+async cleanup patterns keep their ordinary behavior and are reported in build
+diagnostics. The engine remains React-free. File/output stores use lazy state
+initialization for stable ownership, not a memoization cache.
+
+## Shared workspace
+
+- Choose a tool before adding files. Home is `#/`; the implemented merge tool is
+  `#/merge`. `#/split` and `#/images` are explicitly unavailable development
+  placeholders, not working conversions. Unknown tool addresses show a recovery
+  screen. Hashes and history state identify tools only, never documents or settings.
+- There is one in-memory draft, not one draft per tool. Home, tool changes, and
+  browser Back/Forward require confirmation before discarding nonempty work,
+  even after a download was requested. Keep working is the safe default.
+  Processing/cancellation locks navigation until the worker has stopped.
+  Bookmarks and refresh select a tool but never restore a draft.
+- Inputs come before settings in reading/tab order. Desktop places settings beside
+  the input list; small screens stack them. Dragging is optional; keyboard ordering,
+  removal, focus restoration, and status announcements remain available.
+- `apps/web/src/workspace` owns the file registry, PDF validation queue,
+  windowed inputs, preview cache, document job lifecycle, and output/download
+  ownership. `merge` supplies its operation, preservation acknowledgement, and
+  operation-specific copy. `core-ui` owns the reusable file dropzone and dialog.
+- Shared downloads retain only metadata in React state and keep Blob references
+  in the output store. A single output downloads directly as PDF. Multiple outputs
+  expose individual downloads plus **Prepare ZIP for all PDFs**, followed by an
+  explicit **Download ZIP**. No download starts just because packaging finished.
+  These multi-output controls are ready for the future tools; merge still produces
+  exactly one PDF.
+- ZIP packaging uses a separate, lazy fflate worker. Cancellation terminates it
+  before unlocking, without discarding generated PDFs. Packaging/download errors
+  permit explicit retry; editing/reset releases output and ZIP URLs. Filenames are
+  sanitized and disambiguated once, so individual names and ZIP entries agree.
+- The shared preview queue accepts separate lazy PDF and JPEG/PNG renderers.
+  Optional image thumbnails run in a disposable local worker, fit within 144 pixels,
+  and never modify originals. This is preview infrastructure, not image conversion
+  or required image-input validation; those still belong to the image tool.
+- The footer opens local `privacy.html` and `notices.html` disclosures in a new tab
+  without discarding work. The notices page explicitly records incomplete release
+  licensing, rather than claiming a completed compliance audit.
+
+`PdfLimits`, `BundleLimits`, and `ImagePreviewLimits` are enforcement points for
+measured release values, not prepopulated production limits. The registry and
+output store report retained raw bytes/counts; ZIP progress reports actual entries
+and packaging bytes. These are not measurements of total browser/decoded memory.
+Image pixel limits can be checked after decoding, not a guarantee against decode
+allocation failure. Physical-device calibration, image validation, page grids,
+and operation-specific settings belong to their respective implementation/release
+tickets; shared infrastructure does not claim those tools are complete.
 
 ## Merge behavior and limitations
 
@@ -74,13 +127,16 @@ aggregate parsed-memory accounting, and scheduling calibration remain gates in
 **[CODING_STANDARDS.md](CODING_STANDARDS.md)** owns coding conventions: focused
 modules, descriptive arrow functions, minimal comments, package entry barrels,
 React/shadcn practices, dependency boundaries, formatting, and lint rules.
+Components use PascalCase `.tsx` filenames; other project-owned JS/TS sources,
+tests, and build scripts use camelCase, enforced by lint. Conventional config
+names and dotted test/worker suffixes are retained.
 
-| Package               | Responsibility                                                                     |
-| --------------------- | ---------------------------------------------------------------------------------- |
-| `apps/web`            | React app, merge-specific views/hooks, file registry, downloads, and build scripts |
-| `packages/core-ui`    | Shared shadcn primitives, reusable compositions, utilities, and theme              |
-| `packages/pdf-engine` | React-free PDF validation, generation, workers, and preview lifecycle              |
-| `packages/tooling`    | Shared TypeScript, ESLint, and formatter tooling                                   |
+| Package               | Responsibility                                                                       |
+| --------------------- | ------------------------------------------------------------------------------------ |
+| `apps/web`            | React app, shared document workspace, merge views/hooks, and build scripts           |
+| `packages/core-ui`    | Shared shadcn primitives, reusable compositions, utilities, and theme                |
+| `packages/pdf-engine` | React-free PDF validation/generation, image/PDF previews, ZIP packaging, and workers |
+| `packages/tooling`    | Shared TypeScript, ESLint, and formatter tooling                                     |
 
 Rush owns installation and `common/config/rush/pnpm-lock.yaml`. Do not run
 `npm install` or `pnpm install` at the root or inside packages.
@@ -114,7 +170,10 @@ development servers on ports 4173 and 4174.
 Tests inspect real output counts/order, all page boxes/rotation, decoded
 text/vector streams, first-page render equivalence, keyboard/focus behavior,
 local workers, error recovery, cancellation, download retry, and repeated
-merge/download/reset cycles with worker/URL cleanup assertions. Synthetic
+merge/download/reset and ZIP packaging cycles with worker/URL cleanup assertions.
+Shared download tests use a test-only consumer of the common hooks, never a hidden
+production conversion tool. Routing tests cover direct links, refresh, manual
+hash changes, guarded Back/Forward, safe discard, and processing locks. Synthetic
 fixtures and Chromium mobile emulation do not establish complete compatibility,
 physical-device memory budgets, or release-level privacy evidence.
 
@@ -140,11 +199,17 @@ the emitted modules under `assets/`; build scripts explicitly bundle each worker
 and keep generation and preview capability entries separate and lazy.
 
 The local server serves only the generated output, never repository source.
+For self-hosting, serve all of `apps/web/dist`, including the two static disclosure
+pages and `assets/`, under the same base path used during build. Hash routes require
+no server-side route rewriting. The host receives ordinary asset requests and may
+log them; visitors' documents are processed locally. Self-hosting does not provide
+an offline-startup or PWA guarantee.
 Development and production outputs are separate. Production deployments should
 replace the output directory atomically and revalidate fixed-name entry assets
 rather than applying immutable caching to them.
 
-The engine uses pdf-lib 1.17.1 (MIT) and PDF.js 5.7.284 (Apache-2.0); installed
+The engine uses pdf-lib 1.17.1 (MIT), PDF.js 5.7.284 (Apache-2.0), and fflate 0.8.2
+(MIT); installed
 packages retain upstream license texts. The owner selected MIT for PDFBurrow,
 attributed to PDFBurrow contributors; adding the project license and complete
 redistribution notices remains required before release. The shadcn attribution

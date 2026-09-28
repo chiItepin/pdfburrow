@@ -2,6 +2,7 @@
 
 @source "./";
 @source "../../../apps/web/src";
+@source "../../../apps/web/public";
 
 @theme inline {
   --color-background: var(--background);

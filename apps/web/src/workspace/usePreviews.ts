@@ -4,6 +4,7 @@ export const usePreviews = (
   ids: readonly string[],
   getFile: (id: string) => File | undefined,
   paused: boolean,
+  render: (file: File, signal: AbortSignal) => Promise<Blob>,
 ) => {
   const cache = useRef(new Map<string, Thumbnail>());
   const [thumbnails, setThumbnails] = useState(new Map<string, Thumbnail>());
@@ -35,11 +36,7 @@ export const usePreviews = (
           }
           let thumbnail: Thumbnail;
           try {
-            const { previewPdf } = await import("@repo/pdf-engine/preview");
-            if (controller.signal.aborted) {
-              return;
-            }
-            const blob = await previewPdf(file, controller.signal);
+            const blob = await render(file, controller.signal);
             if (controller.signal.aborted) {
               return;
             }
@@ -49,7 +46,8 @@ export const usePreviews = (
               return;
             }
             thumbnail = {
-              error: "Preview unavailable. Validation and merging are independent of previews.",
+              error:
+                "Preview unavailable. Required validation and generation are independent of previews.",
             };
           }
           cache.current.set(id, thumbnail);
@@ -58,7 +56,7 @@ export const usePreviews = (
       })();
     }
     return () => controller.abort();
-  }, [key, getFile, paused]);
+  }, [key, getFile, paused, render]);
   useEffect(() => {
     const current = cache.current;
     return () => {

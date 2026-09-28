@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
-import type { MergeJob } from "./types";
+import type { DocumentJob } from "./types";
 
-export const useWorkspaceLifecycle = (inputCount: number, phase: MergeJob["phase"]) => {
+export const useWorkspaceLifecycle = (inputCount: number, phase: DocumentJob["phase"]) => {
   const draftHeading = useRef<HTMLHeadingElement>(null);
   const resultHeading = useRef<HTMLHeadingElement>(null);
   const jobError = useRef<HTMLParagraphElement>(null);

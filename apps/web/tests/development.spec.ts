@@ -12,7 +12,7 @@ test("React development builds load local workers and produce a downloadable PDF
   );
   const input = await PDFDocument.create();
   input.addPage([300, 400]).drawText("Development worker fixture", { x: 30, y: 100, size: 12 });
-  await page.goto("./");
+  await page.goto("./#/merge");
   await page.locator('input[type="file"]').setInputFiles({
     name: "development.pdf",
     mimeType: "application/pdf",

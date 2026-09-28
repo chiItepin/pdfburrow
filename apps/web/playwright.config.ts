@@ -14,10 +14,14 @@ export default defineConfig({
   projects: [
     {
       name: "desktop-chromium",
-      testMatch: "workspace.spec.ts",
+      testMatch: ["workspace.spec.ts", "navigation.spec.ts", "downloads.spec.ts"],
       use: { ...devices["Desktop Chrome"] },
     },
-    { name: "mobile-chromium", testMatch: "workspace.spec.ts", use: { ...devices["Pixel 7"] } },
+    {
+      name: "mobile-chromium",
+      testMatch: ["workspace.spec.ts", "navigation.spec.ts", "downloads.spec.ts"],
+      use: { ...devices["Pixel 7"] },
+    },
     {
       name: "development-chromium",
       testMatch: "development.spec.ts",
