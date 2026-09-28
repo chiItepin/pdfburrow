@@ -16,10 +16,10 @@ export type DocumentTask = (context: {
 
 export type MoveDirection = "up" | "down";
 export type DiscardAction = "reset" | "edit";
-export interface Thumbnail {
-  url?: string;
-  error?: string;
-}
+export type Thumbnail =
+  | { state: "queued" | "rendering" | "paused" }
+  | { state: "ready"; url: string }
+  | { state: "error"; message: string };
 
 export interface OutputSummary {
   readonly filename: string;

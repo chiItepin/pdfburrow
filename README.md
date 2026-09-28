@@ -26,6 +26,10 @@ for validation, arrange them with Move up/down or drag, acknowledge the
 preservation limitations, and select **Merge PDFs**. **Download PDF** appears
 after generation; downloads never start automatically.
 
+Merge accepts PDF content only. The native picker's PDF filter is advisory and
+some browsers allow selecting other file types; validation rejects PNG/JPEG
+images even if renamed to `.pdf`. Selecting an image does not convert it.
+
 Vite is no longer used. React Compiler runs through Babel on app and shared UI
 TypeScript, then esbuild bundles it and the local workers;
 Tailwind's CLI compiles the shared shadcn theme. Development watches source files
@@ -102,6 +106,15 @@ tickets; shared infrastructure does not claim those tools are complete.
   are not preserved. Detection is not exhaustive.
 - Adding/removing files clears acknowledgement; reordering does not. Optional
   first-page thumbnails do not establish export support or replace validation.
+- File cards use shared shadcn Attachment components with uncropped page previews.
+  Queued, rendering, paused, and failed previews have distinct feedback.
+  **Retry preview** queues only that thumbnail without restarting an in-flight
+  preview or changing validation, input order, or acknowledgement. Validation
+  retry remains a separate action.
+- PDF.js image decoders for JBIG2/CCITT scans and JPEG 2000 are shipped locally
+  with their license texts in `assets/pdfjs/`, in both development and production.
+  The no-WebAssembly preview mode still requires these JavaScript decoder assets;
+  omitting them can produce blank thumbnails for otherwise valid scanned PDFs.
 - One required validation and one optional preview run at a time. Eight inputs
   are displayed per view; only that view's thumbnails are retained. This UI bound
   is not a measured workload limit or virtualization threshold. Drop an input on
@@ -111,6 +124,13 @@ tickets; shared infrastructure does not claim those tools are complete.
 - Generation pauses previews and locks editing. Cancel stops its disposable
   worker, then restores the unchanged draft. No elapsed-time generation cutoff
   or automatic retry is used.
+- Spinner indicates indeterminate validation, rendering, startup, and saving;
+  page-copy Progress uses the complete validated page count, not a per-input
+  percentage. Shared ZIP progress counts packaged PDFs. Reduced motion retains
+  static loading indicators and status text.
+- Sonner announces successful generation and download requests, not every file
+  or reorder. Actionable errors and cancellation status remain inline. A download
+  request does not prove that the browser saved the file.
 - Editing clears previous output, with confirmation if no download was requested.
   Start over confirms nonempty work and releases app-held resources without
   changing originals or downloaded files. This is not forensic erasure.
@@ -140,6 +160,7 @@ Remove the source or start over to choose another PDF.
   extraction; other modes keep their existing rules. Eight source pages and
   their optional previews are shown at a time; moving between views preserves selections.
   A preview failure does not block validation or generation.
+  Failed page previews can be retried without changing the selection or arrangement.
   Drop on Previous/Next pages or use Earlier/Later to reorder across views.
   Dragging uses the maintained `@dnd-kit/react` 0.5.0 package, with native checkbox
   controls kept separate from drag handles.
@@ -234,6 +255,9 @@ mixed page boxes, rotations and user units, ordinary vectors, an image-only scan
 and warning-bearing links/attachments. An independent PDF.js reader checks the
 download's exact text and every page's rendered pixels against the sources;
 annotation rendering is excluded because annotation preservation is not promised.
+Synthetic six-page JBIG2 and CCITT scan fixtures also check actual thumbnail
+pixels and same-origin decoder loading in production and development; no user
+documents are included in the fixture set.
 The test-only font comes from PDF.js's installed `standard_fonts`, with its
 `LICENSE_LIBERATION`; fontkit and the fixture font are not added to application assets.
 

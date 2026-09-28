@@ -131,7 +131,12 @@ export const PagePicker = ({
               selected={selected.includes(number)}
               editable={editable}
               dragging={dragging}
-              preview={previews.get(String(number))}
+              preview={previews.thumbnails.get(String(number))}
+              previewsPaused={paused || dragging}
+              onRetryPreview={() => {
+                previews.retry(String(number));
+                focusAfterCommit(() => document.getElementById(`page-${number}`));
+              }}
               onMove={movePage}
               onToggle={() =>
                 onSelect(

@@ -31,6 +31,7 @@ export const previewPdf = async (
       useSystemFonts: false,
       disableFontFace: true,
       useWasm: false,
+      wasmUrl: new URL("./pdfjs/", import.meta.url).href,
       stopAtErrors: true,
     });
     const pdf = await task.promise;

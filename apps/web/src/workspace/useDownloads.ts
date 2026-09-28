@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { toast } from "@repo/core-ui";
 import type { BundleLimits, BundleProgress, PdfOutput } from "@repo/pdf-engine";
 import { bundleFilename, createOutputStore } from "./outputStore";
 import type { OutputSummary } from "./types";
@@ -25,6 +26,7 @@ export const useDownloads = (announce: (message: string) => void) => {
   );
 
   const clear = () => {
+    toast.dismiss("document-download");
     controller.current?.abort();
     controller.current = null;
     store.clear();
@@ -45,9 +47,11 @@ export const useDownloads = (announce: (message: string) => void) => {
         store.requestPdf(index);
       }
       setError("");
-      announce(
-        "Download requested. Check your browser's downloads; this does not confirm the file was saved.",
-      );
+      announce("");
+      toast.info("Download requested.", {
+        id: "document-download",
+        description: "Check your browser's downloads; this does not confirm the file was saved.",
+      });
     } catch {
       setError(
         "The download could not be requested. Your outputs are still available; try the download again.",

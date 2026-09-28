@@ -1,5 +1,5 @@
 import { useSortable } from "@dnd-kit/react/sortable";
-import { Button, cn } from "@repo/core-ui";
+import { Button, Spinner, cn } from "@repo/core-ui";
 import type { Thumbnail } from "../workspace/types";
 
 export const SortablePage = ({
@@ -11,6 +11,8 @@ export const SortablePage = ({
   editable,
   dragging,
   preview,
+  previewsPaused,
+  onRetryPreview,
   onToggle,
   onMove,
 }: {
@@ -22,6 +24,8 @@ export const SortablePage = ({
   editable: boolean;
   dragging: boolean;
   preview?: Thumbnail;
+  previewsPaused: boolean;
+  onRetryPreview: () => void;
   onToggle: () => void;
   onMove: (page: number, target: number, control: string) => void;
 }) => {
@@ -35,6 +39,8 @@ export const SortablePage = ({
   return (
     <li
       ref={ref}
+      id={`page-${number}`}
+      tabIndex={-1}
       aria-label={`Page ${number}, position ${position} of ${total}`}
       className={cn(
         "flex min-w-0 flex-col gap-2 rounded-lg border bg-white p-3",
@@ -54,8 +60,8 @@ export const SortablePage = ({
           />
           Page {number}
         </span>
-        <span className="flex h-32 items-center justify-center">
-          {preview?.url ? (
+        <span className="flex h-32 flex-col items-center justify-center gap-2">
+          {preview?.state === "ready" ? (
             <img
               src={preview.url}
               alt={`Preview of page ${number}`}
@@ -63,14 +69,33 @@ export const SortablePage = ({
               className="max-h-full max-w-full"
             />
           ) : (
-            <span className="text-center text-xs text-muted-foreground">
-              {preview?.error
-                ? "Preview unavailable. You can still select this page."
-                : "Loading preview..."}
-            </span>
+            <>
+              {preview?.state === "rendering" && <Spinner aria-hidden="true" />}
+              <span className="text-center text-xs text-muted-foreground">
+                {preview?.state === "error"
+                  ? "Preview unavailable. You can still select this page."
+                  : previewsPaused
+                    ? "Preview paused"
+                    : preview?.state === "rendering"
+                      ? "Generating preview..."
+                      : "Preview queued"}
+              </span>
+            </>
           )}
         </span>
       </label>
+      {preview?.state === "error" && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="min-h-11"
+          disabled={previewsPaused}
+          aria-label={`Retry preview of page ${number}`}
+          onClick={onRetryPreview}
+        >
+          Retry preview
+        </Button>
+      )}
       <Button
         ref={handleRef}
         id={`drag-page-${number}`}

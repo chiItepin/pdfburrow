@@ -1,4 +1,4 @@
-import { Button, ConfirmDiscard } from "@repo/core-ui";
+import { Button, ConfirmDiscard, Spinner } from "@repo/core-ui";
 import { FilePicker } from "./FilePicker";
 import { InputList } from "../workspace/InputList";
 import { MergeResult } from "./MergeResult";
@@ -8,6 +8,7 @@ import { usePreviews } from "../workspace/usePreviews";
 import { renderPdfPreview } from "../workspace/previewRenderers";
 import { describeJobStatus } from "./jobStatus";
 import { mergeTask } from "./mergeTask";
+import { MergeProgress } from "./MergeProgress";
 
 export const MergeWorkspace = ({
   workspace,
@@ -72,7 +73,9 @@ export const MergeWorkspace = ({
             <InputList
               draft={draft}
               editable={editable}
-              previews={previews}
+              previews={previews.thumbnails}
+              previewsPaused={locked}
+              retryPreview={previews.retry}
               moveFile={workspace.moveFile}
               removeFile={workspace.removeFile}
             />
@@ -102,6 +105,7 @@ export const MergeWorkspace = ({
                   disabled={!draft.ready || !draft.acknowledged || locked || !capable}
                   onClick={mergeFiles}
                 >
+                  {locked && <Spinner aria-hidden="true" />}
                   {job.phase === "error" ? "Retry merge" : "Merge PDFs"}
                 </Button>
                 {locked && (
@@ -116,9 +120,11 @@ export const MergeWorkspace = ({
                 )}
               </div>
             )}
-            <p role="status" aria-live="polite" className="mt-4 min-h-6 text-sm">
-              {describeJobStatus(job, workspace.notice)}
-            </p>
+            <MergeProgress
+              job={job}
+              pageCount={draft.pageCount}
+              status={describeJobStatus(job, workspace.notice)}
+            />
             {job.phase === "error" && (
               <p ref={jobError} tabIndex={-1} role="alert" className="mt-3 text-destructive">
                 {job.message}

@@ -115,6 +115,7 @@ test("cancellation, worker/resource failures and optional preview errors preserv
   await page.getByRole("button", { name: "Generate PDFs" }).click();
   await expect(page.getByRole("button", { name: "Drag page 1", exact: true })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Move page 1 later", exact: true })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Retry preview of page 1" })).toBeDisabled();
   await expect(page.getByRole("radio", { name: "Every page", exact: true })).toBeDisabled();
   await expect(page.getByRole("link", { name: "Merge PDFs", exact: true })).toHaveAttribute(
     "aria-disabled",
@@ -129,6 +130,11 @@ test("cancellation, worker/resource failures and optional preview errors preserv
     page.getByRole("region", { name: "Split / Extract settings" }).getByRole("status"),
   ).toContainText("Generation cancelled");
   await expect(page.getByRole("heading", { name: "Your source PDF" })).toBeFocused();
+  await expect(page.getByRole("checkbox", { name: "Page 1", exact: true })).toBeChecked();
+  await page.unroute("**/pdf.worker.min.js");
+  await page.getByRole("button", { name: "Retry preview of page 1" }).click();
+  await expect(page.getByRole("img", { name: "Preview of page 1", exact: true })).toBeVisible();
+  await expect(page.getByRole("listitem", { name: "Page 1, position 1 of 1" })).toBeFocused();
   await expect(page.getByRole("checkbox", { name: "Page 1", exact: true })).toBeChecked();
   await page.unroute("**/split.worker.js");
   await page.route("**/split.worker.js", (route) => route.abort());
