@@ -190,7 +190,9 @@ terminates the worker and retains source/settings; a failed job never publishes 
 Editing clears generated outputs, with confirmation when downloads remain unrequested.
 Changing tools, removing the source or resetting cannot carry selections into another document.
 `PdfLimits` can enforce selected-page totals (including repetitions), output count and aggregate
-output bytes. These are calibration hooks, not measured production limits. No size-target
+output bytes. The split page limit applies to selected output pages, not the source's full page
+count; source byte limits and full structural validation still apply.
+These are calibration hooks, not measured production limits. No size-target
 splitting, compression, repair, encrypted-PDF support, or remote fallback is added.
 
 ## Repository guide

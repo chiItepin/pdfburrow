@@ -336,6 +336,67 @@ test("actual numbered PDFs and ZIP entries expand beyond 999 without collisions"
   }
 });
 
+test("split page limits count selected output pages rather than the whole source", async () => {
+  const input = await fixture(100);
+  const limits = {
+    totalPages: 1,
+    inputCount: 1,
+    perInputBytes: input.blob.size,
+    totalInputBytes: input.blob.size,
+  };
+  for (const selection of [selected([100]), ranges([[100, 100]]), ranges([[100, 100]], false)]) {
+    assert.equal(planSplit(input.name, 100, selection, limits).totalPages, 1);
+    const outputs = await splitDocuments(
+      { input, selection, acknowledged: true, limits },
+      () => {},
+    );
+    assert.equal(outputs.length, 1);
+    const output = await PDFDocument.load(await outputs[0].blob.arrayBuffer());
+    assert.equal(output.getPageCount(), 1);
+    assert.equal(output.getPage(0).getWidth(), 399);
+  }
+  for (const selection of [
+    selected([1, 100]),
+    ranges([[1, 100]]),
+    ranges([
+      [100, 100],
+      [100, 100],
+    ]),
+    ranges(
+      [
+        [100, 100],
+        [100, 100],
+      ],
+      false,
+    ),
+    { mode: "fixed", size: 1 },
+    { mode: "every" },
+  ]) {
+    await assert.rejects(
+      splitDocuments({ input, selection, acknowledged: true, limits }, () => {}),
+      { code: "limit", message: /Selected pages/ },
+    );
+  }
+  for (const sourceLimits of [
+    { inputCount: 0 },
+    { perInputBytes: input.blob.size - 1 },
+    { totalInputBytes: input.blob.size - 1 },
+  ]) {
+    await assert.rejects(
+      splitDocuments(
+        {
+          input,
+          selection: selected([100]),
+          acknowledged: true,
+          limits: { ...limits, ...sourceLimits },
+        },
+        () => {},
+      ),
+      { code: "limit" },
+    );
+  }
+});
+
 test("source support, acknowledgement and calibrated resource limits remain enforced", async () => {
   const input = await fixture(2);
   const request = { input, selection: { mode: "every" }, acknowledged: true };

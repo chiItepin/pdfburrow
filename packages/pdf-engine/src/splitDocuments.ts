@@ -21,7 +21,10 @@ export const splitDocuments = async (
   }
   const limits = request.limits ?? {};
   progress({ phase: "validating", completed: 0, total: 1 });
-  const { document, info } = await loadValidatedPdf(request.input, limits);
+  const { document, info } = await loadValidatedPdf(request.input, {
+    ...limits,
+    totalPages: undefined,
+  });
   const plan = planSplit(request.input.name, info.pageCount, request.selection, limits);
   const outputs: PdfOutput[] = [];
   let completed = 0;
