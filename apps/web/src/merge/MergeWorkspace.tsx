@@ -2,18 +2,43 @@ import { Button, ConfirmDiscard, Spinner } from "@repo/core-ui";
 import { FilePicker } from "./FilePicker";
 import { InputList } from "../workspace/InputList";
 import { MergeResult } from "./MergeResult";
-import { PreservationNotice } from "./PreservationNotice";
+import { PreservationNotice } from "../workspace/PreservationNotice";
+import type { usePdfWorkspace } from "../workspace/usePdfWorkspace";
+import { usePreviews } from "../workspace/usePreviews";
+import { renderPdfPreview } from "../workspace/previewRenderers";
+import { describeJobStatus } from "./jobStatus";
+import { mergeTask } from "./mergeTask";
 import { MergeProgress } from "./MergeProgress";
-import type { useMergeWorkspace } from "./useMergeWorkspace";
 
 export const MergeWorkspace = ({
   workspace,
 }: {
-  workspace: ReturnType<typeof useMergeWorkspace>;
+  workspace: ReturnType<typeof usePdfWorkspace>;
 }) => {
   const { draft, execution, focus, capable, confirmation } = workspace;
   const { draftHeading, resultHeading, jobError } = focus;
   const { job, locked, editable } = execution;
+  const previews = usePreviews(
+    draft.visible.filter((input) => input.status === "ready").map((input) => input.id),
+    draft.files.get,
+    locked,
+    renderPdfPreview,
+  );
+  const mergeFiles = () => {
+    if (!editable || !draft.ready || !draft.acknowledged || !capable) {
+      return;
+    }
+    void execution.start(async (options) => {
+      const inputs = draft.inputs.map((input) => {
+        const blob = draft.files.get(input.id);
+        if (!blob) {
+          throw new Error(`The input ${input.name} is no longer available.`);
+        }
+        return { id: input.id, name: input.name, blob };
+      });
+      return mergeTask(inputs, draft.acknowledged)(options);
+    });
+  };
   return (
     <>
       {!capable && (
@@ -48,9 +73,9 @@ export const MergeWorkspace = ({
             <InputList
               draft={draft}
               editable={editable}
-              previews={workspace.previews}
+              previews={previews.thumbnails}
               previewsPaused={locked}
-              retryPreview={workspace.retryPreview}
+              retryPreview={previews.retry}
               moveFile={workspace.moveFile}
               removeFile={workspace.removeFile}
             />
@@ -78,7 +103,7 @@ export const MergeWorkspace = ({
                 <Button
                   size="lg"
                   disabled={!draft.ready || !draft.acknowledged || locked || !capable}
-                  onClick={workspace.mergeFiles}
+                  onClick={mergeFiles}
                 >
                   {locked && <Spinner aria-hidden="true" />}
                   {job.phase === "error" ? "Retry merge" : "Merge PDFs"}
@@ -95,7 +120,11 @@ export const MergeWorkspace = ({
                 )}
               </div>
             )}
-            <MergeProgress job={job} pageCount={draft.pageCount} status={workspace.status} />
+            <MergeProgress
+              job={job}
+              pageCount={draft.pageCount}
+              status={describeJobStatus(job, workspace.notice)}
+            />
             {job.phase === "error" && (
               <p ref={jobError} tabIndex={-1} role="alert" className="mt-3 text-destructive">
                 {job.message}

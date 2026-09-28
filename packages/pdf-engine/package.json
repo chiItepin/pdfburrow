@@ -7,6 +7,9 @@
     ".": "./src/index.ts",
     "./diagnostics": "./src/diagnostics.ts",
     "./merge": "./src/merge/index.ts",
+    "./split": "./src/split/index.ts",
+    "./selection": "./src/selection/index.ts",
+    "./filename": "./src/pdfFilename.ts",
     "./preview": "./src/preview/index.ts",
     "./bundle": "./src/bundle/index.ts",
     "./image-preview": "./src/image-preview/index.ts"

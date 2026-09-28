@@ -1,6 +1,7 @@
 import { EncryptedPDFError, PDFDocument } from "pdf-lib";
 import { inspectDocument } from "./inspectDocument.ts";
 import { PdfError } from "./pdfError.ts";
+import { pdfStem } from "./pdfFilename.ts";
 import { enforceLimit } from "./resourceLimits.ts";
 import type { MergeRequest, PdfInfo, PdfInput, PdfLimits, PdfOutput, PdfProgress } from "./types";
 
@@ -27,7 +28,7 @@ const validateInputLimits = (inputs: readonly PdfInput[], limits: PdfLimits) => 
   }
 };
 
-const loadValidatedPdf = async (input: PdfInput, limits: PdfLimits) => {
+export const loadValidatedPdf = async (input: PdfInput, limits: PdfLimits) => {
   validateInputLimits([input], limits);
   const header = new Uint8Array(await input.blob.slice(0, 1024).arrayBuffer());
   if (!new TextDecoder("latin1").decode(header).includes("%PDF-")) {
@@ -70,14 +71,7 @@ const loadValidatedPdf = async (input: PdfInput, limits: PdfLimits) => {
 export const inspectPdf = async (input: PdfInput, limits: PdfLimits = {}): Promise<PdfInfo> =>
   (await loadValidatedPdf(input, limits)).info;
 
-export const mergedFilename = (name: string): string => {
-  const stem = name
-    .replace(/\.pdf$/iu, "")
-    .replace(/\p{Cc}|[<>:"/\\|?*]/gu, "_")
-    .replace(/[. ]+$/gu, "")
-    .trim();
-  return `${stem || "document"}-merged.pdf`;
-};
+export const mergedFilename = (name: string): string => `${pdfStem(name)}-merged.pdf`;
 
 export const mergeDocuments = async (
   request: MergeRequest,

@@ -1,6 +1,10 @@
 import { getDocument, PDFWorker } from "pdfjs-dist";
 /** The caller serializes previews and releases returned object URLs. */
-export const previewPdf = async (blob: Blob, signal: AbortSignal): Promise<Blob> => {
+export const previewPdf = async (
+  blob: Blob,
+  signal: AbortSignal,
+  pageNumber = 1,
+): Promise<Blob> => {
   signal.throwIfAborted();
   const port = new Worker(new URL("./pdf.worker.min.js", import.meta.url), { type: "module" });
   const worker = PDFWorker.create({ port });
@@ -32,7 +36,7 @@ export const previewPdf = async (blob: Blob, signal: AbortSignal): Promise<Blob>
     });
     const pdf = await task.promise;
     signal.throwIfAborted();
-    const page = await pdf.getPage(1);
+    const page = await pdf.getPage(pageNumber);
     const original = page.getViewport({ scale: 1 });
     const viewport = page.getViewport({ scale: 144 / Math.max(original.width, original.height) });
     canvas.width = Math.ceil(viewport.width);

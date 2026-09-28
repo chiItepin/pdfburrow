@@ -5,7 +5,8 @@ export const usePreviews = (
   ids: readonly string[],
   getFile: (id: string) => File | undefined,
   paused: boolean,
-  render: (file: File, signal: AbortSignal) => Promise<Blob>,
+  render: (file: File, signal: AbortSignal, id: string) => Promise<Blob>,
+  sourceId?: string,
 ) => {
   const cache = useRef(new Map<string, Thumbnail>());
   const requestRetry = useRef<((id: string) => void) | null>(null);
@@ -39,7 +40,7 @@ export const usePreviews = (
           if (id === undefined) {
             break;
           }
-          const file = getFile(id);
+          const file = getFile(sourceId ?? id);
           if (!file) {
             const unavailable: Thumbnail = {
               state: "error",
@@ -52,7 +53,7 @@ export const usePreviews = (
           setThumbnails((current) => new Map(current).set(id, { state: "rendering" }));
           let thumbnail: Thumbnail;
           try {
-            const blob = await render(file, controller.signal);
+            const blob = await render(file, controller.signal, id);
             if (controller.signal.aborted) {
               return;
             }
@@ -64,7 +65,7 @@ export const usePreviews = (
             thumbnail = {
               state: "error",
               message:
-                "Retry the preview or continue merging. PDF validation is independent of previews.",
+                "Retry the preview or continue processing. PDF validation is independent of previews.",
             };
           }
           cache.current.set(id, thumbnail);
@@ -87,7 +88,7 @@ export const usePreviews = (
       requestRetry.current = null;
       controller.abort();
     };
-  }, [key, getFile, paused, render]);
+  }, [key, getFile, paused, render, sourceId]);
   useEffect(() => {
     const current = cache.current;
     return () => {

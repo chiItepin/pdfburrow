@@ -1,16 +1,18 @@
 interface PreservationNoticeProps {
+  action?: string;
   disabled: boolean;
   acknowledged: boolean;
   onAcknowledge: (value: boolean) => void;
 }
 
 export const PreservationNotice = ({
+  action = "merge",
   disabled,
   acknowledged,
   onAcknowledge,
 }: PreservationNoticeProps) => (
   <fieldset disabled={disabled} className="mt-6 rounded-lg border p-4">
-    <legend className="px-1 font-semibold">Before you merge</legend>
+    <legend className="px-1 font-semibold">Before you {action}</legend>
     <p className="mb-3 text-sm">
       This is a page-focused rewrite, not a lossless copy. Annotations and visible marks may change
       or disappear. Bookmarks, attachments, metadata, accessibility tags, and PDF/A guarantees are

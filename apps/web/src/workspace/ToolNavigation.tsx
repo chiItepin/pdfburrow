@@ -16,7 +16,7 @@ export const ToolNavigation = ({
       [
         ["home", "Home"],
         ["merge", "Merge PDFs"],
-        ["split", "Split / Extract (not available)"],
+        ["split", "Split / Extract"],
         ["images", "Images to PDF (not available)"],
       ] as const
     ).map(([value, label]) => (

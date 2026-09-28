@@ -1,0 +1,1 @@
+export { SplitWorkspace } from "./SplitWorkspace";

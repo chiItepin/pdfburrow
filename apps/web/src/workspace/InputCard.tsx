@@ -7,6 +7,7 @@ import {
   AttachmentMedia,
   AttachmentTitle,
   Spinner,
+  useFocusAfterCommit,
 } from "@repo/core-ui";
 import type { PdfInputRow, MoveDirection, Thumbnail } from "./types";
 
@@ -16,12 +17,13 @@ interface InputCardProps {
   total: number;
   editable: boolean;
   checking: boolean;
-  previewsPaused: boolean;
+  reorderable?: boolean;
+  previewsPaused?: boolean;
   thumbnail?: Thumbnail;
   onMove: (id: string, target: number, direction?: MoveDirection) => void;
   onRemove: (id: string) => void;
   onRetry: (id: string) => void;
-  onRetryPreview: (id: string) => void;
+  onRetryPreview?: (id: string) => void;
 }
 
 export const InputCard = ({
@@ -30,19 +32,21 @@ export const InputCard = ({
   total,
   editable,
   checking,
-  previewsPaused,
+  reorderable = true,
+  previewsPaused = false,
   thumbnail,
   onMove,
   onRemove,
   onRetry,
   onRetryPreview,
 }: InputCardProps) => {
+  const focusAfterCommit = useFocusAfterCommit();
   const retry = (action: (id: string) => void) => {
     action(input.id);
-    requestAnimationFrame(() => document.getElementById(`input-${input.id}`)?.focus());
+    focusAfterCommit(() => document.getElementById(`input-${input.id}`));
   };
   const previewLabel =
-    input.status !== "ready"
+    input.status !== "ready" || !thumbnail
       ? "PDF"
       : thumbnail?.state === "error"
         ? "Preview unavailable"
@@ -53,17 +57,17 @@ export const InputCard = ({
             : "Preview queued";
   return (
     <li
-      draggable={editable}
+      draggable={editable && reorderable}
       onDragStart={(event) => event.dataTransfer.setData("application/x-pdfburrow", input.id)}
       onDragOver={(event) => {
-        if (editable) {
+        if (editable && reorderable) {
           event.preventDefault();
         }
       }}
       onDrop={(event) => {
         event.preventDefault();
         const id = event.dataTransfer.getData("application/x-pdfburrow");
-        if (id) {
+        if (id && editable && reorderable) {
           onMove(id, index);
         }
       }}
@@ -115,26 +119,30 @@ export const InputCard = ({
           )}
         </AttachmentContent>
         <AttachmentActions className="w-full">
-          <AttachmentAction
-            id={`up-${input.id}`}
-            variant="outline"
-            disabled={!editable}
-            aria-disabled={index === 0}
-            aria-label={`Move ${input.name} up`}
-            onClick={() => onMove(input.id, index - 1, "up")}
-          >
-            Move up
-          </AttachmentAction>
-          <AttachmentAction
-            id={`down-${input.id}`}
-            variant="outline"
-            disabled={!editable}
-            aria-disabled={index === total - 1}
-            aria-label={`Move ${input.name} down`}
-            onClick={() => onMove(input.id, index + 1, "down")}
-          >
-            Move down
-          </AttachmentAction>
+          {reorderable && (
+            <>
+              <AttachmentAction
+                id={`up-${input.id}`}
+                variant="outline"
+                disabled={!editable}
+                aria-disabled={index === 0}
+                aria-label={`Move ${input.name} up`}
+                onClick={() => onMove(input.id, index - 1, "up")}
+              >
+                Move up
+              </AttachmentAction>
+              <AttachmentAction
+                id={`down-${input.id}`}
+                variant="outline"
+                disabled={!editable}
+                aria-disabled={index === total - 1}
+                aria-label={`Move ${input.name} down`}
+                onClick={() => onMove(input.id, index + 1, "down")}
+              >
+                Move down
+              </AttachmentAction>
+            </>
+          )}
           <AttachmentAction
             id={`remove-${input.id}`}
             disabled={!editable}
@@ -153,7 +161,7 @@ export const InputCard = ({
               Retry validation
             </AttachmentAction>
           )}
-          {thumbnail?.state === "error" && (
+          {thumbnail?.state === "error" && onRetryPreview && (
             <AttachmentAction
               variant="outline"
               disabled={previewsPaused}

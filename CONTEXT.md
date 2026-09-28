@@ -23,7 +23,7 @@ The inputs and operation settings the user is preparing for the selected tool. A
 A ZIP containing multiple outputs for download together.
 
 **Page selection**:
-The source pages chosen for an output. Selected-page toggles choose unique pages in source order; custom ranges preserve range order and can repeat pages where ranges overlap.
+The source pages chosen for an output. Selected-page toggles choose unique pages in the user's arranged page order, initially source order; custom ranges preserve range order and can repeat pages where ranges overlap.
 
 **Page range**:
 A contiguous, inclusive span from a start page to an end page in one source PDF, numbered from 1.

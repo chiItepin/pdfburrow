@@ -1,11 +1,12 @@
 # PDFBurrow
 
-A React + TypeScript local document workspace with one working tool: **Merge PDFs**.
-Add local PDFs, arrange whole files, and explicitly download one merged PDF.
-**Split, extraction, and JPEG/PNG conversion are not implemented.**
+A React + TypeScript local document workspace with **Merge PDFs** and
+**Split / Extract**. Combine whole PDFs or choose pages from one source, then
+explicitly download PDFs or a ZIP of multiple outputs.
+**JPEG/PNG conversion is not implemented.**
 
 The [PDFBurrow MVP map](https://github.com/chiItepin/pdfburrow/issues/1) is the
-decision index. This workspace implements merge and the shared file-to-download workflow,
+decision index. This workspace implements merge, split/extraction and the shared file-to-download workflow,
 not the entire MVP. It is not a release; the selected project license has not yet
 been added.
 
@@ -44,8 +45,8 @@ initialization for stable ownership, not a memoization cache.
 ## Shared workspace
 
 - Choose a tool before adding files. Home is `#/`; the implemented merge tool is
-  `#/merge`. `#/split` and `#/images` are explicitly unavailable development
-  placeholders, not working conversions. Unknown tool addresses show a recovery
+  `#/merge`; split/extraction is `#/split`. `#/images` is an explicitly unavailable
+  development placeholder, not a working conversion. Unknown tool addresses show a recovery
   screen. Hashes and history state identify tools only, never documents or settings.
 - There is one in-memory draft, not one draft per tool. Home, tool changes, and
   browser Back/Forward require confirmation before discarding nonempty work,
@@ -57,14 +58,14 @@ initialization for stable ownership, not a memoization cache.
   removal, focus restoration, and status announcements remain available.
 - `apps/web/src/workspace` owns the file registry, PDF validation queue,
   windowed inputs, preview cache, document job lifecycle, and output/download
-  ownership. `merge` supplies its operation, preservation acknowledgement, and
-  operation-specific copy. `core-ui` owns the reusable file dropzone and dialog.
+  ownership. Merge and split share one draft/job owner, preservation acknowledgement,
+  and download lifecycle; each feature supplies its operation and settings.
+  `core-ui` owns the reusable file dropzone and dialog.
 - Shared downloads retain only metadata in React state and keep Blob references
   in the output store. A single output downloads directly as PDF. Multiple outputs
   expose individual downloads plus **Prepare ZIP for all PDFs**, followed by an
   explicit **Download ZIP**. No download starts just because packaging finished.
-  These multi-output controls are ready for the future tools; merge still produces
-  exactly one PDF.
+  Split uses these multi-output controls; merge still produces exactly one PDF.
 - ZIP packaging uses a separate, lazy fflate worker. Cancellation terminates it
   before unlocking, without discarding generated PDFs. Packaging/download errors
   permit explicit retry; editing/reset releases output and ZIP URLs. Filenames are
@@ -82,8 +83,8 @@ measured release values, not prepopulated production limits. The registry and
 output store report retained raw bytes/counts; ZIP progress reports actual entries
 and packaging bytes. These are not measurements of total browser/decoded memory.
 Image pixel limits can be checked after decoding, not a guarantee against decode
-allocation failure. Physical-device calibration, image validation, page grids,
-and operation-specific settings belong to their respective implementation/release
+allocation failure. Physical-device calibration, image validation,
+and image-specific settings belong to their respective implementation/release
 tickets; shared infrastructure does not claim those tools are complete.
 
 ## Merge behavior and limitations
@@ -145,6 +146,57 @@ not invent production limits. The full PDF fixture matrix, physical devices,
 aggregate parsed-memory accounting, and scheduling calibration remain gates in
 [Validate the MVP and prepare GitHub Pages release](https://github.com/chiItepin/pdfburrow/issues/10).
 
+## Split / Extract behavior
+
+Open `#/split` and add exactly one source PDF. Multi-file drops are rejected, not
+silently reduced to the first file. Required validation and preservation acknowledgement
+are the same as merge; unsupported inputs cannot be acknowledged into support.
+Remove the source or start over to choose another PDF.
+
+- **Selected pages:** toggle numbered pages, Select all, or Clear. Pages are unique
+  and exported in the arranged thumbnail order, initially source order, regardless of click order.
+  Use drag handles (mouse, press-and-hold touch, or keyboard), Earlier/Later, or Reset page order.
+  Unselecting a page does not reset its position. Ordering applies only to selected-page
+  extraction; other modes keep their existing rules. Eight source pages and
+  their optional previews are shown at a time; moving between views preserves selections.
+  A preview failure does not block validation or generation.
+  Failed page previews can be retried without changing the selection or arrangement.
+  Drop on Previous/Next pages or use Earlier/Later to reorder across views.
+  Dragging uses the maintained `@dnd-kit/react` 0.5.0 package, with native checkbox
+  controls kept separate from drag handles.
+- **Custom ranges:** add inclusive Start/End page rows and order them with Move up/down.
+  Combine ranges into one PDF (default), or create one PDF per row. Overlaps and
+  repeated rows intentionally repeat pages, with a visible warning.
+- **Fixed page-count groups:** choose a whole number from 1 through the source page
+  count. Consecutive groups retain a shorter final group.
+- **Every page:** create one PDF per source page, in source order.
+
+Bounded numeric controls have no comma-separated expression grammar. Incomplete,
+reversed, fractional and out-of-bounds settings disable generation and remove the
+previous prediction; inline guidance explains what to correct. The React-free selection
+planner validates again in the generation worker. Before processing, it supplies exact
+output counts, filenames and page counts, including repetitions. Predictions and output
+downloads are windowed to eight entries without limiting the number of outputs.
+
+Combined selections use `<source>-extracted.pdf`; separate outputs use
+`<source>-split-001.pdf`, with indexes expanding beyond three digits. A single split
+output retains its numbered name and downloads directly, without a ZIP. Multiple outputs
+offer individual PDFs plus an explicitly prepared `<source>-split.zip`; ZIP entries match
+individual filenames. Sanitization and collision handling follow the shared download rules.
+Leading dots and spaces are stripped from source stems before predicting or generating filenames.
+Reserved device stems such as `CON.foo` are prefixed with `_`. Planning, generation, PDF downloads,
+and ZIP naming share the same sanitizer so retention does not change predicted names.
+
+Generation is a lazy local worker and rewrites pages without rasterizing them. Cancellation
+terminates the worker and retains source/settings; a failed job never publishes partial outputs.
+Editing clears generated outputs, with confirmation when downloads remain unrequested.
+Changing tools, removing the source or resetting cannot carry selections into another document.
+`PdfLimits` can enforce selected-page totals (including repetitions), output count and aggregate
+output bytes. The split page limit applies to selected output pages, not the source's full page
+count; source byte limits and full structural validation still apply.
+These are calibration hooks, not measured production limits. No size-target
+splitting, compression, repair, encrypted-PDF support, or remote fallback is added.
+
 ## Repository guide
 
 **[CODING_STANDARDS.md](CODING_STANDARDS.md)** owns coding conventions: focused
@@ -156,7 +208,7 @@ names and dotted test/worker suffixes are retained.
 
 | Package               | Responsibility                                                                       |
 | --------------------- | ------------------------------------------------------------------------------------ |
-| `apps/web`            | React app, shared document workspace, merge views/hooks, and build scripts           |
+| `apps/web`            | React app, shared workspace, merge/split views and hooks, and build scripts          |
 | `packages/core-ui`    | Shared shadcn primitives, reusable compositions, utilities, and theme                |
 | `packages/pdf-engine` | React-free PDF validation/generation, image/PDF previews, ZIP packaging, and workers |
 | `packages/tooling`    | Shared TypeScript, ESLint, and formatter tooling                                     |
@@ -223,6 +275,16 @@ The generator verifies the detached signature and removes its temporary private
 key. The self-signed certificate is test data, not a trusted identity; these cases
 do not establish exhaustive encryption/signature detection. The normal test run
 uses the saved fixtures and does not require OpenSSL.
+
+Split checks cover every approved mode, arranged selected pages, ordered/repeated ranges, exact predictions,
+single-page sources, invalid settings, cancellation, source rejection, and repeated
+PDF/ZIP/reset cycles. PDF.js independently compares downloaded text, geometry and
+every rendered page with the source, including repeated pages. Unit checks also
+generate 1,001 separately named PDFs and verify their ZIP entries. These synthetic
+cases do not replace the release fixture/device matrix or measured memory limits.
+Page ordering checks exercise pointer and keyboard drag/drop, Escape cancellation,
+touch handles, cross-window moves, selection persistence, and reset, including the
+page order inside downloaded PDFs.
 
 ## Production build and base paths
 

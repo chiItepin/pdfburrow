@@ -15,6 +15,7 @@ export type DocumentTask = (context: {
 }) => Promise<Outcome<readonly PdfOutput[]>>;
 
 export type MoveDirection = "up" | "down";
+export type DiscardAction = "reset" | "edit";
 export type Thumbnail =
   | { state: "queued" | "rendering" | "paused" }
   | { state: "ready"; url: string }

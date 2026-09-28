@@ -31,6 +31,7 @@ export interface PdfLimits {
   readonly totalInputBytes?: number;
   readonly totalPages?: number;
   readonly outputBytes?: number;
+  readonly outputCount?: number;
 }
 
 export interface MergeRequest {

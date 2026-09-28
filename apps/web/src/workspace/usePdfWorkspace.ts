@@ -1,25 +1,17 @@
 import { useState } from "react";
-import { describeJobStatus } from "./jobStatus";
-import type { DiscardAction } from "./types";
-import type { MoveDirection } from "../workspace/types";
-import { usePdfDraft } from "../workspace/usePdfDraft";
-import { useDocumentJob } from "../workspace/useDocumentJob";
-import { usePreviews } from "../workspace/usePreviews";
-import { useWorkspaceLifecycle } from "../workspace/useWorkspaceLifecycle";
-import { renderPdfPreview } from "../workspace/previewRenderers";
+import { useFocusAfterCommit } from "@repo/core-ui";
+import type { DiscardAction, MoveDirection } from "./types";
+import { usePdfDraft } from "./usePdfDraft";
+import { useDocumentJob } from "./useDocumentJob";
+import { useWorkspaceLifecycle } from "./useWorkspaceLifecycle";
 
-export const useMergeWorkspace = () => {
+export const usePdfWorkspace = () => {
   const [notice, announce] = useState("");
   const [confirmation, setConfirmation] = useState<DiscardAction | null>(null);
   const draft = usePdfDraft(announce);
   const execution = useDocumentJob(announce);
   const focus = useWorkspaceLifecycle(draft.inputs.length, execution.job.phase);
-  const previews = usePreviews(
-    draft.visible.filter((input) => input.status === "ready").map((input) => input.id),
-    draft.files.get,
-    execution.locked,
-    renderPdfPreview,
-  );
+  const focusAfterCommit = useFocusAfterCommit();
   const capable =
     typeof Worker !== "undefined" &&
     typeof Blob.prototype.arrayBuffer === "function" &&
@@ -46,23 +38,6 @@ export const useMergeWorkspace = () => {
     execution.editDraft();
     draft.moveFile(id, target, direction);
   };
-  const mergeFiles = () => {
-    if (!execution.editable || !draft.ready || !draft.acknowledged || !capable) {
-      return;
-    }
-    void execution.start(async (options) => {
-      const { mergePdfs } = await import("@repo/pdf-engine/merge");
-      const inputs = draft.inputs.map((input) => {
-        const blob = draft.files.get(input.id);
-        if (!blob) {
-          throw new Error(`The input ${input.name} is no longer available.`);
-        }
-        return { id: input.id, name: input.name, blob };
-      });
-      const result = await mergePdfs({ acknowledged: draft.acknowledged, inputs }, options);
-      return result.kind === "success" ? { kind: "success", value: [result.value] } : result;
-    });
-  };
   const discardWork = (action: DiscardAction) => {
     execution.editDraft();
     if (action === "reset") {
@@ -74,8 +49,8 @@ export const useMergeWorkspace = () => {
         : "Editing inputs. Previous output cleared.",
     );
     setConfirmation(null);
-    requestAnimationFrame(() =>
-      action === "reset" ? draft.addButton.current?.focus() : focus.draftHeading.current?.focus(),
+    focusAfterCommit(() =>
+      action === "reset" ? draft.addButton.current : focus.draftHeading.current,
     );
   };
   const requestEdit = () => {
@@ -89,15 +64,13 @@ export const useMergeWorkspace = () => {
     draft,
     execution,
     focus,
-    previews: previews.thumbnails,
-    retryPreview: previews.retry,
     capable,
     confirmation,
-    status: describeJobStatus(execution.job, notice),
+    notice,
+    announce,
     addFiles,
     removeFile,
     moveFile,
-    mergeFiles,
     discardForNavigation: () => {
       execution.editDraft();
       draft.resetDraft();

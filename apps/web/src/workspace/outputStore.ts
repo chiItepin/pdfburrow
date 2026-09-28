@@ -1,24 +1,12 @@
 import type { PdfOutput } from "@repo/pdf-engine";
+import { safeFilenameStem } from "@repo/pdf-engine/filename";
 
 interface StoredOutput extends PdfOutput {
   url?: string;
   requested: boolean;
 }
 
-const safeStem = (filename: string, extension: string) => {
-  const withoutExtension = filename.toLowerCase().endsWith(extension)
-    ? filename.slice(0, -extension.length)
-    : filename;
-  const stem = withoutExtension
-    .replace(/\p{Cc}|[<>:"/\\|?*]/gu, "_")
-    .replace(/^[. ]+|[. ]+$/gu, "")
-    .trim();
-  return /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/iu.test(stem)
-    ? `_${stem}`
-    : stem || "document";
-};
-
-export const bundleFilename = (name: string) => `${safeStem(name, ".zip")}.zip`;
+export const bundleFilename = (name: string) => `${safeFilenameStem(name, ".zip")}.zip`;
 
 export const createOutputStore = () => {
   let outputs: StoredOutput[] = [];
@@ -63,7 +51,7 @@ export const createOutputStore = () => {
         if (!value.blob.size) {
           throw new Error("The operation returned an empty PDF. Your inputs are retained; retry.");
         }
-        const stem = safeStem(value.suggestedFilename, ".pdf");
+        const stem = safeFilenameStem(value.suggestedFilename, ".pdf");
         let filename = `${stem}.pdf`;
         let suffix = 2;
         while (names.has(filename.toLowerCase())) {
