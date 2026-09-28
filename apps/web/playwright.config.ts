@@ -14,13 +14,33 @@ export default defineConfig({
   projects: [
     {
       name: "desktop-chromium",
-      testMatch: ["workspace.spec.ts", "navigation.spec.ts", "downloads.spec.ts"],
+      testMatch: [
+        "workspace.spec.ts",
+        "navigation.spec.ts",
+        "downloads.spec.ts",
+        "mergeArtifacts.spec.ts",
+      ],
       use: { ...devices["Desktop Chrome"] },
     },
     {
       name: "mobile-chromium",
-      testMatch: ["workspace.spec.ts", "navigation.spec.ts", "downloads.spec.ts"],
+      testMatch: [
+        "workspace.spec.ts",
+        "navigation.spec.ts",
+        "downloads.spec.ts",
+        "mergeArtifacts.spec.ts",
+      ],
       use: { ...devices["Pixel 7"] },
+    },
+    {
+      name: "desktop-firefox",
+      testMatch: ["workspace.spec.ts", "mergeArtifacts.spec.ts"],
+      use: { ...devices["Desktop Firefox"] },
+    },
+    {
+      name: "desktop-webkit",
+      testMatch: ["workspace.spec.ts", "mergeArtifacts.spec.ts"],
+      use: { ...devices["Desktop Safari"] },
     },
     {
       name: "development-chromium",
