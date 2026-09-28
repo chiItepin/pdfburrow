@@ -165,13 +165,14 @@ test("drag drop targets and explicit buttons reorder across bounded page windows
   await expect.poll(() => orderLabels(page)).toEqual(labels([1, 2]));
 });
 
-test("touch drag handles reorder without turning a scroll into a selection", async ({
+test("touch drag handles require a hold and cancel activation when moved too soon", async ({
   page,
   isMobile,
 }) => {
   test.skip(!isMobile, "Uses a touch-enabled Chromium device profile.");
   await page.goto("./#/split");
   await addSplitSource(page, 2);
+  await expect(page.getByRole("img", { name: "Preview of page 2", exact: true })).toBeVisible();
   const source = page.getByRole("button", { name: "Drag page 2", exact: true });
   const target = page.getByRole("button", { name: "Drag page 1", exact: true });
   await source.scrollIntoViewIfNeeded();
@@ -181,10 +182,29 @@ test("touch drag handles reorder without turning a scroll into a selection", asy
     throw new Error("Touch drag handles are missing.");
   }
   const session = await page.context().newCDPSession(page);
+  await page.clock.install({ time: new Date("2026-01-01T00:00:00Z") });
+  await page.clock.pauseAt(new Date("2026-01-01T00:00:01Z"));
   const x = start.x + start.width / 2;
   const y = start.y + start.height / 2;
+  const dragging = page.locator("[data-dnd-dragging]");
   await session.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y }] });
-  await expect(page.locator("[data-dnd-dragging]")).toHaveCount(1);
+  expect(await dragging.count()).toBe(0);
+  await page.clock.runFor(249);
+  expect(await dragging.count()).toBe(0);
+  await session.send("Input.dispatchTouchEvent", {
+    type: "touchMove",
+    touchPoints: [{ x: x - 6, y }],
+  });
+  await page.clock.runFor(250);
+  expect(await dragging.count()).toBe(0);
+  await session.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  await expect.poll(() => orderLabels(page)).toEqual(labels([1, 2]));
+  await session.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y }] });
+  await page.clock.runFor(249);
+  expect(await dragging.count()).toBe(0);
+  await page.clock.runFor(1);
+  await page.clock.resume();
+  await expect(dragging).toHaveCount(1);
   for (let step = 1; step <= 20; step++) {
     await session.send("Input.dispatchTouchEvent", {
       type: "touchMove",
