@@ -5,6 +5,9 @@ deployment of that exact commit. Creating a tag starts delivery; it does **not**
 approve publication. The owner approves each candidate through the protected
 `github-pages` environment.
 
+For guided execution, invoke the repository's [pages-release skill](.github/skills/pages-release/SKILL.md)
+with `/pages-release` and the intended tag/commit, or an existing tag/run to resume.
+
 [Tagged Pages release](.github/workflows/pages.yml) owns the triggers, pinned
 tools, checks, artifact path, permissions, and queue configuration. It runs for
 all tag names, including names containing `/`, rather than a version-prefix
