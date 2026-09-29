@@ -79,7 +79,18 @@ export const pageRegistry = [
     template: "notices.html",
     title: "Licenses and notices - PDFBurrow",
     description:
-      "Read PDFBurrow's development licensing status, third-party software notices, and locally distributed PDF.js decoder license information.",
+      "Read PDFBurrow's MIT license, distributed third-party software notices, license inventory, and locally shipped PDF.js decoder license information.",
+    indexable: true,
+    schema: null,
+  },
+  {
+    route: "limits",
+    path: "limits.html",
+    source: "html",
+    template: "limits.html",
+    title: "Workload limits - PDFBurrow",
+    description:
+      "Review PDFBurrow's provisional file, page, image, and output limits, plus pending browser and device calibration. Limits are not memory safety guarantees.",
     indexable: true,
     schema: null,
   },

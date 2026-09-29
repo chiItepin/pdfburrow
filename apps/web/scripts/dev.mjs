@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { watch } from "node:fs";
+import { unwatchFile, watch, watchFile } from "node:fs";
 import { appDirectory } from "./buildOptions.mjs";
 import { tailwindArguments, tailwindExecutable, watchApplication, writeHtml } from "./build.mjs";
 import { startServer } from "./server.mjs";
@@ -13,8 +13,12 @@ const tailwind = spawn(tailwindExecutable, [...tailwindArguments, "--watch=alway
   cwd: appDirectory,
   stdio: "inherit",
 });
-const htmlWatcher = watch(new URL("../index.html", import.meta.url), () => {
-  void writeHtml().catch((error) => console.error("HTML rebuild failed:", error));
+const htmlTemplate = new URL("../index.html", import.meta.url);
+watchFile(htmlTemplate, { interval: 250 }, (current, previous) => {
+  // macOS can report template reads as changes; only content updates need a rebuild.
+  if (current.mtimeMs !== previous.mtimeMs || current.size !== previous.size) {
+    void writeHtml().catch((error) => console.error("HTML rebuild failed:", error));
+  }
 });
 const disclosureWatcher = watch(new URL("../public/", import.meta.url), () => {
   void writeHtml().catch((error) => console.error("Disclosure rebuild failed:", error));
@@ -25,7 +29,7 @@ const stop = async () => {
     return;
   }
   stopping = true;
-  htmlWatcher.close();
+  unwatchFile(htmlTemplate);
   disclosureWatcher.close();
   tailwind.kill();
   server.close();

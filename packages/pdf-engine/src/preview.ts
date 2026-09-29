@@ -1,11 +1,18 @@
 import { getDocument, PDFWorker } from "pdfjs-dist";
+import { enforceLimit } from "./resourceLimits";
+
+export interface PdfPreviewLimits {
+  readonly inputBytes?: number;
+}
 /** The caller serializes previews and releases returned object URLs. */
 export const previewPdf = async (
   blob: Blob,
   signal: AbortSignal,
   pageNumber = 1,
+  limits: PdfPreviewLimits = {},
 ): Promise<Blob> => {
   signal.throwIfAborted();
+  enforceLimit(blob.size, limits.inputBytes, "Preview input bytes", "Use a smaller source PDF.");
   const port = new Worker(new URL("./pdf.worker.min.js", import.meta.url), { type: "module" });
   const worker = PDFWorker.create({ port });
   const canvas = document.createElement("canvas");

@@ -7,9 +7,9 @@ PDFs or a ZIP of multiple outputs.
 
 The [PDFBurrow MVP map](https://github.com/chiItepin/pdfburrow/issues/1) is the
 decision index. This workspace implements the three MVP tools and the shared
-file-to-download workflow, but still lacks release calibration and complete
-compatibility evidence. It is not a release; the selected project license has not yet
-been added.
+file-to-download workflow with provisional workload limits. It is an experimental
+build, not a verified release. The project is MIT-licensed; device calibration and
+complete compatibility evidence still require release review.
 
 ## Run locally
 
@@ -45,6 +45,16 @@ initialization for stable ownership, not a memoization cache.
 
 ## Shared workspace
 
+- The responsive shadcn sidebar contains Home and the three document tools; on
+  phones it opens as a keyboard-accessible drawer. The page header uses breadcrumbs,
+  with a compact ellipsis menu on narrow screens. Every navigation entry preserves
+  the same discard confirmation and processing lock.
+- The sidebar's **Dark mode** switch selects light or dark appearance throughout
+  the workspace. Dark is the default; only this preference is saved in local
+  storage, never documents. If preference storage is unavailable, the switch still
+  works for the visit and reports that the choice could not be saved.
+  Saved appearance is applied before the workspace loads and keeps supported
+  browser chrome in sync with theme changes.
 - Choose a tool before adding files. Under the configured base, Home is `/`;
   merge is `merge/`; split/extraction is `split/`; JPEG/PNG conversion is `images/`.
   Legacy `#/`, `#/merge`, `#/split`, and `#/images` bookmarks still work and are
@@ -56,8 +66,11 @@ initialization for stable ownership, not a memoization cache.
   even after a download was requested. Keep working is the safe default.
   Processing/cancellation locks navigation until the worker has stopped.
   Bookmarks and refresh select a tool but never restore a draft.
-- Inputs come before settings in reading/tab order. Desktop places settings beside
-  the input list; small screens stack them. Dragging is optional; keyboard ordering,
+- Tool settings live in a dedicated right sidebar, toggled from the right end of
+  the breadcrumb header. Wide screens dock the independently scrolling panel;
+  narrower screens open it as a drawer. Closing it preserves settings. Generation,
+  cancellation, preservation acknowledgement, and downloads stay with the documents.
+- Inputs come before settings in reading/tab order. Dragging is optional; keyboard ordering,
   removal, focus restoration, and status announcements remain available.
 - `apps/web/src/workspace` owns the file registry, required PDF/image validation queue,
   windowed inputs, preview cache, document job lifecycle, and output/download
@@ -77,18 +90,34 @@ initialization for stable ownership, not a memoization cache.
   Optional image thumbnails run in a disposable local worker, fit within 144 pixels,
   and never modify originals. Required image decoding and conversion have a separate
   disposable worker; optional previews never establish export support.
-- The footer opens local `privacy.html` and `notices.html` disclosures in a new tab
-  without discarding work. The notices page explicitly records incomplete release
-  licensing, rather than claiming a completed compliance audit.
+- The footer opens local privacy, licenses/notices, and workload-limit disclosures
+  in a new tab without discarding work. The build includes the project license,
+  third-party license texts, and a versioned inventory; it does not imply a completed
+  contributor-rights audit.
 
-`PdfLimits`, `ImageLimits`, `BundleLimits`, and `ImagePreviewLimits` are enforcement points for
-measured release values, not prepopulated production limits. The registry and
-output store report retained raw bytes/counts; ZIP progress reports actual entries
-and packaging bytes. These are not measurements of total browser/decoded memory.
+`apps/web/src/workspace/resourcePolicy.ts` owns the shared provisional policy:
+20 inputs, 20 MiB per input, 50 MiB total inputs, 200 pages per source PDF and
+per merged/selected output job, 50 output PDFs totaling 50 MiB, and a 52 MiB ZIP.
+Images are limited to 12 million pixels each, 24 million pixels per draft, and
+8192 pixels per dimension. PDF page boxes are limited to 14,400 effective points per
+dimension, after applying the page-local `UserUnit` scale (default 1);
+image-sized output pages are limited to 6144 points per dimension.
+One MiB is 1,048,576 bytes; each boundary is inclusive.
+
+These are owner-authorized engineering estimates, not a measured cross-device
+baseline. The 20-file admission cap bounds the validation queue; an over-limit
+addition is rejected as a whole before any new original is retained. Validation,
+generation, split prediction, image previews, and ZIP packaging receive the policy.
+PDF previews check raw input bytes, not decoded embedded-image memory.
+The registry and output store report retained raw bytes/counts; ZIP progress reports
+actual entries and packaging bytes. None measures total browser/decoded memory.
 Image header dimensions and aggregate pixel budgets are checked before generation
 decoding; decoded dimensions are checked again. These checks do not guarantee
-against decoder allocation failure. Physical-device calibration and measured
-production thresholds remain release work.
+against decoder allocation failure. Originals, parsed/decoded data, outputs, and
+ZIP intermediates can coexist. Output-byte checks occur during or after allocation.
+Physical-device calibration, measured safety margins, and performance thresholds
+remain release work. The eight-item preview window remains a bounded UI choice,
+not a measured virtualization crossover.
 
 ## Merge behavior and limitations
 
@@ -142,10 +171,9 @@ production thresholds remain release work.
   Static hosting receives application-asset requests. Offline/PWA operation is
   not promised.
 
-**Not release-ready:** safe resource limits and the complete browser/device
-matrix are not calibrated. Large/complex inputs may exhaust browser memory.
-`PdfLimits` provides enforcement points for future measured values; the app does
-not invent production limits. The full PDF fixture matrix, physical devices,
+**Not release-ready:** provisional limits are enforced but have not been calibrated
+across the complete browser/device matrix. Complex inputs may still exhaust browser
+memory below those limits. The full PDF fixture matrix, physical devices,
 aggregate parsed-memory accounting, and scheduling calibration remain gates in
 [Validate the MVP and prepare GitHub Pages release](https://github.com/chiItepin/pdfburrow/issues/10).
 
@@ -197,7 +225,8 @@ Changing tools, removing the source or resetting cannot carry selections into an
 `PdfLimits` can enforce selected-page totals (including repetitions), output count and aggregate
 output bytes. The split page limit applies to selected output pages, not the source's full page
 count; source byte limits and full structural validation still apply.
-These are calibration hooks, not measured production limits. No size-target
+The app supplies the shared provisional policy; a separate source-page cap remains
+in force even when extracting one page. These are not measured production limits. No size-target
 splitting, compression, repair, encrypted-PDF support, or remote fallback is added.
 
 ## Images to PDF behavior
@@ -296,12 +325,13 @@ npm run format
 npm run check
 apps/web/node_modules/.bin/playwright install chromium firefox webkit
 npm run test:browser
+npm run test:privacy
 ```
 
 `check` runs Prettier verification, type/lint checks, unit and workspace contract
 tests, and a production build. Browser tests use separate production and
-development servers on ports 4173 and 4174. Set `PDFBURROW_TEST_PORT` to use another
-port pair (the chosen port and the next port) when these are already occupied.
+development servers on ports 4173 and 4174. Concurrent worktrees can select distinct
+`PDFBURROW_TEST_PORT` and `PDFBURROW_TEST_DEV_PORT` values; existing servers are never reused.
 
 Tests inspect real output counts/order, all page boxes/rotation, decoded
 text/vector streams, every-page render equivalence, keyboard/focus behavior,
@@ -312,6 +342,33 @@ production conversion tool. Routing tests cover direct links, refresh, manual
 hash changes, guarded Back/Forward, safe discard, and processing locks. Synthetic
 fixtures and Chromium mobile emulation do not establish complete compatibility,
 physical-device memory budgets, or release-level privacy evidence.
+
+`test:privacy` runs the production artifact through allowlisted request tracing and
+real cached-worker processing with the browser network disabled. It covers merge,
+split, JPEG/PNG conversion, PDF/ZIP downloads, corrupt input, injected cancellation,
+reset, and repeated jobs. macOS WebKit offline emulation currently blocks local Blob
+reads; that case is explicitly skipped and remains an evidence gap, not a passing
+offline result. Physical Safari must be checked separately. This does not promise
+offline startup, persistence, or a PWA.
+
+On success it writes `apps/web/dist/release-evidence.json` with per-file SHA-256
+hashes, a combined artifact digest, commit/dirty-worktree status, host and browser
+versions, fixture hashes, request traces, test outcomes, and explicit pending gates.
+It rejects a base-path mismatch or artifact mutation during collection and removes
+stale evidence before running. A rebuild removes old evidence. The report always
+states that release approval, device calibration, and licensing review are separate;
+passing these synthetic scenarios is not a universal non-egress proof.
+
+Every build generates `LICENSE.txt`, `third-party-notices.txt`, and
+`license-inventory.json` from actual emitted JavaScript inputs, retained legal
+comments, Tailwind CSS, copied shadcn components, and PDF.js decoder notices.
+Unknown package licenses and missing license texts fail the build; there are no
+inferred-license fallbacks. Packages removed by tree shaking are excluded from the
+distributed inventory. Contributor rights still require owner confirmation.
+The `react-remove-scroll-bar@2.3.8` archive omits its license file; the build
+supplements only that exact MIT-licensed version with the upstream text retained
+in `apps/web/licenses/reactRemoveScrollBar.txt`. Its pinned upstream source and
+text hash are recorded in the inventory. A different version still requires review.
 
 Merge workflow and downloaded-artifact checks run in Playwright's Chromium,
 Firefox, and WebKit, plus Chromium mobile emulation. These browser builds are
@@ -355,6 +412,9 @@ npm run preview
 ```
 
 The default base is `/pdfburrow/`. The production output is `apps/web/dist`.
+The preview server gives built assets a ten-minute cache lifetime, like a static
+host, so warmed-worker network-blocking checks use the real browser cache.
+HTML/disclosures and all development files remain uncached; no service worker is added.
 For a future custom-domain root:
 
 ```sh
@@ -369,7 +429,7 @@ the emitted modules under `assets/`; build scripts explicitly bundle each worker
 and keep generation and preview capability entries separate and lazy.
 
 The local server serves only the generated output, never repository source.
-For self-hosting, serve all of `apps/web/dist`, including the two static disclosure
+For self-hosting, serve all of `apps/web/dist`, including the three static disclosure
 pages, tool directories, `404.html`, `sitemap.xml`, `robots.txt`, and `assets/`,
 under the same base path used during build. Serve directory `index.html` files
 and real 404 responses for unknown paths; no SPA rewrite to the homepage is needed.
@@ -390,7 +450,7 @@ remain lazy and no document data is rendered or persisted.
 Each page has a unique title, description, canonical URL, and Open Graph/Twitter
 metadata. Home and tool pages also expose factual WebSite/SoftwareApplication
 structured data, without invented ratings or reviews. Unknown tools are marked
-`noindex`. The sitemap includes only the home, three tools, and two disclosures,
+`noindex`. The sitemap includes only the home, three tools, and three disclosures,
 never hash fragments or error pages. Client navigation keeps metadata aligned with
 the accepted route, including when a discard confirmation is cancelled.
 
@@ -417,11 +477,10 @@ published, reachable site and owner-controlled search-console access; a local bu
 does not establish indexing or Core Web Vitals.
 
 The engine uses pdf-lib 1.17.1 (MIT), PDF.js 5.7.284 (Apache-2.0), and fflate 0.8.2
-(MIT); installed
-packages retain upstream license texts. The owner selected MIT for PDFBurrow,
-attributed to PDFBurrow contributors; adding the project license and complete
-redistribution notices remains required before release. The shadcn attribution
-is retained in `packages/core-ui/NOTICE.txt`.
+(MIT). The owner selected MIT for PDFBurrow, attributed to PDFBurrow contributors.
+The build includes the project license and third-party redistribution notices;
+contributor rights still require owner confirmation before release. The shadcn
+attribution is retained in `packages/core-ui/NOTICE.txt`.
 
 Releases: read [RELEASING.md](RELEASING.md) before tagging or changing GitHub Pages
 delivery. It owns candidate qualification, owner approval, and publication verification.

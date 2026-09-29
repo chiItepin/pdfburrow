@@ -1,7 +1,21 @@
-import { Button } from "@repo/core-ui";
+import { useRef } from "react";
+import { FileText, House, Moon } from "lucide-react";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  Switch,
+  useSidebar,
+} from "@repo/core-ui";
 import { routePath } from "./routes";
 import type { ToolRoute } from "./routes";
 import { siteBasePath } from "./site";
+import { tools } from "./tools";
+import { useTheme } from "./ThemeProvider";
 
 export const ToolNavigation = ({
   route,
@@ -11,33 +25,81 @@ export const ToolNavigation = ({
   route: ToolRoute;
   locked: boolean;
   onNavigate: (route: ToolRoute) => void;
-}) => (
-  <nav aria-label="PDF tools" className="mb-8 flex flex-wrap items-center gap-2">
-    {(
-      [
-        ["home", "Home"],
-        ["merge", "Merge PDFs"],
-        ["split", "Split / Extract"],
-        ["images", "Images to PDF"],
-      ] as const
-    ).map(([value, label]) => (
-      <Button key={value} variant={route === value ? "secondary" : "ghost"} asChild>
-        <a
-          href={routePath(value, siteBasePath)}
-          aria-current={route === value ? "page" : undefined}
-          aria-disabled={locked}
-          className="aria-disabled:opacity-50"
-          onClick={(event) => {
-            if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
-              return;
-            }
-            event.preventDefault();
-            onNavigate(value);
-          }}
-        >
-          {label}
-        </a>
-      </Button>
-    ))}
-  </nav>
-);
+}) => {
+  const { isMobile, setOpenMobile } = useSidebar();
+  const { theme, setTheme, error } = useTheme();
+  const pending = useRef<ToolRoute | null>(null);
+  const entries = [{ route: "home", label: "Home", icon: House } as const, ...tools];
+  return (
+    <Sidebar
+      aria-label="Workspace sidebar"
+      mobileTitle="PDF tools"
+      mobileDescription="Choose a document tool or change the color theme."
+      onCloseAutoFocus={() => {
+        if (pending.current !== null) {
+          const next = pending.current;
+          pending.current = null;
+          onNavigate(next);
+        }
+      }}
+    >
+      <SidebarHeader className="h-16 justify-center border-b px-6">
+        <div className="flex items-center gap-2.5 font-semibold tracking-tight">
+          <FileText className="size-5 text-primary" strokeWidth={1.75} aria-hidden="true" />
+          PDFBurrow
+        </div>
+      </SidebarHeader>
+      <SidebarContent>
+        <nav aria-label="PDF tools">
+          <SidebarMenu>
+            {entries.map(({ route: value, label, icon: Icon }) => (
+              <SidebarMenuItem key={value}>
+                <SidebarMenuButton asChild isActive={route === value}>
+                  <a
+                    href={routePath(value, siteBasePath)}
+                    aria-current={route === value ? "page" : undefined}
+                    aria-disabled={locked}
+                    onClick={(event) => {
+                      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+                        return;
+                      }
+                      event.preventDefault();
+                      if (isMobile) {
+                        // Restore drawer focus before opening a discard confirmation.
+                        pending.current = value;
+                        setOpenMobile(false);
+                      } else {
+                        onNavigate(value);
+                      }
+                    }}
+                  >
+                    <Icon strokeWidth={1.75} aria-hidden="true" />
+                    <span>{label}</span>
+                  </a>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </nav>
+      </SidebarContent>
+      <SidebarFooter>
+        <div className="flex min-h-11 items-center gap-3 px-2">
+          <Moon className="size-4 text-muted-foreground" strokeWidth={1.75} aria-hidden="true" />
+          <label htmlFor="dark-mode" className="flex-1 cursor-pointer py-3 text-sm">
+            Dark mode
+          </label>
+          <Switch
+            id="dark-mode"
+            checked={theme === "dark"}
+            onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
+          />
+        </div>
+        {error && (
+          <p role="alert" className="px-2 text-xs text-destructive">
+            {error}
+          </p>
+        )}
+      </SidebarFooter>
+    </Sidebar>
+  );
+};

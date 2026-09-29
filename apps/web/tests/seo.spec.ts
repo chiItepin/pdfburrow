@@ -1,14 +1,16 @@
 import { expect, test } from "@playwright/test";
+import { navigateToTool } from "./fixtures/workspaceNavigation";
 
 const basePath = process.env.PDFBURROW_BASE_PATH ?? "/pdfburrow/";
 const siteOrigin = process.env.PDFBURROW_SITE_ORIGIN ?? "https://chiitepin.github.io";
 const pages = [
-  ["", "PDF tools that run on your device. No uploads."],
+  ["", "Home"],
   ["merge/", "Merge PDFs"],
   ["split/", "Split / Extract"],
   ["images/", "Images to PDF"],
   ["privacy.html", "Your documents stay on your device"],
   ["notices.html", "Licenses and notices"],
+  ["limits.html", "Provisional workload limits"],
 ] as const;
 
 test("search pages contain readable content, crawlable links and unique metadata without JavaScript", async ({
@@ -48,10 +50,12 @@ test("search pages contain readable content, crawlable links and unique metadata
       if (!path.endsWith(".html")) {
         await expect(page.locator("noscript p")).toBeVisible();
         await expect(page.locator("noscript p")).toContainText("Enable JavaScript");
-        await expect(page.getByRole("link", { name: "Merge PDFs", exact: true })).toHaveAttribute(
-          "href",
-          `${basePath}merge/`,
+        await expect(page.getByText("Your theme could not be saved", { exact: false })).toHaveCount(
+          0,
         );
+        await expect(
+          page.getByRole("link", { name: "Merge PDFs", exact: true, includeHidden: true }),
+        ).toHaveAttribute("href", `${basePath}merge/`);
         const schema = JSON.parse((await page.locator("#page-schema").textContent())!);
         expect(schema["@type"]).toBe(path ? "SoftwareApplication" : "WebSite");
         expect(schema.url).toBe(`${siteOrigin}${basePath}${path}`);
@@ -112,6 +116,10 @@ test("direct tool URLs survive refresh, stay local and keep metadata synchronize
       "href",
       `${basePath}privacy.html`,
     );
+    await expect(page.getByRole("link", { name: "Workload limits", exact: true })).toHaveAttribute(
+      "href",
+      `${basePath}limits.html`,
+    );
     expect(
       await page.evaluate(() =>
         performance
@@ -127,7 +135,7 @@ test("direct tool URLs survive refresh, stay local and keep metadata synchronize
       ),
     ).toBe(false);
   }
-  await page.getByRole("link", { name: "Merge PDFs", exact: true }).click();
+  await navigateToTool(page, "Merge PDFs");
   await expect(page).toHaveTitle("Merge PDFs locally, free and without uploads - PDFBurrow");
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
     "href",

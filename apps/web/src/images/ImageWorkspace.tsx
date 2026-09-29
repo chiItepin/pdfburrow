@@ -6,6 +6,7 @@ import type { useDocumentWorkspace } from "../workspace/useDocumentWorkspace";
 import { usePreviews } from "../workspace/usePreviews";
 import { ImageSettings } from "./ImageSettings";
 import { useImageJob } from "./useImageJob";
+import { ToolSettingsSidebar } from "../workspace/ToolSettingsSidebar";
 
 export const ImageWorkspace = ({
   workspace,
@@ -47,7 +48,7 @@ export const ImageWorkspace = ({
           One image per page, in displayed order. Orientation metadata is applied before your
           rotations. Thumbnails show image direction and white backgrounds, not paper margins.
         </p>
-        <div className="mt-4 grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="mt-6">
           <div className="min-w-0">
             <FileDropzone
               regionLabel="Add image files"
@@ -78,15 +79,7 @@ export const ImageWorkspace = ({
               rotateFile={images.rotateFile}
             />
           </div>
-          <section className="min-w-0 lg:pt-5" aria-labelledby="settings-heading">
-            <h3 id="settings-heading" className="text-lg font-semibold">
-              Image PDF settings
-            </h3>
-            <ImageSettings
-              settings={images.settings}
-              disabled={!editable}
-              onChange={images.changeSettings}
-            />
+          <section className="tool-actions" aria-label="Image output">
             <p className="mt-4 text-sm">
               {draft.ready && images.names
                 ? images.names.filenames.length === 1
@@ -139,6 +132,13 @@ export const ImageWorkspace = ({
               </p>
             )}
           </section>
+          <ToolSettingsSidebar title="Image PDF settings">
+            <ImageSettings
+              settings={images.settings}
+              disabled={!editable}
+              onChange={images.changeSettings}
+            />
+          </ToolSettingsSidebar>
         </div>
       </section>
       {job.phase === "complete" && images.names && (

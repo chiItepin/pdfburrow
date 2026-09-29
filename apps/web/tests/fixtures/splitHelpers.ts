@@ -1,6 +1,7 @@
 import { expect, type Page } from "@playwright/test";
 import { PDFDocument } from "pdf-lib";
 import { readFile } from "node:fs/promises";
+import { closeToolSettings } from "./toolSettings";
 
 export const addSplitSource = async (page: Page, count = 10) => {
   const document = await PDFDocument.create();
@@ -12,10 +13,11 @@ export const addSplitSource = async (page: Page, count = 10) => {
     mimeType: "application/pdf",
     buffer: Buffer.from(await document.save()),
   });
-  await expect(page.getByRole("radio", { name: "Every page", exact: true })).toBeVisible();
+  await expect(page.getByRole("checkbox", { name: "Page 1", exact: true })).toBeVisible();
 };
 
 export const generateSplit = async (page: Page) => {
+  await closeToolSettings(page);
   await page
     .getByRole("checkbox", { name: "I understand these limitations for the current PDF inputs." })
     .check();

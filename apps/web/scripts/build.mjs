@@ -4,6 +4,7 @@ import { copyFile, mkdir, rm, writeFile } from "node:fs/promises";
 import { basename } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
+import { licenseNoticesPlugin } from "./licenseNotices.mjs";
 import {
   appDirectory,
   basePath,
@@ -47,17 +48,33 @@ export const buildStyles = async () => {
 
 export const writeHtml = writeStaticPages;
 
+/** @param {boolean} development */
+const applicationOptions = (development) => {
+  const options = buildOptions(development);
+  return {
+    ...options,
+    metafile: true,
+    plugins: [...(options.plugins ?? []), licenseNoticesPlugin(outputDirectory)],
+  };
+};
+
 export const buildApplication = async () => {
   await rm(`${outputDirectory}/assets`, { recursive: true, force: true });
   await rm(`${outputDirectory}/release.json`, { force: true });
-  await Promise.all([build(buildOptions(false)), buildStyles(), writeHtml(), copyPreviewAssets()]);
+  await rm(`${outputDirectory}/release-evidence.json`, { force: true });
+  await Promise.all([
+    build(applicationOptions(false)),
+    buildStyles(),
+    writeHtml(),
+    copyPreviewAssets(),
+  ]);
   await writeFile(`${outputDirectory}/base-path.json`, JSON.stringify(basePath));
 };
 
 export const watchApplication = async () => {
   await copyPreviewAssets();
   await buildStyles();
-  const options = buildOptions(true);
+  const options = applicationOptions(true);
   const builder = await context({
     ...options,
     plugins: [

@@ -43,7 +43,7 @@ export const SortablePage = ({
       tabIndex={-1}
       aria-label={`Page ${number}, position ${position} of ${total}`}
       className={cn(
-        "flex min-w-0 flex-col gap-2 rounded-lg border bg-white p-3",
+        "flex min-w-0 flex-col gap-2 rounded-lg border bg-card p-3",
         selected && "border-primary bg-secondary",
         isDragSource && "shadow-md",
       )}

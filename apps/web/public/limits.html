@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    %PAGE_METADATA%
+    <link rel="stylesheet" href="%BASE_PATH%assets/styles.css" />
+  </head>
+  <body>
+    <main class="mx-auto max-w-3xl px-6 py-12">
+      <a class="text-primary underline" href="%BASE_PATH%">PDFBurrow</a>
+      <h1 class="mt-8 text-3xl font-semibold">Provisional workload limits</h1>
+      <p class="mt-5">
+        These conservative starting limits reduce oversized jobs. They are engineering estimates,
+        not measurements of available memory or guarantees that a device can complete a job. Even a
+        small compressed PDF can require substantial memory when opened.
+      </p>
+      <ul class="mt-5 list-disc space-y-2 pl-6">
+        <li>Up to 20 inputs, 20 MiB per input, and 50 MiB of inputs per draft.</li>
+        <li>Up to 200 source pages per PDF and 200 merged or selected output pages per job.</li>
+        <li>Up to 50 output PDFs, totaling 50 MiB; up to 52 MiB for a ZIP.</li>
+        <li>
+          Images: up to 12 million pixels each, 24 million pixels per draft, and 8192 pixels per
+          dimension.
+        </li>
+        <li>
+          PDF source page boxes: at most 14,400 effective points per dimension, including the page's
+          UserUnit scale. Image-sized output pages: at most 6144 points per dimension.
+        </li>
+      </ul>
+      <p class="mt-5">
+        One MiB is 1,048,576 bytes. Limits include the stated boundary. An oversized file-addition
+        batch is rejected in full; existing inputs remain. Other detected violations show an error.
+        Remove inputs, select fewer pages, combine outputs, or prepare smaller originals in another
+        tool. PDFBurrow never silently downsamples or omits output pages.
+      </p>
+      <p class="mt-5">
+        Originals, decoded images, parsed PDF objects, generated PDFs, and ZIP buffers can coexist.
+        Output-size limits are checked during or after generation; they cannot prevent every
+        allocation failure. Previews are optional, limited to the eight visible items, and paused
+        during generation. Cancel stops the job without changing your originals.
+      </p>
+      <h2 class="mt-8 text-xl font-semibold">Browser and device coverage</h2>
+      <p class="mt-3">
+        This is an experimental build. Automated Chromium, Firefox, and WebKit coverage is not
+        certification of Chrome, Edge, Safari, or physical iPhone, iPad, and Android devices.
+        Physical-device calibration and current/previous browser-major coverage remain pending.
+        Browser memory pressure can close the tab and lose in-memory work. Keep your originals.
+      </p>
+    </main>
+  </body>
+</html>

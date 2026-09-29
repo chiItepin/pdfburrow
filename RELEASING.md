@@ -144,3 +144,25 @@ release-ready. The release ticket remains the source of truth for pending
 licensing, device/resource calibration, privacy evidence, and publication gates.
 Keep development/support disclosures until the corresponding evidence supports
 changing them.
+
+The owner closed the validation ticket administratively, not as evidence that
+its gates passed. Subsequent authorization to address the gaps using best guesses
+permits the shared **provisional** workload policy; it does not turn estimates into
+calibration or waive physical-device coverage. The project now carries its MIT
+license and build-generated distributed notices from the shipped packages. Confirm
+contributor licensing rights before publication.
+
+After building the candidate, run `npm run test:privacy` with the same
+`PDFBURROW_BASE_PATH`. The generated `apps/web/dist/release-evidence.json` identifies
+the tested files by SHA-256, commit and dirty-worktree status, environment, fixtures,
+network observations, and remaining gates. The Pages workflow generates it after
+`release.json` so provenance is included in the hash manifest. A local dirty-worktree
+report is development evidence, not evidence for the unchanged `main` commit.
+Repeat applicable qualification on the final clean release commit.
+
+Current automated evidence cannot establish physical iPhone/iPad/Android behavior,
+the current/previous stable-major matrix, or measured memory/performance margins.
+On macOS, Playwright WebKit's offline emulation blocks local Blob reads; that scenario is an
+explicit gap, not silently counted as passing. An owner-approved narrower release
+policy would need to be recorded explicitly; the experimental UI label alone
+does not change publication requirements.

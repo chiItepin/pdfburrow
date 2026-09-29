@@ -13,7 +13,14 @@ self.onmessage = async (event: MessageEvent<ImagePreviewRequest>) => {
     enforceLimit(blob.size, limits.inputBytes, "Image input bytes", "Use a smaller source image.");
     ({ bitmap } = await decodeImage(
       { id: "preview", name: "", blob },
-      { perInputBytes: limits.inputBytes, perImagePixels: limits.decodedPixels },
+      {
+        perInputBytes: limits.inputBytes,
+        perImagePixels: limits.decodedPixels,
+        maxDimension:
+          limits.width !== undefined && limits.height !== undefined
+            ? Math.max(limits.width, limits.height)
+            : undefined,
+      },
     ));
     enforceLimit(bitmap.width, limits.width, "Image width", "Use a smaller source image.");
     enforceLimit(bitmap.height, limits.height, "Image height", "Use a smaller source image.");

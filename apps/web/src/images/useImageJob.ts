@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { ImageRotation, ImageSettings } from "@repo/pdf-engine";
 import { defaultImageSettings, imageOutputNames } from "@repo/pdf-engine/image-layout";
 import type { useDocumentWorkspace } from "../workspace/useDocumentWorkspace";
+import { imageLimits } from "../workspace/resourcePolicy";
 
 const turns: readonly ImageRotation[] = [0, 90, 180, 270];
 
@@ -81,7 +82,7 @@ export const useImageJob = (workspace: ReturnType<typeof useDocumentWorkspace>) 
           return { id: input.id, name: input.name, blob, rotation: rotations.get(input.id) ?? 0 };
         });
         const { imagesToPdf } = await import("@repo/pdf-engine/images");
-        return imagesToPdf({ inputs, settings }, options);
+        return imagesToPdf({ inputs, settings, limits: imageLimits }, options);
       });
     },
   };

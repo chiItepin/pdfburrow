@@ -22,8 +22,12 @@ test("download preserves every page's embedded text, pixels, boxes and rotation 
   await page.goto("./#/merge");
   await page.locator('input[type="file"]').setInputFiles(inputs);
   await expect(page.getByText("Output: one PDF, 4 pages, in the order above.")).toBeVisible();
-  await expect(page.getByRole("listitem").first()).toContainText("Annotations or links detected");
-  await expect(page.getByRole("listitem").first()).toContainText("Document features detected");
+  await expect(
+    page.locator("[data-workspace-content]").getByRole("listitem").first(),
+  ).toContainText("Annotations or links detected");
+  await expect(
+    page.locator("[data-workspace-content]").getByRole("listitem").first(),
+  ).toContainText("Document features detected");
   await expect(page.getByRole("button", { name: "Merge PDFs", exact: true })).toBeDisabled();
   await page.getByRole("button", { name: "Move scan.pdf up" }).click();
   await page.getByRole("checkbox").check();

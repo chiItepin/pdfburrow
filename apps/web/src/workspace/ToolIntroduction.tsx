@@ -1,56 +1,58 @@
 import { Button } from "@repo/core-ui";
+import { ArrowUpRight } from "lucide-react";
 import type { ToolRoute } from "./routes";
 import { routePath } from "./routes";
 import { siteBasePath } from "./site";
+import { tools } from "./tools";
 
 export const ToolIntroduction = ({
   route,
-  onMerge,
-  onSplit,
-  onImages,
+  onNavigate,
 }: {
   route: Exclude<ToolRoute, "merge" | "split" | "images">;
-  onMerge: () => void;
-  onSplit: () => void;
-  onImages: () => void;
+  onNavigate: (route: ToolRoute) => void;
 }) => (
-  <section className="py-8" aria-label="Tool availability">
-    <h2 className="text-xl font-semibold">
+  <section className="max-w-3xl py-10 sm:py-12" aria-label="Tool availability">
+    <h2 className="text-2xl font-semibold tracking-tight">
       {route === "home" ? "Choose a PDF tool" : "Choose an available tool"}
     </h2>
-    <p className="mt-3 max-w-prose">
+    <p className="mt-3 max-w-prose leading-relaxed text-muted-foreground">
       {route === "home"
         ? "Combine local PDFs, split and extract pages, or turn JPEG and PNG images into PDFs. Free to use, with no signup."
         : "This address does not identify a PDFBurrow tool. No documents or settings can be restored from a link."}
     </p>
-    {(
-      [
-        ["merge", "Open Merge PDFs", onMerge],
-        ["split", "Open Split / Extract", onSplit],
-        ["images", "Open Images to PDF", onImages],
-      ] as const
-    ).map(([tool, label, onNavigate]) => (
-      <Button
-        key={tool}
-        className={tool === "merge" ? "mt-5" : "mt-5 sm:ml-3"}
-        variant={tool === "merge" ? "default" : "outline"}
-        asChild
-      >
-        <a
-          href={routePath(tool, siteBasePath)}
-          onClick={(event) => {
-            if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
-              return;
-            }
-            event.preventDefault();
-            onNavigate();
-          }}
+    <div className="mt-8 divide-y border-y">
+      {tools.map(({ route: value, label, description, icon: Icon }) => (
+        <Button
+          key={value}
+          variant="ghost"
+          className="h-auto w-full justify-start gap-4 rounded-none px-2 py-6 text-left whitespace-normal sm:gap-5"
+          asChild
         >
-          {label}
-        </a>
-      </Button>
-    ))}
-    <p className="mt-5 text-sm text-muted-foreground">
+          <a
+            href={routePath(value, siteBasePath)}
+            aria-label={`Open ${label}`}
+            onClick={(event) => {
+              if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+                return;
+              }
+              event.preventDefault();
+              onNavigate(value);
+            }}
+          >
+            <Icon className="size-5! text-primary" strokeWidth={1.5} aria-hidden="true" />
+            <span className="flex-1">
+              <span className="block text-base font-medium">{label}</span>
+              <span className="mt-1 block text-sm leading-relaxed font-normal text-muted-foreground">
+                {description}
+              </span>
+            </span>
+            <ArrowUpRight className="text-muted-foreground" aria-hidden="true" />
+          </a>
+        </Button>
+      ))}
+    </div>
+    <p className="mt-6 max-w-prose text-sm leading-relaxed text-muted-foreground">
       Choose a tool before adding files. Switching tools clears your current work only after you
       confirm.
     </p>

@@ -24,12 +24,14 @@ export type Outcome<T> =
   | { readonly kind: "cancelled" }
   | { readonly kind: "failure"; readonly code: FailureCode; readonly message: string };
 
-/** Populated from release calibration, not guessed from the device or file size. */
+/** Explicit workload guardrails; these do not measure available browser memory. */
 export interface PdfLimits {
   readonly inputCount?: number;
   readonly perInputBytes?: number;
   readonly totalInputBytes?: number;
   readonly totalPages?: number;
+  readonly sourcePages?: number;
+  readonly pageDimension?: number;
   readonly outputBytes?: number;
   readonly outputCount?: number;
 }

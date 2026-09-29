@@ -39,7 +39,7 @@ export const loadValidatedPdf = async (input: PdfInput, limits: PdfLimits) => {
       updateMetadata: false,
       throwOnInvalidObject: true,
     });
-    const info = inspectDocument(document);
+    const info = inspectDocument(document, limits);
     enforceLimit(
       info.pageCount,
       limits.totalPages,

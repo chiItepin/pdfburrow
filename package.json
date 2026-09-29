@@ -16,6 +16,7 @@
     "ui:add": "cd packages/core-ui && node ../../common/scripts/install-run-rushx.js ui:add",
     "test": "node --experimental-transform-types --test tests/*.test.mjs",
     "test:browser": "cd apps/web && node ../../common/scripts/install-run-rushx.js test:browser",
+    "test:privacy": "node apps/web/scripts/releaseEvidence.mjs",
     "format": "packages/tooling/node_modules/.bin/prettier --write .",
     "format:check": "packages/tooling/node_modules/.bin/prettier --check .",
     "check": "npm run format:check && npm run typecheck && npm run lint && npm test && npm run build"

@@ -3,6 +3,7 @@ import { PDFDocument } from "pdf-lib";
 import { readFile } from "node:fs/promises";
 import { addSplitSource, downloadSplit, generateSplit } from "./fixtures/splitHelpers";
 import { imageFixture, generateImages, downloadImagePdf } from "./fixtures/imageFixtures";
+import { setToolOption } from "./fixtures/toolSettings";
 
 test("development image workers load locally and produce a real image-sized PDF", async ({
   page,
@@ -11,7 +12,7 @@ test("development image workers load locally and produce a real image-sized PDF"
   await page
     .locator('input[type="file"]')
     .setInputFiles(await imageFixture(page, "development.png", 960, 480));
-  await page.getByRole("radio", { name: "Image size (96 pixels per inch)" }).check();
+  await setToolOption(page, "Image size (96 pixels per inch)");
   await expect(page.getByRole("img", { name: "Preview of development.png" })).toBeVisible();
   await generateImages(page);
   const output = await downloadImagePdf(page);
@@ -25,7 +26,7 @@ test("development image workers load locally and produce a real image-sized PDF"
 test("development split workers produce real numbered PDFs", async ({ page }) => {
   await page.goto("./#/split");
   await addSplitSource(page, 1);
-  await page.getByRole("radio", { name: "Every page", exact: true }).check();
+  await setToolOption(page, "Every page");
   await generateSplit(page);
   const output = await downloadSplit(page);
   expect(output.name).toBe("report-split-001.pdf");

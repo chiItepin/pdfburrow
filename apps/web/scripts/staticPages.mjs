@@ -98,6 +98,12 @@ export const writeStaticPages = async () => {
       `User-agent: *\nAllow: /\n\nSitemap: ${siteOrigin}${basePath}sitemap.xml\n`,
     );
   } finally {
+    const renderedModule = require.cache[renderer];
+    if (renderedModule?.parent) {
+      renderedModule.parent.children = renderedModule.parent.children.filter(
+        (child) => child !== renderedModule,
+      );
+    }
     delete require.cache[renderer];
     await rm(temporary, { recursive: true, force: true });
   }
