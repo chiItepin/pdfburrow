@@ -1,7 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "@/App";
-import { ThemeProvider } from "@repo/core-ui";
+import { ThemeProvider } from "./workspace/ThemeProvider";
 
 const root = document.getElementById("root");
 if (!root) {

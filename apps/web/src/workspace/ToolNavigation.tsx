@@ -10,11 +10,11 @@ import {
   SidebarMenuItem,
   Switch,
   useSidebar,
-  useTheme,
 } from "@repo/core-ui";
 import { routeHash } from "./routes";
 import type { ToolRoute } from "./routes";
 import { tools } from "./tools";
+import { useTheme } from "./ThemeProvider";
 
 export const ToolNavigation = ({
   route,
@@ -32,6 +32,8 @@ export const ToolNavigation = ({
   return (
     <Sidebar
       aria-label="Workspace sidebar"
+      mobileTitle="PDF tools"
+      mobileDescription="Choose a document tool or change the color theme."
       onCloseAutoFocus={() => {
         if (pending.current !== null) {
           const next = pending.current;

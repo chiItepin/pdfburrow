@@ -1,4 +1,4 @@
-import { ConfirmDiscard, SidebarInset, SidebarProvider, Toaster, useTheme } from "@repo/core-ui";
+import { ConfirmDiscard, SidebarInset, SidebarProvider, Toaster } from "@repo/core-ui";
 import { MergeWorkspace } from "./merge";
 import { useDocumentWorkspace } from "./workspace/useDocumentWorkspace";
 import { ImageWorkspace } from "./images";
@@ -9,6 +9,7 @@ import { WorkspaceFooter } from "./workspace/WorkspaceFooter";
 import { useToolNavigation } from "./workspace/useToolNavigation";
 import { WorkspaceHeader } from "./workspace/WorkspaceHeader";
 import { ToolSettingsProvider } from "./workspace/ToolSettingsSidebar";
+import { useTheme } from "./workspace/ThemeProvider";
 
 export const App = () => {
   const workspace = useDocumentWorkspace();

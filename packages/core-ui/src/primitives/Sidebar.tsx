@@ -44,9 +44,13 @@ export const SidebarProvider = ({ className, children, ...props }: ComponentProp
 export const Sidebar = ({
   className,
   children,
+  mobileTitle,
+  mobileDescription,
   onCloseAutoFocus,
   ...props
 }: ComponentProps<"aside"> & {
+  mobileTitle: string;
+  mobileDescription: string;
   onCloseAutoFocus?: ComponentProps<typeof SheetContent>["onCloseAutoFocus"];
 }) => {
   const { isMobile, openMobile, setOpenMobile, trigger } = useSidebar();
@@ -62,10 +66,8 @@ export const Sidebar = ({
             onCloseAutoFocus?.(event);
           }}
         >
-          <SheetTitle className="sr-only">PDF tools</SheetTitle>
-          <SheetDescription className="sr-only">
-            Choose a document tool or change the color theme.
-          </SheetDescription>
+          <SheetTitle className="sr-only">{mobileTitle}</SheetTitle>
+          <SheetDescription className="sr-only">{mobileDescription}</SheetDescription>
           <div className={cn("flex min-h-0 flex-1 flex-col", className)}>{children}</div>
         </SheetContent>
       </Sheet>

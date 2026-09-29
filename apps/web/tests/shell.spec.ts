@@ -119,6 +119,9 @@ test("mobile drawer traps focus, dismisses safely, and adapts when resized", asy
   await trigger.click();
   const dialog = page.getByRole("dialog", { name: "PDF tools", exact: true });
   await expect(dialog).toBeVisible();
+  await expect(dialog).toHaveAccessibleDescription(
+    "Choose a document tool or change the color theme.",
+  );
   await expect(page.locator('[data-slot="sidebar-trigger"] svg')).toHaveClass(
     /lucide-panel-left-close/,
   );

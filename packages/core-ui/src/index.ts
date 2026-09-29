@@ -17,7 +17,6 @@ export { PageFrame } from "./components/PageFrame";
 export { FileDropzone } from "./components/FileDropzone";
 export { cn } from "./lib/utils";
 export { useFocusAfterCommit } from "./lib/useFocusAfterCommit";
-export { ThemeProvider, useTheme } from "./components/ThemeProvider";
 export {
   Breadcrumb,
   BreadcrumbList,
