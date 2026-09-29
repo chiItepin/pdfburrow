@@ -1,8 +1,18 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const basePath = process.env.PDFBURROW_BASE_PATH ?? "/pdfburrow/";
-const origin = "http://127.0.0.1:4173";
-const developmentOrigin = "http://127.0.0.1:4174";
+const previewPort = Number(process.env.PDFBURROW_TEST_PORT ?? 4173);
+const developmentPort = Number(process.env.PDFBURROW_TEST_DEV_PORT ?? 4174);
+if (
+  [previewPort, developmentPort].some(
+    (port) => !Number.isInteger(port) || port < 1 || port > 65535,
+  ) ||
+  previewPort === developmentPort
+) {
+  throw new Error("Browser test ports must be distinct integers between 1 and 65535.");
+}
+const origin = `http://127.0.0.1:${previewPort}`;
+const developmentOrigin = `http://127.0.0.1:${developmentPort}`;
 
 export default defineConfig({
   testDir: "./tests",
@@ -30,6 +40,8 @@ export default defineConfig({
         "previewFeedback.spec.ts",
         "previewRetry.spec.ts",
         "compressedPreviews.spec.ts",
+        "resourceLimits.spec.ts",
+        "privacy.spec.ts",
       ],
       use: { ...devices["Desktop Chrome"] },
     },
@@ -51,6 +63,8 @@ export default defineConfig({
         "previewFeedback.spec.ts",
         "previewRetry.spec.ts",
         "compressedPreviews.spec.ts",
+        "resourceLimits.spec.ts",
+        "privacy.spec.ts",
       ],
       use: { ...devices["Pixel 7"] },
     },
@@ -70,6 +84,8 @@ export default defineConfig({
         "previewFeedback.spec.ts",
         "previewRetry.spec.ts",
         "compressedPreviews.spec.ts",
+        "resourceLimits.spec.ts",
+        "privacy.spec.ts",
       ],
       use: { ...devices["Desktop Firefox"] },
     },
@@ -89,6 +105,8 @@ export default defineConfig({
         "previewFeedback.spec.ts",
         "previewRetry.spec.ts",
         "compressedPreviews.spec.ts",
+        "resourceLimits.spec.ts",
+        "privacy.spec.ts",
       ],
       use: { ...devices["Desktop Safari"] },
     },
@@ -100,13 +118,13 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: "node ../../common/scripts/install-run-rushx.js preview --port 4173",
+      command: `node ../../common/scripts/install-run-rushx.js preview --port ${previewPort}`,
       url: `${origin}${basePath}`,
       reuseExistingServer: false,
       timeout: 30_000,
     },
     {
-      command: "node ../../common/scripts/install-run-rushx.js dev --port 4174",
+      command: `node ../../common/scripts/install-run-rushx.js dev --port ${developmentPort}`,
       url: `${developmentOrigin}${basePath}`,
       reuseExistingServer: false,
       timeout: 30_000,

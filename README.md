@@ -7,9 +7,9 @@ PDFs or a ZIP of multiple outputs.
 
 The [PDFBurrow MVP map](https://github.com/chiItepin/pdfburrow/issues/1) is the
 decision index. This workspace implements the three MVP tools and the shared
-file-to-download workflow, but still lacks release calibration and complete
-compatibility evidence. It is not a release; the selected project license has not yet
-been added.
+file-to-download workflow with provisional workload limits. It is an experimental
+build, not a verified release. The project is MIT-licensed; device calibration and
+complete compatibility evidence still require release review.
 
 ## Run locally
 
@@ -88,18 +88,34 @@ initialization for stable ownership, not a memoization cache.
   Optional image thumbnails run in a disposable local worker, fit within 144 pixels,
   and never modify originals. Required image decoding and conversion have a separate
   disposable worker; optional previews never establish export support.
-- The footer opens local `privacy.html` and `notices.html` disclosures in a new tab
-  without discarding work. The notices page explicitly records incomplete release
-  licensing, rather than claiming a completed compliance audit.
+- The footer opens local privacy, licenses/notices, and workload-limit disclosures
+  in a new tab without discarding work. The build includes the project license,
+  third-party license texts, and a versioned inventory; it does not imply a completed
+  contributor-rights audit.
 
-`PdfLimits`, `ImageLimits`, `BundleLimits`, and `ImagePreviewLimits` are enforcement points for
-measured release values, not prepopulated production limits. The registry and
-output store report retained raw bytes/counts; ZIP progress reports actual entries
-and packaging bytes. These are not measurements of total browser/decoded memory.
+`apps/web/src/workspace/resourcePolicy.ts` owns the shared provisional policy:
+20 inputs, 20 MiB per input, 50 MiB total inputs, 200 pages per source PDF and
+per merged/selected output job, 50 output PDFs totaling 50 MiB, and a 52 MiB ZIP.
+Images are limited to 12 million pixels each, 24 million pixels per draft, and
+8192 pixels per dimension. PDF page boxes are limited to 14,400 effective points per
+dimension, after applying the page-local `UserUnit` scale (default 1);
+image-sized output pages are limited to 6144 points per dimension.
+One MiB is 1,048,576 bytes; each boundary is inclusive.
+
+These are owner-authorized engineering estimates, not a measured cross-device
+baseline. The 20-file admission cap bounds the validation queue; an over-limit
+addition is rejected as a whole before any new original is retained. Validation,
+generation, split prediction, image previews, and ZIP packaging receive the policy.
+PDF previews check raw input bytes, not decoded embedded-image memory.
+The registry and output store report retained raw bytes/counts; ZIP progress reports
+actual entries and packaging bytes. None measures total browser/decoded memory.
 Image header dimensions and aggregate pixel budgets are checked before generation
 decoding; decoded dimensions are checked again. These checks do not guarantee
-against decoder allocation failure. Physical-device calibration and measured
-production thresholds remain release work.
+against decoder allocation failure. Originals, parsed/decoded data, outputs, and
+ZIP intermediates can coexist. Output-byte checks occur during or after allocation.
+Physical-device calibration, measured safety margins, and performance thresholds
+remain release work. The eight-item preview window remains a bounded UI choice,
+not a measured virtualization crossover.
 
 ## Merge behavior and limitations
 
@@ -153,10 +169,9 @@ production thresholds remain release work.
   Static hosting receives application-asset requests. Offline/PWA operation is
   not promised.
 
-**Not release-ready:** safe resource limits and the complete browser/device
-matrix are not calibrated. Large/complex inputs may exhaust browser memory.
-`PdfLimits` provides enforcement points for future measured values; the app does
-not invent production limits. The full PDF fixture matrix, physical devices,
+**Not release-ready:** provisional limits are enforced but have not been calibrated
+across the complete browser/device matrix. Complex inputs may still exhaust browser
+memory below those limits. The full PDF fixture matrix, physical devices,
 aggregate parsed-memory accounting, and scheduling calibration remain gates in
 [Validate the MVP and prepare GitHub Pages release](https://github.com/chiItepin/pdfburrow/issues/10).
 
@@ -208,7 +223,8 @@ Changing tools, removing the source or resetting cannot carry selections into an
 `PdfLimits` can enforce selected-page totals (including repetitions), output count and aggregate
 output bytes. The split page limit applies to selected output pages, not the source's full page
 count; source byte limits and full structural validation still apply.
-These are calibration hooks, not measured production limits. No size-target
+The app supplies the shared provisional policy; a separate source-page cap remains
+in force even when extracting one page. These are not measured production limits. No size-target
 splitting, compression, repair, encrypted-PDF support, or remote fallback is added.
 
 ## Images to PDF behavior
@@ -307,11 +323,13 @@ npm run format
 npm run check
 apps/web/node_modules/.bin/playwright install chromium firefox webkit
 npm run test:browser
+npm run test:privacy
 ```
 
 `check` runs Prettier verification, type/lint checks, unit and workspace contract
 tests, and a production build. Browser tests use separate production and
-development servers on ports 4173 and 4174.
+development servers on ports 4173 and 4174. Concurrent worktrees can select distinct
+`PDFBURROW_TEST_PORT` and `PDFBURROW_TEST_DEV_PORT` values; existing servers are never reused.
 
 Tests inspect real output counts/order, all page boxes/rotation, decoded
 text/vector streams, every-page render equivalence, keyboard/focus behavior,
@@ -322,6 +340,29 @@ production conversion tool. Routing tests cover direct links, refresh, manual
 hash changes, guarded Back/Forward, safe discard, and processing locks. Synthetic
 fixtures and Chromium mobile emulation do not establish complete compatibility,
 physical-device memory budgets, or release-level privacy evidence.
+
+`test:privacy` runs the production artifact through allowlisted request tracing and
+real cached-worker processing with the browser network disabled. It covers merge,
+split, JPEG/PNG conversion, PDF/ZIP downloads, corrupt input, injected cancellation,
+reset, and repeated jobs. macOS WebKit offline emulation currently blocks local Blob
+reads; that case is explicitly skipped and remains an evidence gap, not a passing
+offline result. Physical Safari must be checked separately. This does not promise
+offline startup, persistence, or a PWA.
+
+On success it writes `apps/web/dist/release-evidence.json` with per-file SHA-256
+hashes, a combined artifact digest, commit/dirty-worktree status, host and browser
+versions, fixture hashes, request traces, test outcomes, and explicit pending gates.
+It rejects a base-path mismatch or artifact mutation during collection and removes
+stale evidence before running. A rebuild removes old evidence. The report always
+states that release approval, device calibration, and licensing review are separate;
+passing these synthetic scenarios is not a universal non-egress proof.
+
+Every build generates `LICENSE.txt`, `third-party-notices.txt`, and
+`license-inventory.json` from actual emitted JavaScript inputs, retained legal
+comments, Tailwind CSS, copied shadcn components, and PDF.js decoder notices.
+Unknown package licenses and missing license texts fail the build; there are no
+inferred-license fallbacks. Packages removed by tree shaking are excluded from the
+distributed inventory. Contributor rights still require owner confirmation.
 
 Merge workflow and downloaded-artifact checks run in Playwright's Chromium,
 Firefox, and WebKit, plus Chromium mobile emulation. These browser builds are
@@ -365,6 +406,9 @@ npm run preview
 ```
 
 The default base is `/pdfburrow/`. The production output is `apps/web/dist`.
+The preview server gives built assets a ten-minute cache lifetime, like a static
+host, so warmed-worker network-blocking checks use the real browser cache.
+HTML/disclosures and all development files remain uncached; no service worker is added.
 For a future custom-domain root:
 
 ```sh

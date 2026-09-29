@@ -1,5 +1,6 @@
 import type { SplitSelection } from "@repo/pdf-engine";
 import type { useDocumentWorkspace } from "../workspace/useDocumentWorkspace";
+import { pdfLimits } from "../workspace/resourcePolicy";
 
 export const useSplitJob = (
   workspace: ReturnType<typeof useDocumentWorkspace>,
@@ -24,6 +25,7 @@ export const useSplitJob = (
           input: { id: input.id, name: input.name, blob },
           selection,
           acknowledged: draft.acknowledged,
+          limits: pdfLimits,
         },
         options,
       );

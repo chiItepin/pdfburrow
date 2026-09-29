@@ -66,7 +66,7 @@ export const useDocumentWorkspace = () => {
     focus,
     capable,
     confirmation,
-    notice,
+    notice: draft.resourceError || notice,
     announce,
     addFiles,
     removeFile,

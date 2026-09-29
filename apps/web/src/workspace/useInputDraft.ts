@@ -3,6 +3,7 @@ import { useFocusAfterCommit } from "@repo/core-ui";
 import { createFileRegistry } from "./fileRegistry";
 import type { InputRow, MoveDirection } from "./types";
 import { useValidation } from "./useValidation";
+import { draftResourceError, fileAdditionError } from "./resourcePolicy";
 
 const visibleFileCount = 8;
 
@@ -15,7 +16,9 @@ export const useInputDraft = (announce: (message: string) => void) => {
   const addButton = useRef<HTMLButtonElement>(null);
   const focusAfterCommit = useFocusAfterCommit();
   const validationId = useValidation(inputs, files, setInputs, announce);
-  const ready = inputs.length > 0 && inputs.every((input) => input.status === "ready");
+  const resourceError = draftResourceError(inputs);
+  const ready =
+    !resourceError && inputs.length > 0 && inputs.every((input) => input.status === "ready");
   const pageCount = inputs.reduce(
     (sum, input) => sum + (input.status === "ready" ? input.info.pageCount : 0),
     0,
@@ -28,7 +31,13 @@ export const useInputDraft = (announce: (message: string) => void) => {
   useEffect(() => () => files.releaseAll(), [files]);
 
   const addFiles = (added: FileList | readonly File[], kind: InputRow["kind"] = "pdf") => {
-    const rows = Array.from(added, (file): InputRow => {
+    const incoming = Array.from(added);
+    const error = fileAdditionError(files.usage(), incoming);
+    if (error) {
+      announce(error);
+      return;
+    }
+    const rows = incoming.map((file): InputRow => {
       const id = crypto.randomUUID();
       files.retain(id, file);
       return { id, name: file.name, size: file.size, kind, status: "pending" };
@@ -100,6 +109,7 @@ export const useInputDraft = (announce: (message: string) => void) => {
     acknowledged,
     setAcknowledged,
     ready,
+    resourceError,
     pageCount,
     visible,
     firstVisibleIndex,

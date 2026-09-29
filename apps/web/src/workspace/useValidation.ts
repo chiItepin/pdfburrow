@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import type { FileRegistry } from "./fileRegistry";
 import type { InputRow } from "./types";
+import { imageLimits, pdfLimits } from "./resourcePolicy";
 
 export const useValidation = (
   inputs: readonly InputRow[],
@@ -34,17 +35,18 @@ export const useValidation = (
     const controller = new AbortController();
     const validate = async () => {
       try {
-        const validateInput =
+        const engine =
           kind === "image"
-            ? (await import("@repo/pdf-engine/images")).validateImage
-            : (await import("@repo/pdf-engine/merge")).validatePdf;
+            ? await import("@repo/pdf-engine/images")
+            : await import("@repo/pdf-engine/merge");
         if (controller.signal.aborted) {
           return;
         }
-        const outcome = await validateInput(
-          { id: validationId, name: file.name, blob: file },
-          { signal: controller.signal },
-        );
+        const input = { id: validationId, name: file.name, blob: file };
+        const outcome =
+          "validateImage" in engine
+            ? await engine.validateImage(input, { signal: controller.signal }, imageLimits)
+            : await engine.validatePdf(input, { signal: controller.signal, limits: pdfLimits });
         if (controller.signal.aborted || outcome.kind === "cancelled") {
           return;
         }

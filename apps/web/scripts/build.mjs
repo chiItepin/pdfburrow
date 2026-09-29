@@ -4,6 +4,7 @@ import { copyFile, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { basename } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
+import { licenseNoticesPlugin } from "./licenseNotices.mjs";
 import {
   appDirectory,
   basePath,
@@ -48,16 +49,32 @@ export const writeHtml = async () => {
   await mkdir(outputDirectory, { recursive: true });
   const template = await readFile(new URL("../index.html", import.meta.url), "utf8");
   await writeFile(`${outputDirectory}/index.html`, template.replaceAll("%BASE_PATH%", basePath));
-  for (const name of ["privacy.html", "notices.html"]) {
+  for (const name of ["privacy.html", "notices.html", "limits.html"]) {
     const page = await readFile(new URL(`../public/${name}`, import.meta.url), "utf8");
     await writeFile(`${outputDirectory}/${name}`, page.replaceAll("%BASE_PATH%", basePath));
   }
 };
 
+/** @param {boolean} development */
+const applicationOptions = (development) => {
+  const options = buildOptions(development);
+  return {
+    ...options,
+    metafile: true,
+    plugins: [...(options.plugins ?? []), licenseNoticesPlugin(outputDirectory)],
+  };
+};
+
 export const buildApplication = async () => {
   await rm(`${outputDirectory}/assets`, { recursive: true, force: true });
   await rm(`${outputDirectory}/release.json`, { force: true });
-  await Promise.all([build(buildOptions(false)), buildStyles(), writeHtml(), copyPreviewAssets()]);
+  await rm(`${outputDirectory}/release-evidence.json`, { force: true });
+  await Promise.all([
+    build(applicationOptions(false)),
+    buildStyles(),
+    writeHtml(),
+    copyPreviewAssets(),
+  ]);
   await writeFile(`${outputDirectory}/base-path.json`, JSON.stringify(basePath));
 };
 
@@ -65,7 +82,7 @@ export const watchApplication = async () => {
   await copyPreviewAssets();
   await writeHtml();
   await buildStyles();
-  const builder = await context(buildOptions(true));
+  const builder = await context(applicationOptions(true));
   try {
     await builder.rebuild();
     await builder.watch();

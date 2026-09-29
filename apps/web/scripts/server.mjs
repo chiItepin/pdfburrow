@@ -2,7 +2,7 @@ import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
 import { createServer } from "node:http";
 import { extname, resolve, sep } from "node:path";
-import { basePath, outputDirectory } from "./buildOptions.mjs";
+import { basePath, isDevelopment, outputDirectory } from "./buildOptions.mjs";
 
 const contentTypes = new Map([
   [".html", "text/html; charset=utf-8"],
@@ -10,6 +10,7 @@ const contentTypes = new Map([
   [".css", "text/css; charset=utf-8"],
   [".json", "application/json"],
   [".map", "application/json"],
+  [".txt", "text/plain; charset=utf-8"],
 ]);
 
 /** @param {import("node:http").IncomingMessage} request @param {import("node:http").ServerResponse} response */
@@ -53,7 +54,10 @@ const serveRequest = async (request, response) => {
   }
   response.writeHead(200, {
     "Content-Type": contentTypes.get(extname(file)) ?? "application/octet-stream",
-    "Cache-Control": "no-store",
+    "Cache-Control":
+      !isDevelopment && pathname.startsWith(`${basePath}assets/`)
+        ? "public, max-age=600"
+        : "no-store",
     "X-Content-Type-Options": "nosniff",
   });
   if (request.method === "HEAD") {
