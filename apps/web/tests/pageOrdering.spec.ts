@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { PDFDocument } from "pdf-lib";
 import { addSplitSource, downloadSplit, editSplit, generateSplit } from "./fixtures/splitHelpers";
+import { setToolOption } from "./fixtures/toolSettings";
 
 const pageOrder = (page: Page) => page.getByRole("list", { name: "Page order", exact: true });
 const labels = (pages: readonly number[], offset = 0, total = pages.length) =>
@@ -67,8 +68,8 @@ test("pointer drag arranges unique selected pages and the download follows the d
   ]);
   await expect(page.getByRole("button", { name: "Drag page 3", exact: true })).toBeDisabled();
   await editSplit(page);
-  await page.getByRole("radio", { name: "Every page", exact: true }).check();
-  await page.getByRole("radio", { name: "Selected pages", exact: true }).check();
+  await setToolOption(page, "Every page");
+  await setToolOption(page, "Selected pages");
   await expect.poll(() => orderLabels(page)).toEqual(labels([3, 1, 2, 4]));
   await page.getByRole("checkbox", { name: "Page 3", exact: true }).uncheck();
   await page.getByRole("checkbox", { name: "Page 3", exact: true }).check();

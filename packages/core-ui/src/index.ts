@@ -17,3 +17,35 @@ export { PageFrame } from "./components/PageFrame";
 export { FileDropzone } from "./components/FileDropzone";
 export { cn } from "./lib/utils";
 export { useFocusAfterCommit } from "./lib/useFocusAfterCommit";
+export { ThemeProvider, useTheme } from "./components/ThemeProvider";
+export {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+  BreadcrumbEllipsis,
+} from "./primitives/Breadcrumb";
+export {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "./primitives/DropdownMenu";
+export {
+  Sidebar,
+  SidebarProvider,
+  SidebarInset,
+  SidebarTrigger,
+  SidebarHeader,
+  SidebarContent,
+  SidebarFooter,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  useSidebar,
+} from "./primitives/Sidebar";
+export { Switch } from "./primitives/Switch";
+export { Sheet, SheetContent, SheetTitle, SheetDescription } from "./primitives/Sheet";
+export { useMediaQuery } from "./lib/useMediaQuery";

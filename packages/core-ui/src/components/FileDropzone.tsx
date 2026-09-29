@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import type { ReactNode, Ref } from "react";
+import { Upload } from "lucide-react";
 import { Button } from "../primitives/Button";
 
 export const FileDropzone = ({
@@ -27,7 +28,7 @@ export const FileDropzone = ({
   return (
     <section
       aria-label={regionLabel}
-      className="my-5 rounded-lg border-2 border-dashed bg-card p-6 text-card-foreground"
+      className="mb-5 flex min-h-64 flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 px-6 py-8 text-center text-card-foreground"
       onDragOver={(event) => event.preventDefault()}
       onDrop={(event) => {
         event.preventDefault();
@@ -51,6 +52,7 @@ export const FileDropzone = ({
           event.target.value = "";
         }}
       />
+      <Upload className="mb-5 size-7 text-muted-foreground" strokeWidth={1.5} aria-hidden="true" />
       <Button ref={buttonRef} disabled={disabled} onClick={() => input.current?.click()}>
         {label}
       </Button>

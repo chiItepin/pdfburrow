@@ -9,6 +9,7 @@ import { renderPdfPreview } from "../workspace/previewRenderers";
 import { describeJobStatus } from "./jobStatus";
 import { mergeTask } from "./mergeTask";
 import { MergeProgress } from "./MergeProgress";
+import { ToolSettingsSidebar } from "../workspace/ToolSettingsSidebar";
 
 export const MergeWorkspace = ({
   workspace,
@@ -63,7 +64,7 @@ export const MergeWorkspace = ({
         <p className="mt-2 text-sm text-muted-foreground">
           Whole files are merged in displayed order. Page sizes and rotations are kept.
         </p>
-        <div className="mt-4 grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="mt-6">
           <div className="min-w-0">
             <FilePicker
               disabled={!editable || !capable}
@@ -80,10 +81,7 @@ export const MergeWorkspace = ({
               removeFile={workspace.removeFile}
             />
           </div>
-          <section className="min-w-0 lg:pt-5" aria-labelledby="settings-heading">
-            <h3 id="settings-heading" className="text-lg font-semibold">
-              Merge settings
-            </h3>
+          <section className="tool-actions" aria-label="Merge output">
             {draft.inputs.length > 0 && (
               <PreservationNotice
                 disabled={!editable}
@@ -131,6 +129,30 @@ export const MergeWorkspace = ({
               </p>
             )}
           </section>
+          <ToolSettingsSidebar title="Merge settings">
+            <dl className="space-y-6 pt-6 text-sm">
+              <div>
+                <dt className="font-medium">Pages</dt>
+                <dd className="mt-2 leading-relaxed text-muted-foreground">
+                  All pages from each PDF are included. Use Split / Extract to choose specific
+                  pages.
+                </dd>
+              </div>
+              <div>
+                <dt className="font-medium">File order</dt>
+                <dd className="mt-2 leading-relaxed text-muted-foreground">
+                  Files are merged in the order shown. Drag them or use Move up and Move down to
+                  arrange them.
+                </dd>
+              </div>
+              <div>
+                <dt className="font-medium">Output</dt>
+                <dd className="mt-2 leading-relaxed text-muted-foreground">
+                  One combined PDF. Page sizes and rotations are kept.
+                </dd>
+              </div>
+            </dl>
+          </ToolSettingsSidebar>
         </div>
       </section>
       {job.phase === "complete" && (

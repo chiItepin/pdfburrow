@@ -3,6 +3,7 @@ import { createRequire } from "node:module";
 import { inspectArtifact } from "./fixtures/pdfArtifacts";
 import { preservationPdfs } from "./fixtures/preservationPdfs";
 import { downloadSplit, editSplit, generateSplit } from "./fixtures/splitHelpers";
+import { withToolSettings } from "./fixtures/toolSettings";
 
 const requireEngine = createRequire(
   new URL("../../../packages/pdf-engine/package.json", import.meta.url),
@@ -37,11 +38,13 @@ test("downloads preserve selected and repeated page text, pixels and geometry in
   expect(await inspectArtifact(artifact.bytes)).toEqual([source[0], source[2]]);
   await expect(page.getByRole("button", { name: "Prepare ZIP for all PDFs" })).toHaveCount(0);
   await editSplit(page);
-  await page.getByRole("radio", { name: "Custom ranges" }).check();
-  await page.getByRole("button", { name: "Add range" }).click();
-  await page.getByRole("spinbutton", { name: "Range 1 start page" }).fill("2");
-  await page.getByRole("button", { name: "Add range" }).click();
-  await page.getByRole("spinbutton", { name: "Range 2 end page" }).fill("2");
+  await withToolSettings(page, async () => {
+    await page.getByRole("radio", { name: "Custom ranges" }).check();
+    await page.getByRole("button", { name: "Add range" }).click();
+    await page.getByRole("spinbutton", { name: "Range 1 start page" }).fill("2");
+    await page.getByRole("button", { name: "Add range" }).click();
+    await page.getByRole("spinbutton", { name: "Range 2 end page" }).fill("2");
+  });
   await expect(page.getByText(/Overlapping ranges repeat pages/)).toBeVisible();
   await expect(page.getByRole("region", { name: "Output prediction" })).toContainText(
     "Output: 1 PDF, 4 pages total.",
@@ -55,7 +58,9 @@ test("downloads preserve selected and repeated page text, pixels and geometry in
     source[1],
   ]);
   await editSplit(page);
-  await page.getByRole("checkbox", { name: "Combine ranges into one PDF" }).uncheck();
+  await withToolSettings(page, () =>
+    page.getByRole("checkbox", { name: "Combine ranges into one PDF" }).uncheck(),
+  );
   await expect(page.getByRole("region", { name: "Output prediction" })).toContainText(
     "Output: 2 PDFs, 4 pages total.",
   );
@@ -77,10 +82,12 @@ test("downloads preserve selected and repeated page text, pixels and geometry in
 
   for (const mode of ["Fixed page-count groups", "Every page"]) {
     await editSplit(page);
-    await page.getByRole("radio", { name: mode, exact: true }).check();
-    if (mode === "Fixed page-count groups") {
-      await page.getByRole("spinbutton", { name: "Pages per PDF" }).fill("2");
-    }
+    await withToolSettings(page, async () => {
+      await page.getByRole("radio", { name: mode, exact: true }).check();
+      if (mode === "Fixed page-count groups") {
+        await page.getByRole("spinbutton", { name: "Pages per PDF" }).fill("2");
+      }
+    });
     const expected =
       mode === "Every page"
         ? [[source[0]], [source[1]], [source[2]]]

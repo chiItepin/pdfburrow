@@ -1,7 +1,14 @@
 import { expect, test } from "@playwright/test";
+import { closeToolSidebar, navigateToTool, openToolSidebar } from "./fixtures/workspaceNavigation";
 import { PDFDocument } from "pdf-lib";
 import { addSplitSource, downloadSplit, editSplit, generateSplit } from "./fixtures/splitHelpers";
 import { protectedPdf, malformedPageTree } from "./fixtures/preservationPdfs";
+import {
+  openToolSettings,
+  closeToolSettings,
+  setToolOption,
+  withToolSettings,
+} from "./fixtures/toolSettings";
 
 test("bounded page windows, source-order toggles, Clear and single-source guards", async ({
   page,
@@ -54,6 +61,7 @@ test("range ordering, invalid settings and shorter final groups never show stale
 }) => {
   await page.goto("./#/split");
   await addSplitSource(page);
+  await openToolSettings(page);
   await page.getByRole("radio", { name: "Custom ranges" }).check();
   await expect(page.getByText("Add at least one range.", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Add range" }).click();
@@ -73,25 +81,35 @@ test("range ordering, invalid settings and shorter final groups never show stale
   ).toEqual([301, 304, 305, 306]);
   await editSplit(page);
   for (const value of ["", "0", "11", "1.5", "3"]) {
-    await page.getByRole("spinbutton", { name: "Range 1 start page" }).fill(value);
+    await withToolSettings(page, () =>
+      page.getByRole("spinbutton", { name: "Range 1 start page" }).fill(value),
+    );
     await expect(page.getByRole("region", { name: "Output prediction" })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Generate PDFs" })).toBeDisabled();
   }
+  await openToolSettings(page);
   await page.getByRole("button", { name: "Remove range 1" }).click();
   await expect(page.getByRole("spinbutton", { name: "Range 1 start page" })).toBeFocused();
   await page.getByRole("button", { name: "Remove range 1" }).click();
   await expect(page.getByRole("button", { name: "Add range" })).toBeFocused();
+  await closeToolSettings(page);
   await expect(page.getByRole("region", { name: "Output prediction" })).toHaveCount(0);
-  await page.getByRole("radio", { name: "Fixed page-count groups" }).check();
+  await setToolOption(page, "Fixed page-count groups");
   for (const value of ["", "0", "11", "1.5"]) {
-    await page.getByRole("spinbutton", { name: "Pages per PDF" }).fill(value);
+    await withToolSettings(page, () =>
+      page.getByRole("spinbutton", { name: "Pages per PDF" }).fill(value),
+    );
     await expect(page.getByRole("region", { name: "Output prediction" })).toHaveCount(0);
   }
-  await page.getByRole("spinbutton", { name: "Pages per PDF" }).fill("4");
+  await withToolSettings(page, () =>
+    page.getByRole("spinbutton", { name: "Pages per PDF" }).fill("4"),
+  );
   await expect(page.getByRole("region", { name: "Output prediction" })).toContainText(
     "report-split-003.pdf · 2 pages",
   );
-  await page.getByRole("spinbutton", { name: "Pages per PDF" }).fill("10");
+  await withToolSettings(page, () =>
+    page.getByRole("spinbutton", { name: "Pages per PDF" }).fill("10"),
+  );
   await generateSplit(page);
   expect((await downloadSplit(page)).name).toBe("report-split-001.pdf");
   await expect(page.getByRole("button", { name: "Prepare ZIP for all PDFs" })).toHaveCount(0);
@@ -116,18 +134,22 @@ test("cancellation, worker/resource failures and optional preview errors preserv
   await expect(page.getByRole("button", { name: "Drag page 1", exact: true })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Move page 1 later", exact: true })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Retry preview of page 1" })).toBeDisabled();
-  await expect(page.getByRole("radio", { name: "Every page", exact: true })).toBeDisabled();
+  await withToolSettings(page, () =>
+    expect(page.getByRole("radio", { name: "Every page", exact: true })).toBeDisabled(),
+  );
+  await openToolSidebar(page);
   await expect(page.getByRole("link", { name: "Merge PDFs", exact: true })).toHaveAttribute(
     "aria-disabled",
     "true",
   );
+  await closeToolSidebar(page);
   await page.evaluate(() => {
     location.hash = "#/merge";
   });
   await expect(page).toHaveURL(/#\/split$/);
   await page.getByRole("button", { name: "Cancel generation" }).click();
   await expect(
-    page.getByRole("region", { name: "Split / Extract settings" }).getByRole("status"),
+    page.getByRole("region", { name: "Split output" }).getByRole("status"),
   ).toContainText("Generation cancelled");
   await expect(page.getByRole("heading", { name: "Your source PDF" })).toBeFocused();
   await expect(page.getByRole("checkbox", { name: "Page 1", exact: true })).toBeChecked();
@@ -190,7 +212,7 @@ test("repeated split and ZIP cycles release workers and URLs, with explicit reco
   await page.goto("./#/split");
   for (let cycle = 0; cycle < 5; cycle++) {
     await addSplitSource(page, 10);
-    await page.getByRole("radio", { name: "Every page", exact: true }).check();
+    await setToolOption(page, "Every page");
     await expect(
       page.getByRole("region", { name: "Output prediction" }).getByRole("listitem"),
     ).toHaveCount(8);
@@ -262,20 +284,23 @@ test("unsupported sources stay visible and cannot be acknowledged away", async (
     await expect(page.getByRole("button", { name: "Add PDF", exact: true })).toBeFocused();
   }
   await addSplitSource(page, 1);
-  await page.getByRole("radio", { name: "Every page", exact: true }).check();
+  await setToolOption(page, "Every page");
   await generateSplit(page);
   await page.getByRole("button", { name: "Edit selection" }).click();
   await expect(page.getByRole("button", { name: "Keep working" })).toBeFocused();
   await page.getByRole("button", { name: "Keep working" }).click();
-  await page.getByRole("link", { name: "Merge PDFs", exact: true }).click();
+  await navigateToTool(page, "Merge PDFs");
   await page.getByRole("button", { name: "Keep working" }).click();
   await expect(page.getByRole("button", { name: "Download PDF", exact: true })).toBeVisible();
-  await page.getByRole("link", { name: "Merge PDFs", exact: true }).click();
+  await navigateToTool(page, "Merge PDFs");
   await page.getByRole("button", { name: "Discard", exact: true }).click();
-  await expect(page.getByRole("listitem")).toHaveCount(0);
+  await expect(page).toHaveURL(/#\/merge$/);
+  await expect(page.locator("[data-workspace-content]").getByRole("listitem")).toHaveCount(0);
   await page.goBack();
   await expect(page).toHaveURL(/#\/split$/);
   await addSplitSource(page, 1);
-  await expect(page.getByRole("radio", { name: "Selected pages", exact: true })).toBeChecked();
+  await withToolSettings(page, () =>
+    expect(page.getByRole("radio", { name: "Selected pages", exact: true })).toBeChecked(),
+  );
   await expect(page.getByRole("checkbox", { name: "Page 1", exact: true })).not.toBeChecked();
 });

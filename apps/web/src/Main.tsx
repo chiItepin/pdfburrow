@@ -1,7 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "@/App";
-import { Toaster } from "@repo/core-ui";
+import { ThemeProvider } from "@repo/core-ui";
 
 const root = document.getElementById("root");
 if (!root) {
@@ -10,7 +10,8 @@ if (!root) {
 
 createRoot(root).render(
   <StrictMode>
-    <App />
-    <Toaster />
+    <ThemeProvider>
+      <App />
+    </ThemeProvider>
   </StrictMode>,
 );

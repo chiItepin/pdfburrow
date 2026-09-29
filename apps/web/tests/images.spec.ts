@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 import { PDFDocument } from "pdf-lib";
 import { createRequire } from "node:module";
+import { navigateToTool } from "./fixtures/workspaceNavigation";
+import { setToolOption, withToolSettings } from "./fixtures/toolSettings";
 import {
   imageFixture,
   animatedPng,
@@ -28,10 +30,12 @@ test("image workspace orders and rotates actual combined/separate PDFs with shar
   const third = await imageFixture(page, "map.png", 40, 40);
   await page.locator('input[type="file"]').setInputFiles([first, second, third]);
   await expect(page.getByRole("button", { name: "Convert to PDF", exact: true })).toBeEnabled();
-  await expect(page.getByRole("radio", { name: "One combined PDF" })).toBeChecked();
-  await expect(page.getByRole("radio", { name: "A4 (210 x 297 mm)", exact: true })).toBeChecked();
-  await page.getByRole("radio", { name: "Image size (96 pixels per inch)" }).check();
-  await expect(page.getByRole("group", { name: "Page orientation", exact: true })).toHaveCount(0);
+  await withToolSettings(page, async () => {
+    await expect(page.getByRole("radio", { name: "One combined PDF" })).toBeChecked();
+    await expect(page.getByRole("radio", { name: "A4 (210 x 297 mm)", exact: true })).toBeChecked();
+    await page.getByRole("radio", { name: "Image size (96 pixels per inch)" }).check();
+    await expect(page.getByRole("group", { name: "Page orientation", exact: true })).toHaveCount(0);
+  });
   await page.getByRole("button", { name: "Move beach.jpg down" }).focus();
   await page.keyboard.press("Enter");
   await expect(page.getByRole("button", { name: "Move beach.jpg down" })).toBeFocused();
@@ -54,7 +58,7 @@ test("image workspace orders and rotates actual combined/separate PDFs with shar
     { width: 30, height: 30 },
   ]);
   await page.getByRole("button", { name: "Edit images and settings" }).click();
-  await page.getByRole("radio", { name: "One PDF per image" }).check();
+  await setToolOption(page, "One PDF per image");
   await generateImages(page);
   for (const name of ["map-converted.pdf", "beach-converted.pdf", "map-converted-2.pdf"]) {
     await expect(page.getByRole("button", { name: `Download ${name}`, exact: true })).toBeVisible();
@@ -118,7 +122,7 @@ test("unsupported, animated and undecodable inputs block generation; mislabeled 
   for (const file of invalid) {
     await page.getByRole("button", { name: `Remove ${file.name}`, exact: true }).click();
   }
-  await page.getByRole("radio", { name: "One PDF per image" }).check();
+  await setToolOption(page, "One PDF per image");
   await generateImages(page);
   expect((await downloadImagePdf(page)).name).toBe("photo-converted.pdf");
   await expect(page.getByRole("button", { name: "Prepare ZIP for all PDFs" })).toHaveCount(0);
@@ -133,7 +137,7 @@ test("cancellation, preview/worker/download failures and guarded navigation reta
   await expect(page.getByRole("button", { name: "Convert to PDF", exact: true })).toBeEnabled();
   await expect(page.getByRole("button", { name: "Retry preview of picture.png" })).toBeVisible();
   await page.getByRole("button", { name: "Rotate picture.png left" }).click();
-  await page.getByRole("radio", { name: "Letter (8.5 x 11 inches)" }).check();
+  await setToolOption(page, "Letter (8.5 x 11 inches)");
   await page.route("**/images.worker.js", (route) =>
     route.fulfill({
       contentType: "text/javascript",
@@ -142,7 +146,9 @@ test("cancellation, preview/worker/download failures and guarded navigation reta
   );
   await page.getByRole("button", { name: "Convert to PDF", exact: true }).click();
   await expect(page.getByRole("button", { name: "Rotate picture.png left" })).toBeDisabled();
-  await expect(page.getByRole("radio", { name: "One PDF per image" })).toBeDisabled();
+  await withToolSettings(page, () =>
+    expect(page.getByRole("radio", { name: "One PDF per image" })).toBeDisabled(),
+  );
   await expect(page.getByRole("button", { name: "Retry preview of picture.png" })).toBeDisabled();
   await page.getByRole("button", { name: "Cancel conversion" }).click();
   await expect(page.getByRole("status", { name: "Image conversion status" })).toContainText(
@@ -150,7 +156,9 @@ test("cancellation, preview/worker/download failures and guarded navigation reta
   );
   await expect(page.getByRole("heading", { name: "Your images", exact: true })).toBeFocused();
   await expect(page.getByText(/270° additional rotation/)).toBeVisible();
-  await expect(page.getByRole("radio", { name: "Letter (8.5 x 11 inches)" })).toBeChecked();
+  await withToolSettings(page, () =>
+    expect(page.getByRole("radio", { name: "Letter (8.5 x 11 inches)" })).toBeChecked(),
+  );
   await page.unroute("**/images.worker.js");
   await page.route("**/images.worker.js", (route) => route.abort());
   await page.getByRole("button", { name: "Convert to PDF", exact: true }).click();
@@ -173,10 +181,12 @@ test("cancellation, preview/worker/download failures and guarded navigation reta
   await page.getByRole("button", { name: "Download PDF", exact: true }).click();
   await expect(page.getByRole("alert")).toContainText("still available");
   await downloadImagePdf(page);
-  await page.getByRole("link", { name: "Merge PDFs", exact: true }).click();
+  await navigateToTool(page, "Merge PDFs");
   await page.getByRole("button", { name: "Discard", exact: true }).click();
   await expect(page).toHaveURL(/#\/merge$/);
-  await expect(page.getByRole("listitem")).toHaveCount(0);
-  await page.getByRole("link", { name: "Images to PDF", exact: true }).click();
-  await expect(page.getByRole("radio", { name: "A4 (210 x 297 mm)", exact: true })).toBeChecked();
+  await expect(page.locator("[data-workspace-content]").getByRole("listitem")).toHaveCount(0);
+  await navigateToTool(page, "Images to PDF");
+  await withToolSettings(page, () =>
+    expect(page.getByRole("radio", { name: "A4 (210 x 297 mm)", exact: true })).toBeChecked(),
+  );
 });

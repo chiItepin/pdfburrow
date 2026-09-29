@@ -19,7 +19,7 @@ export const readRoute = (hash: string): ToolRoute => {
 };
 
 export const routeTitles: Record<ToolRoute, string> = {
-  home: "PDF tools that run on your device. No uploads.",
+  home: "Home",
   merge: "Merge PDFs",
   split: "Split / Extract",
   images: "Images to PDF",

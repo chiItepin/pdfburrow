@@ -45,6 +45,14 @@ initialization for stable ownership, not a memoization cache.
 
 ## Shared workspace
 
+- The responsive shadcn sidebar contains Home and the three document tools; on
+  phones it opens as a keyboard-accessible drawer. The page header uses breadcrumbs,
+  with a compact ellipsis menu on narrow screens. Every navigation entry preserves
+  the same discard confirmation and processing lock.
+- The sidebar's **Dark mode** switch selects light or dark appearance throughout
+  the workspace. Dark is the default; only this preference is saved in local
+  storage, never documents. If preference storage is unavailable, the switch still
+  works for the visit and reports that the choice could not be saved.
 - Choose a tool before adding files. Home is `#/`; the implemented merge tool is
   `#/merge`; split/extraction is `#/split`; JPEG/PNG conversion is `#/images`.
   Unknown tool addresses show a recovery
@@ -54,8 +62,11 @@ initialization for stable ownership, not a memoization cache.
   even after a download was requested. Keep working is the safe default.
   Processing/cancellation locks navigation until the worker has stopped.
   Bookmarks and refresh select a tool but never restore a draft.
-- Inputs come before settings in reading/tab order. Desktop places settings beside
-  the input list; small screens stack them. Dragging is optional; keyboard ordering,
+- Tool settings live in a dedicated right sidebar, toggled from the right end of
+  the breadcrumb header. Wide screens dock the independently scrolling panel;
+  narrower screens open it as a drawer. Closing it preserves settings. Generation,
+  cancellation, preservation acknowledgement, and downloads stay with the documents.
+- Inputs come before settings in reading/tab order. Dragging is optional; keyboard ordering,
   removal, focus restoration, and status announcements remain available.
 - `apps/web/src/workspace` owns the file registry, required PDF/image validation queue,
   windowed inputs, preview cache, document job lifecycle, and output/download
