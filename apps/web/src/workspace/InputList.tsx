@@ -1,7 +1,8 @@
 import { Button } from "@repo/core-ui";
 import type { DragEvent } from "react";
 import { InputCard } from "./InputCard";
-import type { usePdfDraft } from "./usePdfDraft";
+import type { ImageRotation } from "@repo/pdf-engine";
+import type { useInputDraft } from "./useInputDraft";
 import type { MoveDirection, Thumbnail } from "./types";
 
 export const InputList = ({
@@ -12,14 +13,18 @@ export const InputList = ({
   retryPreview,
   moveFile,
   removeFile,
+  rotations,
+  rotateFile,
 }: {
-  draft: ReturnType<typeof usePdfDraft>;
+  draft: ReturnType<typeof useInputDraft>;
   editable: boolean;
   previews: ReadonlyMap<string, Thumbnail>;
   previewsPaused: boolean;
   retryPreview: (id: string) => void;
   moveFile: (id: string, target: number, direction?: MoveDirection) => void;
   removeFile: (id: string) => void;
+  rotations?: ReadonlyMap<string, ImageRotation>;
+  rotateFile?: (id: string, direction: "left" | "right") => void;
 }) => {
   const canDrop = (event: DragEvent<HTMLButtonElement>) =>
     editable && event.dataTransfer.types.includes("application/x-pdfburrow");
@@ -42,7 +47,11 @@ export const InputList = ({
 
   return (
     <>
-      <ol className="space-y-3" start={draft.firstVisibleIndex + 1} aria-label="PDF input order">
+      <ol
+        className="space-y-3"
+        start={draft.firstVisibleIndex + 1}
+        aria-label={rotateFile ? "Image input order" : "PDF input order"}
+      >
         {draft.visible.map((input, offset) => (
           <InputCard
             key={input.id}
@@ -57,13 +66,15 @@ export const InputList = ({
             onRemove={removeFile}
             onRetry={draft.retryValidation}
             onRetryPreview={retryPreview}
+            rotation={rotations?.get(input.id)}
+            onRotate={rotateFile}
           />
         ))}
       </ol>
       {draft.maxWindow > 0 && (
         <>
           <p className="mt-4 text-sm text-muted-foreground">
-            Drop a PDF on Previous files or Next files to move it to that view's nearest position.
+            Drop a file on Previous files or Next files to move it to that view's nearest position.
             Repeat to move farther, or use Move up/down.
           </p>
           <nav aria-label="Input list pages" className="mt-4 flex flex-wrap items-center gap-3">

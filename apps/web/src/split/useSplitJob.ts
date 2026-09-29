@@ -1,8 +1,8 @@
 import type { SplitSelection } from "@repo/pdf-engine";
-import type { usePdfWorkspace } from "../workspace/usePdfWorkspace";
+import type { useDocumentWorkspace } from "../workspace/useDocumentWorkspace";
 
 export const useSplitJob = (
-  workspace: ReturnType<typeof usePdfWorkspace>,
+  workspace: ReturnType<typeof useDocumentWorkspace>,
   selection: SplitSelection,
   valid: boolean,
 ) => {

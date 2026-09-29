@@ -45,7 +45,7 @@ test("real merge downloads ordered pages and works locally without document requ
     "rgb(32, 91, 73)",
   );
   await expect(page.getByRole("main")).toHaveCSS("max-width", "1152px");
-  await page.getByRole("link", { name: "Images to PDF (not available)", exact: true }).focus();
+  await page.getByRole("link", { name: "Images to PDF", exact: true }).focus();
   // macOS WebKit uses Option-Tab to include buttons in native keyboard navigation.
   await page.keyboard.press(
     browserName === "webkit" && process.platform === "darwin" ? "Alt+Tab" : "Tab",

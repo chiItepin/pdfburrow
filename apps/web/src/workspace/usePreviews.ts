@@ -65,7 +65,7 @@ export const usePreviews = (
             thumbnail = {
               state: "error",
               message:
-                "Retry the preview or continue processing. PDF validation is independent of previews.",
+                "Retry the preview or continue processing. Required validation is independent of previews.",
             };
           }
           cache.current.set(id, thumbnail);

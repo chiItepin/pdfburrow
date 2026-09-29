@@ -1,0 +1,117 @@
+name: Tagged Pages release
+run-name: Pages release for ${{ github.ref_name }}
+
+on:
+  push:
+    tags:
+      - "**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-release
+  queue: max
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: ${{ github.event.created && !github.event.deleted }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      actions: read
+      contents: read
+      pages: read
+    outputs:
+      commit: ${{ steps.release.outputs.commit }}
+    steps:
+      - name: Require the owner approval gate
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          if ! gh api "repos/$GH_REPO/environments/github-pages" \
+            | jq --exit-status 'any(.protection_rules[];
+                .type == "required_reviewers" and
+                (.reviewers | length == 1 and
+                  .[0].type == "User" and .[0].reviewer.login == "chiItepin"))'; then
+            echo "::error::Restore the github-pages environment with chiItepin as its required reviewer."
+            exit 1
+          fi
+
+      - name: Check out the tagged revision
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "22.22.0"
+
+      - name: Read Pages configuration
+        id: pages
+        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
+
+      - name: Install the pinned workspace
+        run: npm run setup
+
+      - name: Check and build the release candidate
+        env:
+          PDFBURROW_BASE_PATH: ${{ steps.pages.outputs.base_path }}/
+        run: npm run check
+
+      - name: Install browser test runtimes
+        run: apps/web/node_modules/.bin/playwright install --with-deps chromium firefox webkit
+
+      - name: Verify browser workflows and real outputs
+        env:
+          PDFBURROW_BASE_PATH: ${{ steps.pages.outputs.base_path }}/
+        run: npm run test:browser -- --workers=2
+
+      - name: Record artifact provenance
+        id: release
+        run: node apps/web/scripts/releaseMetadata.mjs
+
+      - name: Upload the verified static artifact
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+        with:
+          path: apps/web/dist
+          retention-days: 30
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy the approved artifact
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
+
+      - name: Verify the published revision
+        env:
+          SITE_URL: ${{ steps.deployment.outputs.page_url }}
+          EXPECTED_TAG: ${{ github.ref_name }}
+          EXPECTED_COMMIT: ${{ needs.build.outputs.commit }}
+        run: |
+          for attempt in {1..12}; do
+            if curl --fail --silent --show-error --max-time 15 \
+              "${SITE_URL%/}/release.json?run=${GITHUB_RUN_ID}" -o release.json \
+              && jq --exit-status --arg tag "$EXPECTED_TAG" --arg commit "$EXPECTED_COMMIT" \
+                '.tag == $tag and .commit == $commit' release.json > /dev/null; then
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::Pages did not serve the approved tag and commit. Investigate before declaring this release complete."
+          exit 1

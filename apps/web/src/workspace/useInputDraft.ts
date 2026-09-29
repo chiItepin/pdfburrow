@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { useFocusAfterCommit } from "@repo/core-ui";
 import { createFileRegistry } from "./fileRegistry";
-import type { PdfInputRow, MoveDirection } from "./types";
+import type { InputRow, MoveDirection } from "./types";
 import { useValidation } from "./useValidation";
 
 const visibleFileCount = 8;
 
-export const usePdfDraft = (announce: (message: string) => void) => {
+export const useInputDraft = (announce: (message: string) => void) => {
   const [files] = useState(createFileRegistry);
-  const [inputs, setInputs] = useState<PdfInputRow[]>([]);
+  const [inputs, setInputs] = useState<InputRow[]>([]);
+  const [revision, setRevision] = useState(0);
   const [acknowledged, setAcknowledged] = useState(false);
   const [windowIndex, setWindowIndex] = useState(0);
   const addButton = useRef<HTMLButtonElement>(null);
@@ -26,18 +27,20 @@ export const usePdfDraft = (announce: (message: string) => void) => {
 
   useEffect(() => () => files.releaseAll(), [files]);
 
-  const addFiles = (added: FileList | readonly File[]) => {
-    const rows = Array.from(added, (file): PdfInputRow => {
+  const addFiles = (added: FileList | readonly File[], kind: InputRow["kind"] = "pdf") => {
+    const rows = Array.from(added, (file): InputRow => {
       const id = crypto.randomUUID();
       files.retain(id, file);
-      return { id, name: file.name, size: file.size, status: "pending" };
+      return { id, name: file.name, size: file.size, kind, status: "pending" };
     });
     if (!rows.length) {
       return;
     }
     setInputs((current) => [...current, ...rows]);
     setAcknowledged(false);
-    announce(`${rows.length} file${rows.length === 1 ? "" : "s"} added. Checking PDFs locally.`);
+    announce(
+      `${rows.length} file${rows.length === 1 ? "" : "s"} added. Checking ${kind === "image" ? "images" : "PDFs"} locally.`,
+    );
   };
 
   const removeFile = (id: string) => {
@@ -87,10 +90,12 @@ export const usePdfDraft = (announce: (message: string) => void) => {
     setInputs([]);
     setAcknowledged(false);
     setWindowIndex(0);
+    setRevision((current) => current + 1);
   };
 
   return {
     inputs,
+    revision,
     files,
     acknowledged,
     setAcknowledged,

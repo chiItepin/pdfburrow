@@ -1,5 +1,5 @@
 import type { PdfOutput } from "@repo/pdf-engine";
-import { safeFilenameStem } from "@repo/pdf-engine/filename";
+import { safeFilenameStem, uniquePdfFilenames } from "@repo/pdf-engine/filename";
 
 interface StoredOutput extends PdfOutput {
   url?: string;
@@ -46,19 +46,12 @@ export const createOutputStore = () => {
       if (!values.length) {
         throw new Error("The operation returned no PDFs. Your inputs are retained; retry.");
       }
-      const names = new Set<string>();
-      const next = values.map((value): StoredOutput => {
+      const names = uniquePdfFilenames(values.map((value) => value.suggestedFilename));
+      const next = values.map((value, index): StoredOutput => {
         if (!value.blob.size) {
           throw new Error("The operation returned an empty PDF. Your inputs are retained; retry.");
         }
-        const stem = safeFilenameStem(value.suggestedFilename, ".pdf");
-        let filename = `${stem}.pdf`;
-        let suffix = 2;
-        while (names.has(filename.toLowerCase())) {
-          filename = `${stem}-${suffix++}.pdf`;
-        }
-        names.add(filename.toLowerCase());
-        return { blob: value.blob, suggestedFilename: filename, requested: false };
+        return { blob: value.blob, suggestedFilename: names[index]!, requested: false };
       });
       clear();
       outputs = next;
