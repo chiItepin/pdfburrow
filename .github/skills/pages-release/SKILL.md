@@ -1,20 +1,24 @@
 ---
 name: pages-release
-description: Guide an explicitly authorized PDFBurrow Pages release or resume an existing candidate.
-disable-model-invocation: true
+description: Guide Pages releases when the user explicitly asks to release PDFBurrow, resume a candidate, or inspect a completed release.
 ---
 
 # Pages release
 
 Invoke `/pages-release` with the intended tag and candidate commit, or the existing
-tag/run to resume. Invocation alone is not authorization to push or publish.
+tag/run to resume or inspect. Act only on an explicit user request; loading or
+invoking this skill is not authorization to push or publish.
 
 1. **Load the release contract.** Read [RELEASING.md](../../../RELEASING.md),
    including the current release ticket and its linked decisions, before acting.
    It owns readiness, authorization, recovery, and publication criteria; this
    skill is only a guide through that procedure. Missing evidence blocks release.
-2. **Establish the candidate.** Resolve the intended revision to its full commit
-   SHA. For a new tag, obtain the owner's explicit approval of that exact commit,
+2. **Identify the release.** Resolve the intended revision to its full commit
+   SHA. For a previously published release, follow **Completed release lookup**
+   in the guide and return without entering steps 3-6. This read-only path uses
+   historical evidence, not today's readiness or live-site state, to establish
+   past completion; missing evidence means unverified history, not a retry.
+   For a new tag, obtain the owner's explicit approval of that exact commit,
    tag, and tag push. Ask for missing inputs or approval rather than assuming `HEAD`, a tag
    name, or consent from passing checks. Qualify the candidate against the release
    gates, retaining the exact-artifact evidence required before publication.
@@ -25,9 +29,9 @@ tag/run to resume. Invocation alone is not authorization to push or publish.
    errors or missing protection as blockers; do not change settings.
    Validate the literal tag name using the release guide. Inspect local and remote tags and existing Pages
    runs before creating anything. If the tag or its run already exists, preserve
-   it and check its peeled commit and provenance. For an already-published release,
-   verify and report it rather than rerunning it; for an incomplete candidate,
-   use **Recovery** in the guide.
+   it and check its peeled commit and provenance. Route a completed release to
+   **Completed release lookup** and return; for an incomplete candidate, use
+   **Recovery** in the guide.
    Conflicting provenance blocks release. A missing trigger or another unfinished
    candidate blocks a new release except for the guide's explicitly authorized
    **Missing tag-push run** recovery. Follow that branch's absence checks and
@@ -58,7 +62,8 @@ tag/run to resume. Invocation alone is not authorization to push or publish.
    For missing-trigger recovery, first apply the guide's late-run checks and
    owner rejection/cancellation gate for every superseded tag.
    While waiting, report **incomplete: awaiting owner approval**.
-6. **Verify and record publication.** Follow the guide's publication checks:
+6. **Verify and record current publication.** For a new or resumed deployment,
+   follow the guide's publication checks:
    deployment and published-revision check succeed, live `release.json` matches
    the approved tag/commit, and the documented site checks pass. Record the tag,
    full commit, run URL, site URL, and evidence in the release record and report

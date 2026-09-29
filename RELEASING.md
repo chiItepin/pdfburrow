@@ -7,7 +7,8 @@ Creating a tag starts delivery; it does **not** approve publication. The owner
 approves each candidate through the protected `github-pages` environment.
 
 For guided execution, invoke the repository's [pages-release skill](.github/skills/pages-release/SKILL.md)
-with `/pages-release` and the intended tag/commit, or an existing tag/run to resume.
+with `/pages-release` and the intended tag/commit, or an existing tag/run to resume
+or inspect.
 
 [Tagged Pages release](.github/workflows/pages.yml) owns the triggers, pinned
 tools, checks, artifact path, permissions, and queue configuration. It runs for
@@ -58,7 +59,26 @@ Each run builds the triggering revision once and deploys that same artifact.
    succeed. The live `release.json` must identify the approved tag and commit.
    Check the tool routes, refresh, local workers, and disclosure links at the
    deployment URL. Record the run URL, tag, commit, and site URL in the release
-   record. Only then is the tag's release complete.
+   record. Only then is the tag's release complete. Later read-only lookups use
+   the historical verification below, not a new publication gate.
+
+## Completed release lookup
+
+Inspecting a previously published release is read-only. Match the exact tag and
+full commit to its recorded successful deployment and published-revision check,
+artifact `release.json` provenance, and release evidence, including the site
+checks recorded at publication. Retained evidence can establish completion after
+the downloadable artifact expires; expiry alone does not undo a verified release.
+If that evidence is missing or inconsistent, report **historical completion
+unverified** with the gap, rather than claiming success or rerunning deployment.
+
+Report the historical tag, commit, run URL, and site URL without implying that
+version remains live. A different current `release.json` does not make a verified
+past release incomplete. Only claim **currently live** after checking the current
+deployment and live tag/commit; if those checks are unavailable, report current
+live status as unverified. Return without pushing tags, rerunning workflows, or
+requesting deployment approval. Publishing an older revision again is a separate
+owner-authorized rollback, not a historical lookup.
 
 ## Recovery
 
