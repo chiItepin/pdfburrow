@@ -11,22 +11,28 @@
       <a class="text-primary underline" href="%BASE_PATH%#/">PDFBurrow</a>
       <h1 class="mt-8 text-3xl font-semibold">Licenses and notices</h1>
       <p class="mt-5">
-        This development build is not a licensed release artifact. The owner selected MIT for
-        PDFBurrow, attributed to PDFBurrow contributors, but the project license and complete
-        distributed third-party notices are still release prerequisites. A public repository alone
-        does not grant an open-source license.
+        PDFBurrow is available under the
+        <a class="text-primary underline" href="%BASE_PATH%LICENSE.txt">MIT license</a>, copyright
+        2026 PDFBurrow contributors. Third-party code retains its own licenses.
       </p>
       <h2 class="mt-8 text-xl font-semibold">Third-party software</h2>
       <p class="mt-3">
-        The PDF engine uses pdf-lib 1.17.1 (MIT), PDF.js 5.7.284 (Apache-2.0), and fflate 0.8.2
-        (MIT). The interface uses React, shadcn/ui with Radix primitives, and dnd-kit React 0.5.0
-        (MIT) for page ordering. This summary is not a complete dependency or license audit and does
-        not replace required license texts or notices.
+        Each build includes
+        <a class="text-primary underline" href="%BASE_PATH%third-party-notices.txt"
+          >third-party license texts and notices</a
+        >
+        and a
+        <a class="text-primary underline" href="%BASE_PATH%license-inventory.json"
+          >versioned license inventory</a
+        >
+        for bundled JavaScript, generated CSS, copied components, and PDF preview decoders. These
+        files are generated from the build and installed packages, not a manually maintained list of
+        direct dependencies.
       </p>
       <p class="mt-3">
-        Upstream license files remain in the installed packages, and shadcn attribution is retained
-        in the source tree. The release process must audit all bundled code and assets and include
-        applicable licenses, copyrights, and notices in the distributed artifact before publication.
+        Packages removed from the final JavaScript by tree shaking are not distributed and are
+        excluded from this inventory. No web fonts are shipped; the interface uses your system
+        fonts.
       </p>
       <p class="mt-3">
         PDF.js preview decoders are distributed locally with their upstream license texts:

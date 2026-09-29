@@ -76,6 +76,11 @@ jobs:
         id: release
         run: node apps/web/scripts/releaseMetadata.mjs
 
+      - name: Record exact-artifact privacy evidence and remaining gates
+        env:
+          PDFBURROW_BASE_PATH: ${{ steps.pages.outputs.base_path }}/
+        run: npm run test:privacy
+
       - name: Upload the verified static artifact
         uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
         with:

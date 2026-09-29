@@ -3,6 +3,7 @@ import { toast } from "@repo/core-ui";
 import type { BundleLimits, BundleProgress, PdfOutput } from "@repo/pdf-engine";
 import { bundleFilename, createOutputStore } from "./outputStore";
 import type { OutputSummary } from "./types";
+import { bundleLimits } from "./resourcePolicy";
 
 type Packaging =
   | { phase: "idle" | "cancelling" }
@@ -58,7 +59,7 @@ export const useDownloads = (announce: (message: string) => void) => {
       );
     }
   };
-  const prepareBundle = async (filename: string, limits?: BundleLimits) => {
+  const prepareBundle = async (filename: string, limits: BundleLimits = bundleLimits) => {
     if (controller.current) {
       return;
     }

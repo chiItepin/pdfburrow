@@ -2,9 +2,10 @@ import type { PDFDocument, PDFObject } from "pdf-lib";
 import { PDFArray, PDFDict, PDFInvalidObject, PDFName, PDFRef, PDFStream } from "pdf-lib";
 import { PdfError } from "./pdfError.ts";
 import { inspectPageTree } from "./inspectPageTree.ts";
-import type { PdfInfo } from "./types";
+import type { PdfInfo, PdfLimits } from "./types";
+import { enforceLimit } from "./resourceLimits.ts";
 
-export const inspectDocument = (document: PDFDocument): PdfInfo => {
+export const inspectDocument = (document: PDFDocument, limits: PdfLimits = {}): PdfInfo => {
   if (document.context.trailerInfo.Encrypt) {
     throw new PdfError(
       "unsupported",
@@ -12,6 +13,12 @@ export const inspectDocument = (document: PDFDocument): PdfInfo => {
     );
   }
   const pageCount = inspectPageTree(document);
+  enforceLimit(
+    pageCount,
+    limits.sourcePages,
+    "Source page count",
+    "Prepare a source with fewer pages.",
+  );
   const warnings = new Set<string>();
   const pending: PDFObject[] = document.context
     .enumerateIndirectObjects()
@@ -117,6 +124,12 @@ export const inspectDocument = (document: PDFDocument): PdfInfo => {
       page.getTrimBox(),
       page.getArtBox(),
     ]) {
+      enforceLimit(
+        Math.max(box.width, box.height),
+        limits.pageDimension,
+        "PDF page dimension in points",
+        "Prepare a source with smaller page dimensions.",
+      );
       if (
         ![box.x, box.y, box.width, box.height].every(Number.isFinite) ||
         box.width <= 0 ||

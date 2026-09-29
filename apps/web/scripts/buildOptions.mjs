@@ -9,7 +9,8 @@ const requireEngine = createRequire(
 export const pdfJsDirectory = dirname(requireEngine.resolve("pdfjs-dist/package.json"));
 
 export const appDirectory = fileURLToPath(new URL("../", import.meta.url));
-const isDevelopment = process.argv[1] === fileURLToPath(new URL("./dev.mjs", import.meta.url));
+export const isDevelopment =
+  process.argv[1] === fileURLToPath(new URL("./dev.mjs", import.meta.url));
 export const outputDirectory = fileURLToPath(
   new URL(isDevelopment ? "../.dev" : "../dist", import.meta.url),
 );

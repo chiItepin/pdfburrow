@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { planSplit } from "@repo/pdf-engine/selection";
 import type { SplitPlan, SplitSelection } from "@repo/pdf-engine";
+import { pdfLimits } from "../workspace/resourcePolicy";
 
 export interface RangeRow {
   readonly id: string;
@@ -33,7 +34,7 @@ export const useSplitSettings = (name: string, pageCount: number) => {
   let error = "";
   if (pageCount > 0) {
     try {
-      plan = planSplit(name, pageCount, selection);
+      plan = planSplit(name, pageCount, selection, pdfLimits);
     } catch (failure) {
       error = failure instanceof Error ? failure.message : "Review the page selection.";
     }
