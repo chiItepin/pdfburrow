@@ -1,9 +1,11 @@
 import { pageMetadata, structuredData } from "./pageMetadata";
+import { getPage } from "./pageRegistry";
 import type { ToolRoute } from "./routes";
 import { siteBasePath, siteOrigin } from "./site";
 
 export const updatePageMetadata = (route: ToolRoute) => {
-  const { title, description, url, robots } = pageMetadata(route, siteBasePath, siteOrigin);
+  const page = getPage(route);
+  const { title, description, url, robots } = pageMetadata(page, siteBasePath, siteOrigin);
   document.title = title;
   for (const [selector, content] of [
     ['meta[name="description"]', description],
@@ -19,6 +21,6 @@ export const updatePageMetadata = (route: ToolRoute) => {
   document.querySelector('link[rel="canonical"]')?.setAttribute("href", url);
   const schema = document.getElementById("page-schema");
   if (schema) {
-    schema.textContent = JSON.stringify(structuredData(route, siteBasePath, siteOrigin));
+    schema.textContent = JSON.stringify(structuredData(page, siteBasePath, siteOrigin));
   }
 };

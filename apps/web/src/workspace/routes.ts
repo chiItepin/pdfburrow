@@ -1,7 +1,11 @@
-export type ToolRoute = "home" | "merge" | "split" | "images" | "not-found";
+import { getPage, pageFilename, pagePath, pageRegistry } from "./pageRegistry.ts";
+import type { ReactPage } from "./pageRegistry.ts";
 
-export const routePath = (route: ToolRoute, basePath: string) =>
-  `${basePath}${route === "home" ? "" : route === "not-found" ? "404.html" : `${route}/`}`;
+export type ToolRoute = ReactPage["route"];
+
+export const routePath = (route: ToolRoute, basePath: string) => pagePath(getPage(route), basePath);
+
+const toolPages = pageRegistry.filter((page) => page.source === "react");
 
 export const readRoute = (
   { pathname, hash }: { readonly pathname: string; readonly hash: string },
@@ -9,26 +13,16 @@ export const readRoute = (
 ): ToolRoute => {
   // Old bookmarks and manually edited hashes still pass through the discard guard.
   if (hash && hash !== "#") {
-    switch (hash) {
-      case "#/":
-        return "home";
-      case "#/merge":
-        return "merge";
-      case "#/split":
-        return "split";
-      case "#/images":
-        return "images";
-      default:
-        return "not-found";
-    }
+    return toolPages.find((page) => page.legacyHash === hash)?.route ?? "not-found";
   }
-  if (pathname === basePath || pathname === `${basePath}index.html`) {
-    return "home";
-  }
-  for (const route of ["merge", "split", "images"] as const) {
-    const path = routePath(route, basePath);
-    if (pathname === path || pathname === path.slice(0, -1) || pathname === `${path}index.html`) {
-      return route;
+  for (const page of toolPages) {
+    const path = pagePath(page, basePath);
+    if (
+      pathname === path ||
+      pathname === `${basePath}${pageFilename(page)}` ||
+      (page.path.endsWith("/") && pathname === path.slice(0, -1))
+    ) {
+      return page.route;
     }
   }
   return "not-found";

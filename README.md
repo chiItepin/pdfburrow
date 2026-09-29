@@ -394,6 +394,13 @@ structured data, without invented ratings or reviews. Unknown tools are marked
 never hash fragments or error pages. Client navigation keeps metadata aligned with
 the accepted route, including when a discard confirmation is cancelled.
 
+`apps/web/src/workspace/pageRegistry.ts` is the typed source of truth for page
+paths, metadata, React or HTML-template sources, legacy bookmarks, structured-data
+types, and indexing policy. Routing, prerendering, canonical URLs, and sitemap
+generation consume it. Add a page definition there and supply its React UI or
+public HTML template; the build does not maintain a second route list or
+special-case disclosure names. Only React pages are passed to the React renderer.
+
 `PDFBURROW_SITE_ORIGIN` defaults to `https://chiitepin.github.io` and must be an
 HTTPS origin with no trailing slash, path, credentials, query, or fragment.
 Together with `PDFBURROW_BASE_PATH`, it controls canonical and sitemap URLs.

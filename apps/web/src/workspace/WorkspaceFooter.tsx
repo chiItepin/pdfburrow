@@ -1,4 +1,5 @@
 import { siteBasePath } from "./site";
+import { getPage, pagePath } from "./pageRegistry";
 
 export const WorkspaceFooter = () => (
   <footer className="border-t pt-6 text-sm leading-relaxed text-muted-foreground">
@@ -14,10 +15,10 @@ export const WorkspaceFooter = () => (
       <a href="https://github.com/chiItepin/pdfburrow" target="_blank" rel="noreferrer">
         Source code
       </a>
-      <a href={`${siteBasePath}privacy.html`} target="_blank" rel="noreferrer">
+      <a href={pagePath(getPage("privacy"), siteBasePath)} target="_blank" rel="noreferrer">
         Privacy
       </a>
-      <a href={`${siteBasePath}notices.html`} target="_blank" rel="noreferrer">
+      <a href={pagePath(getPage("notices"), siteBasePath)} target="_blank" rel="noreferrer">
         Licenses/notices
       </a>
     </div>

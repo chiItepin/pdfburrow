@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { appDirectory, outputDirectory } from "./buildOptions.mjs";
-import { basePath, siteDefines } from "./siteConfig.mjs";
+import { basePath, siteDefines, siteOrigin } from "./siteConfig.mjs";
 
 const require = createRequire(import.meta.url);
 /** @param {string} value */
@@ -14,7 +14,7 @@ const escapeHtml = (value) =>
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;");
 
-/** @param {{title: string, description: string, url: string, robots: string}} metadata @param {unknown} schema */
+/** @param {ReturnType<import("../src/workspace/pageMetadata.ts").pageMetadata>} metadata @param {unknown} schema */
 const renderMetadata = ({ title, description, url, robots }, schema) => `
     <title>${escapeHtml(title)}</title>
     <meta name="description" content="${escapeHtml(description)}" />
@@ -31,7 +31,11 @@ const renderMetadata = ({ title, description, url, robots }, schema) => `
     <meta name="twitter:description" content="${escapeHtml(description)}" />
     <script id="page-schema" type="application/ld+json">${JSON.stringify(schema).replaceAll("<", "\\u003c")}</script>`;
 
-/** @typedef {"home" | "merge" | "split" | "images" | "not-found" | "privacy" | "notices"} PageRoute */
+/**
+ * @typedef {Pick<typeof import("../src/workspace/pageRegistry.ts"), "pageRegistry" | "pageFilename">
+ * & typeof import("../src/workspace/pageMetadata.ts")
+ * & {renderPage: (page: import("../src/workspace/pageRegistry.ts").ReactPage) => string}} PageRenderer
+ */
 
 export const writeStaticPages = async () => {
   await mkdir(outputDirectory, { recursive: true });
@@ -60,36 +64,28 @@ export const writeStaticPages = async () => {
       define: { ...siteDefines, "process.env.NODE_ENV": '"production"' },
       logLevel: "warning",
     });
-    /** @type {(route: PageRoute) => {content: string, metadata: {title: string, description: string, url: string, robots: string}, schema: unknown}} */
-    const renderPage = require(renderer).renderPage;
+    /** @type {PageRenderer} */
+    const { pageRegistry, pageFilename, pageMetadata, structuredData, renderPage } = require(
+      renderer,
+    );
     const template = await readFile(new URL("../index.html", import.meta.url), "utf8");
-    /** @type {readonly PageRoute[]} */
-    const routes = ["home", "merge", "split", "images", "privacy", "notices", "not-found"];
     const urls = [];
-    for (const route of routes) {
-      const disclosure = route === "privacy" || route === "notices";
-      const page = disclosure
-        ? await readFile(new URL(`../public/${route}.html`, import.meta.url), "utf8")
-        : template;
-      const { content, metadata, schema } = renderPage(route);
-      const filename =
-        route === "home"
-          ? "index.html"
-          : route === "not-found"
-            ? "404.html"
-            : disclosure
-              ? `${route}.html`
-              : `${route}/index.html`;
-      const destination = join(outputDirectory, filename);
+    for (const page of pageRegistry) {
+      const html =
+        page.source === "html"
+          ? await readFile(new URL(`../public/${page.template}`, import.meta.url), "utf8")
+          : template.replace("%PAGE_CONTENT%", () => renderPage(page));
+      const metadata = pageMetadata(page, basePath, siteOrigin);
+      const schema = structuredData(page, basePath, siteOrigin);
+      const destination = join(outputDirectory, pageFilename(page));
       await mkdir(dirname(destination), { recursive: true });
       await writeFile(
         destination,
-        page
+        html
           .replaceAll("%BASE_PATH%", basePath)
-          .replace("%PAGE_METADATA%", () => renderMetadata(metadata, schema))
-          .replace("%PAGE_CONTENT%", () => content),
+          .replace("%PAGE_METADATA%", () => renderMetadata(metadata, schema)),
       );
-      if (route !== "not-found") {
+      if (page.indexable) {
         urls.push(metadata.url);
       }
     }
@@ -99,7 +95,7 @@ export const writeStaticPages = async () => {
     );
     await writeFile(
       join(outputDirectory, "robots.txt"),
-      `User-agent: *\nAllow: /\n\nSitemap: ${new URL("sitemap.xml", urls[0]).href}\n`,
+      `User-agent: *\nAllow: /\n\nSitemap: ${siteOrigin}${basePath}sitemap.xml\n`,
     );
   } finally {
     delete require.cache[renderer];
