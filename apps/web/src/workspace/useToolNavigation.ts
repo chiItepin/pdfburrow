@@ -1,14 +1,16 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createNavigation } from "./navigation";
 import type { NavigationGuard } from "./navigation";
-import { readRoute, routeTitles } from "./routes";
+import { readRoute } from "./routes";
 import type { ToolRoute } from "./routes";
+import { siteBasePath } from "./site";
+import { updatePageMetadata } from "./updatePageMetadata";
 
-export const useToolNavigation = (guard: NavigationGuard) => {
+export const useToolNavigation = (guard: NavigationGuard, initialRoute?: ToolRoute) => {
   const latest = useRef(guard);
   const controller = useRef<ReturnType<typeof createNavigation> | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
-  const [route, setRoute] = useState(() => readRoute(location.hash));
+  const [route, setRoute] = useState(() => initialRoute ?? readRoute(location, siteBasePath));
   const [confirmation, setConfirmation] = useState(false);
   const [notice, setNotice] = useState("");
   useLayoutEffect(() => {
@@ -34,7 +36,7 @@ export const useToolNavigation = (guard: NavigationGuard) => {
     };
   }, []);
   useEffect(() => {
-    document.title = `${route === "home" ? "Local PDF tools" : routeTitles[route]} - PDFBurrow`;
+    updatePageMetadata(route);
   }, [route]);
   return {
     route,

@@ -1,6 +1,7 @@
 import { Button } from "@repo/core-ui";
-import { routeHash } from "./routes";
+import { routePath } from "./routes";
 import type { ToolRoute } from "./routes";
+import { siteBasePath } from "./site";
 
 export const ToolNavigation = ({
   route,
@@ -22,11 +23,14 @@ export const ToolNavigation = ({
     ).map(([value, label]) => (
       <Button key={value} variant={route === value ? "secondary" : "ghost"} asChild>
         <a
-          href={routeHash(value)}
+          href={routePath(value, siteBasePath)}
           aria-current={route === value ? "page" : undefined}
           aria-disabled={locked}
           className="aria-disabled:opacity-50"
           onClick={(event) => {
+            if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+              return;
+            }
             event.preventDefault();
             onNavigate(value);
           }}

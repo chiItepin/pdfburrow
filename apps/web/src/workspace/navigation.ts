@@ -1,5 +1,6 @@
-import { readRoute, routeHash } from "./routes";
+import { readRoute, routePath } from "./routes";
 import type { ToolRoute } from "./routes";
+import { siteBasePath } from "./site";
 
 interface Entry {
   readonly owner: "pdfburrow";
@@ -35,13 +36,13 @@ export const createNavigation = (callbacks: NavigationCallbacks) => {
   let current: Entry = {
     owner: "pdfburrow",
     index: entryIndex(history.state) ?? 0,
-    route: readRoute(location.hash),
+    route: readRoute(location, siteBasePath),
   };
   let pending: { kind: "push" | "pop"; entry: Entry } | null = null;
   let restoring = false;
   let replay: Entry | null = null;
   const write = (entry: Entry, replace: boolean) => {
-    const url = `${location.pathname}${routeHash(entry.route)}`;
+    const url = routePath(entry.route, siteBasePath);
     if (replace) {
       history.replaceState(entry, "", url);
     } else {
@@ -80,10 +81,10 @@ export const createNavigation = (callbacks: NavigationCallbacks) => {
     const entry: Entry = {
       owner: "pdfburrow",
       index: knownIndex ?? current.index + 1,
-      route: readRoute(location.hash),
+      route: readRoute(location, siteBasePath),
     };
     // A manually edited hash creates a history entry without our state.
-    if (knownIndex === undefined) {
+    if (knownIndex === undefined || location.hash) {
       write(entry, true);
     }
     if (restoring) {

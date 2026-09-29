@@ -124,7 +124,7 @@ test("cancellation, worker/resource failures and optional preview errors preserv
   await page.evaluate(() => {
     location.hash = "#/merge";
   });
-  await expect(page).toHaveURL(/#\/split$/);
+  await expect(page).toHaveURL(/\/split\/$/);
   await page.getByRole("button", { name: "Cancel generation" }).click();
   await expect(
     page.getByRole("region", { name: "Split / Extract settings" }).getByRole("status"),
@@ -274,7 +274,7 @@ test("unsupported sources stay visible and cannot be acknowledged away", async (
   await page.getByRole("button", { name: "Discard", exact: true }).click();
   await expect(page.getByRole("listitem")).toHaveCount(0);
   await page.goBack();
-  await expect(page).toHaveURL(/#\/split$/);
+  await expect(page).toHaveURL(/\/split\/$/);
   await addSplitSource(page, 1);
   await expect(page.getByRole("radio", { name: "Selected pages", exact: true })).toBeChecked();
   await expect(page.getByRole("checkbox", { name: "Page 1", exact: true })).not.toBeChecked();

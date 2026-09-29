@@ -8,14 +8,19 @@ import { ToolIntroduction } from "./workspace/ToolIntroduction";
 import { WorkspaceFooter } from "./workspace/WorkspaceFooter";
 import { useToolNavigation } from "./workspace/useToolNavigation";
 import { routeTitles } from "./workspace/routes";
+import type { ToolRoute } from "./workspace/routes";
+import { ToolGuide } from "./workspace/ToolGuide";
 
-export const App = () => {
+export const App = ({ initialRoute }: { initialRoute?: ToolRoute }) => {
   const workspace = useDocumentWorkspace();
-  const { route, heading, confirmation, notice, request, keep, discard } = useToolNavigation({
-    hasWork: workspace.draft.inputs.length > 0,
-    locked: workspace.execution.locked,
-    discard: workspace.discardForNavigation,
-  });
+  const { route, heading, confirmation, notice, request, keep, discard } = useToolNavigation(
+    {
+      hasWork: workspace.draft.inputs.length > 0,
+      locked: workspace.execution.locked,
+      discard: workspace.discardForNavigation,
+    },
+    initialRoute,
+  );
   return (
     <PageFrame className="max-w-6xl">
       <ToolNavigation route={route} locked={workspace.execution.locked} onNavigate={request} />
@@ -50,6 +55,7 @@ export const App = () => {
           onImages={() => request("images")}
         />
       )}
+      <ToolGuide route={route} />
       <WorkspaceFooter />
       <ConfirmDiscard
         open={confirmation}

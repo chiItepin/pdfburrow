@@ -13,9 +13,10 @@ export const useDocumentWorkspace = () => {
   const focus = useWorkspaceLifecycle(draft.inputs.length, execution.job.phase);
   const focusAfterCommit = useFocusAfterCommit();
   const capable =
-    typeof Worker !== "undefined" &&
-    typeof Blob.prototype.arrayBuffer === "function" &&
-    typeof crypto.randomUUID === "function";
+    typeof window === "undefined" ||
+    (typeof Worker !== "undefined" &&
+      typeof Blob.prototype.arrayBuffer === "function" &&
+      typeof crypto.randomUUID === "function");
 
   const addFiles = (files: FileList | readonly File[], kind: InputRow["kind"] = "pdf") => {
     if (!execution.editable || !capable) {

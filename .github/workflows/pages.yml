@@ -62,6 +62,7 @@ jobs:
       - name: Check and build the release candidate
         env:
           PDFBURROW_BASE_PATH: ${{ steps.pages.outputs.base_path }}/
+          PDFBURROW_SITE_ORIGIN: ${{ steps.pages.outputs.origin }}
         run: npm run check
 
       - name: Install browser test runtimes
@@ -70,6 +71,7 @@ jobs:
       - name: Verify browser workflows and real outputs
         env:
           PDFBURROW_BASE_PATH: ${{ steps.pages.outputs.base_path }}/
+          PDFBURROW_SITE_ORIGIN: ${{ steps.pages.outputs.origin }}
         run: npm run test:browser -- --workers=2
 
       - name: Record artifact provenance

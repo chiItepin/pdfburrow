@@ -22,7 +22,7 @@ npm run dev
 ```
 
 Open `http://127.0.0.1:5173/pdfburrow/` and choose **Merge PDFs**, or bookmark
-`http://127.0.0.1:5173/pdfburrow/#/merge`. Select **Add PDFs** or drop files, wait
+`http://127.0.0.1:5173/pdfburrow/merge/`. Select **Add PDFs** or drop files, wait
 for validation, arrange them with Move up/down or drag, acknowledge the
 preservation limitations, and select **Merge PDFs**. **Download PDF** appears
 after generation; downloads never start automatically.
@@ -45,10 +45,12 @@ initialization for stable ownership, not a memoization cache.
 
 ## Shared workspace
 
-- Choose a tool before adding files. Home is `#/`; the implemented merge tool is
-  `#/merge`; split/extraction is `#/split`; JPEG/PNG conversion is `#/images`.
+- Choose a tool before adding files. Under the configured base, Home is `/`;
+  merge is `merge/`; split/extraction is `split/`; JPEG/PNG conversion is `images/`.
+  Legacy `#/`, `#/merge`, `#/split`, and `#/images` bookmarks still work and are
+  normalized to the corresponding path without adding a history entry.
   Unknown tool addresses show a recovery
-  screen. Hashes and history state identify tools only, never documents or settings.
+  screen. URLs and history state identify tools only, never documents or settings.
 - There is one in-memory draft, not one draft per tool. Home, tool changes, and
   browser Back/Forward require confirmation before discarding nonempty work,
   even after a download was requested. Keep working is the safe default.
@@ -149,7 +151,7 @@ aggregate parsed-memory accounting, and scheduling calibration remain gates in
 
 ## Split / Extract behavior
 
-Open `#/split` and add exactly one source PDF. Multi-file drops are rejected, not
+Open `split/` under the configured base and add exactly one source PDF. Multi-file drops are rejected, not
 silently reduced to the first file. Required validation and preservation acknowledgement
 are the same as merge; unsupported inputs cannot be acknowledged into support.
 Remove the source or start over to choose another PDF.
@@ -200,7 +202,7 @@ splitting, compression, repair, encrypted-PDF support, or remote fallback is add
 
 ## Images to PDF behavior
 
-Open `#/images` and add static JPEG or PNG files. Content inspection and required
+Open `images/` under the configured base and add static JPEG or PNG files. Content inspection and required
 worker decoding determine support, not the extension or MIME label. Valid
 mislabeled images show a format-mismatch notice; unsupported content, corrupt or
 undecodable images, invalid dimensions, and animated PNGs remain visible and
@@ -298,7 +300,8 @@ npm run test:browser
 
 `check` runs Prettier verification, type/lint checks, unit and workspace contract
 tests, and a production build. Browser tests use separate production and
-development servers on ports 4173 and 4174.
+development servers on ports 4173 and 4174. Set `PDFBURROW_TEST_PORT` to use another
+port pair (the chosen port and the next port) when these are already occupied.
 
 Tests inspect real output counts/order, all page boxes/rotation, decoded
 text/vector streams, every-page render equivalence, keyboard/focus behavior,
@@ -355,9 +358,9 @@ The default base is `/pdfburrow/`. The production output is `apps/web/dist`.
 For a future custom-domain root:
 
 ```sh
-PDFBURROW_BASE_PATH=/ npm run build
-PDFBURROW_BASE_PATH=/ npm run test:browser
-PDFBURROW_BASE_PATH=/ npm run preview
+PDFBURROW_BASE_PATH=/ PDFBURROW_SITE_ORIGIN=https://your-domain.example npm run build
+PDFBURROW_BASE_PATH=/ PDFBURROW_SITE_ORIGIN=https://your-domain.example npm run test:browser
+PDFBURROW_BASE_PATH=/ PDFBURROW_SITE_ORIGIN=https://your-domain.example npm run preview
 ```
 
 Build and preview must use the same base; preview rejects a mismatch. A plain
@@ -367,13 +370,44 @@ and keep generation and preview capability entries separate and lazy.
 
 The local server serves only the generated output, never repository source.
 For self-hosting, serve all of `apps/web/dist`, including the two static disclosure
-pages and `assets/`, under the same base path used during build. Hash routes require
-no server-side route rewriting. The host receives ordinary asset requests and may
+pages, tool directories, `404.html`, `sitemap.xml`, `robots.txt`, and `assets/`,
+under the same base path used during build. Serve directory `index.html` files
+and real 404 responses for unknown paths; no SPA rewrite to the homepage is needed.
+The host receives ordinary asset requests and may
 log them; visitors' documents are processed locally. Self-hosting does not provide
 an offline-startup or PWA guarantee.
 Development and production outputs are separate. Production deployments should
 replace the output directory atomically and revalidate fixed-name entry assets
 rather than applying immutable caching to them.
+
+### Search indexing
+
+The build prerenders the same React home and empty tool workspaces into HTML,
+including headings, tool guides, and normal navigation links. JavaScript activates
+local processing; a no-JavaScript notice explains that requirement. The PDF engines
+remain lazy and no document data is rendered or persisted.
+
+Each page has a unique title, description, canonical URL, and Open Graph/Twitter
+metadata. Home and tool pages also expose factual WebSite/SoftwareApplication
+structured data, without invented ratings or reviews. Unknown tools are marked
+`noindex`. The sitemap includes only the home, three tools, and two disclosures,
+never hash fragments or error pages. Client navigation keeps metadata aligned with
+the accepted route, including when a discard confirmation is cancelled.
+
+`PDFBURROW_SITE_ORIGIN` defaults to `https://chiitepin.github.io` and must be an
+HTTPS origin with no trailing slash, path, credentials, query, or fragment.
+Together with `PDFBURROW_BASE_PATH`, it controls canonical and sitemap URLs.
+The Pages workflow reads both from the actual Pages configuration, including custom
+domains. Self-hosted builds must set their own origin rather than canonicalizing
+to the upstream site.
+
+Search engines read `robots.txt` only at the origin root. The generated file works
+directly for root deployments; for a project subpath such as `/pdfburrow/`, submit
+`https://chiitepin.github.io/pdfburrow/sitemap.xml` in the site's search-console
+property or reference it from the origin owner's root `robots.txt`. Do not deploy
+a blocking root robots policy. Sitemap submission and live indexing require a
+published, reachable site and owner-controlled search-console access; a local build
+does not establish indexing or Core Web Vitals.
 
 The engine uses pdf-lib 1.17.1 (MIT), PDF.js 5.7.284 (Apache-2.0), and fflate 0.8.2
 (MIT); installed

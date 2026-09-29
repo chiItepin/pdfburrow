@@ -64,6 +64,12 @@ test("the immutable tagged revision is checked before its single static artifact
   const upload = steps.at(-1);
   assert.ok(upload.uses.startsWith("actions/upload-pages-artifact@"));
   assert.deepEqual(upload.with, { path: "apps/web/dist", "retention-days": 30 });
+  for (const step of steps.filter((step) =>
+    ["npm run check", "npm run test:browser -- --workers=2"].includes(step.run),
+  )) {
+    assert.equal(step.env.PDFBURROW_SITE_ORIGIN, "${{ steps.pages.outputs.origin }}");
+    assert.equal(step.env.PDFBURROW_BASE_PATH, "${{ steps.pages.outputs.base_path }}/");
+  }
   for (const job of Object.values(workflow.jobs)) {
     for (const step of job.steps.filter((step) => step.uses)) {
       assert.match(step.uses, /^actions\/[\w-]+@[a-f0-9]{40}$/u);

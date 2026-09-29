@@ -1,8 +1,12 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const basePath = process.env.PDFBURROW_BASE_PATH ?? "/pdfburrow/";
-const origin = "http://127.0.0.1:4173";
-const developmentOrigin = "http://127.0.0.1:4174";
+const port = Number(process.env.PDFBURROW_TEST_PORT ?? "4173");
+if (!Number.isInteger(port) || port < 1 || port > 65534) {
+  throw new Error("PDFBURROW_TEST_PORT must be an integer from 1 to 65534.");
+}
+const origin = `http://127.0.0.1:${port}`;
+const developmentOrigin = `http://127.0.0.1:${port + 1}`;
 
 export default defineConfig({
   testDir: "./tests",
@@ -15,6 +19,7 @@ export default defineConfig({
     {
       name: "desktop-chromium",
       testMatch: [
+        "seo.spec.ts",
         "workspace.spec.ts",
         "images.spec.ts",
         "imageLifecycle.spec.ts",
@@ -34,6 +39,7 @@ export default defineConfig({
     {
       name: "mobile-chromium",
       testMatch: [
+        "seo.spec.ts",
         "workspace.spec.ts",
         "images.spec.ts",
         "imageLifecycle.spec.ts",
@@ -86,19 +92,19 @@ export default defineConfig({
     },
     {
       name: "development-chromium",
-      testMatch: ["development.spec.ts", "compressedPreviews.spec.ts"],
+      testMatch: ["development.spec.ts", "compressedPreviews.spec.ts", "seo.spec.ts"],
       use: { ...devices["Desktop Chrome"], baseURL: `${developmentOrigin}${basePath}` },
     },
   ],
   webServer: [
     {
-      command: "node ../../common/scripts/install-run-rushx.js preview --port 4173",
+      command: `node ../../common/scripts/install-run-rushx.js preview --port ${port}`,
       url: `${origin}${basePath}`,
       reuseExistingServer: false,
       timeout: 30_000,
     },
     {
-      command: "node ../../common/scripts/install-run-rushx.js dev --port 4174",
+      command: `node ../../common/scripts/install-run-rushx.js dev --port ${port + 1}`,
       url: `${developmentOrigin}${basePath}`,
       reuseExistingServer: false,
       timeout: 30_000,

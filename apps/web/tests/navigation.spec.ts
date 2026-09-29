@@ -21,8 +21,8 @@ test("tool-first entry, bookmarks and local disclosures are truthful and base-aw
     "PDF tools that run on your device. No uploads.",
   );
   await expect(page.locator('input[type="file"]')).toHaveCount(0);
-  await page.getByRole("button", { name: "Open Merge PDFs" }).click();
-  await expect(page).toHaveURL(/#\/merge$/);
+  await page.getByRole("link", { name: "Open Merge PDFs" }).click();
+  await expect(page).toHaveURL(/\/merge\/$/);
   await expect(page.getByRole("heading", { name: "Merge PDFs", exact: true })).toBeFocused();
   await expect(page.getByRole("link", { name: "Privacy", exact: true })).toHaveAttribute(
     "target",
@@ -42,7 +42,7 @@ test("tool-first entry, bookmarks and local disclosures are truthful and base-aw
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Images to PDF");
   await page.goto("./#/unknown?filename=private.pdf");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Tool not found");
-  await expect(page).toHaveURL(/#\/not-found$/);
+  await expect(page).toHaveURL(/\/404\.html$/);
 });
 
 test("tool changes keep work by default and discard it only after confirmation", async ({
@@ -53,13 +53,13 @@ test("tool changes keep work by default and discard it only after confirmation",
   const home = page.getByRole("link", { name: "Home", exact: true });
   await home.click();
   await expect(page.getByRole("button", { name: "Keep working" })).toBeFocused();
-  await expect(page).toHaveURL(/#\/merge$/);
+  await expect(page).toHaveURL(/\/merge\/$/);
   await page.keyboard.press("Escape");
   await expect(home).toBeFocused();
   await expect(page.getByRole("listitem")).toHaveCount(1);
   await page.getByRole("link", { name: "Split / Extract", exact: true }).click();
   await page.getByRole("button", { name: "Discard", exact: true }).click();
-  await expect(page).toHaveURL(/#\/split$/);
+  await expect(page).toHaveURL(/\/split\/$/);
   await expect(page.getByRole("heading", { level: 1 })).toBeFocused();
   await page.getByRole("link", { name: "Merge PDFs", exact: true }).click();
   await expect(page.getByRole("listitem")).toHaveCount(0);
@@ -73,29 +73,29 @@ test("Back and Forward preserve history entries when a dirty navigation is refus
   page,
 }) => {
   await page.goto("./");
-  await page.getByRole("button", { name: "Open Merge PDFs" }).click();
+  await page.getByRole("link", { name: "Open Merge PDFs" }).click();
   await addPdf(page);
   await page.goBack();
   await expect(page.getByRole("dialog")).toBeVisible();
-  await expect(page).toHaveURL(/#\/merge$/);
+  await expect(page).toHaveURL(/\/merge\/$/);
   await page.getByRole("button", { name: "Keep working" }).click();
   await page.goBack();
   await expect(page.getByRole("dialog")).toBeVisible();
   await page.getByRole("button", { name: "Discard", exact: true }).click();
-  await expect(page).toHaveURL(/#\/$/);
+  await expect(page).toHaveURL(new URL("./", test.info().project.use.baseURL).href);
   await page.goForward();
-  await expect(page).toHaveURL(/#\/merge$/);
+  await expect(page).toHaveURL(/\/merge\/$/);
   await expect(page.getByRole("listitem")).toHaveCount(0);
   await page.getByRole("link", { name: "Split / Extract", exact: true }).click();
   await page.goBack();
   await addPdf(page);
   await page.goForward();
   await expect(page.getByRole("dialog")).toBeVisible();
-  await expect(page).toHaveURL(/#\/merge$/);
+  await expect(page).toHaveURL(/\/merge\/$/);
   await page.getByRole("button", { name: "Keep working" }).click();
   await page.goForward();
   await page.getByRole("button", { name: "Discard", exact: true }).click();
-  await expect(page).toHaveURL(/#\/split$/);
+  await expect(page).toHaveURL(/\/split\/$/);
 });
 
 test("manual hash changes cannot bypass confirmation or carry files to another tool", async ({
@@ -107,19 +107,19 @@ test("manual hash changes cannot bypass confirmation or carry files to another t
     location.hash = "#/images";
   });
   await expect(page.getByRole("dialog")).toBeVisible();
-  await expect(page).toHaveURL(/#\/merge$/);
+  await expect(page).toHaveURL(/\/merge\/$/);
   await page.getByRole("button", { name: "Keep working" }).click();
   await expect(page.getByRole("listitem")).toHaveCount(1);
   await page.goForward();
   await page.getByRole("button", { name: "Discard", exact: true }).click();
-  await expect(page).toHaveURL(/#\/images$/);
+  await expect(page).toHaveURL(/\/images\/$/);
 });
 
 test("processing locks tool navigation and history until confirmed cancellation", async ({
   page,
 }) => {
   await page.goto("./");
-  await page.getByRole("button", { name: "Open Merge PDFs" }).click();
+  await page.getByRole("link", { name: "Open Merge PDFs" }).click();
   await addPdf(page);
   await page.route("**/merge.worker.js", (route) =>
     route.fulfill({
@@ -134,14 +134,14 @@ test("processing locks tool navigation and history until confirmed cancellation"
     "true",
   );
   await page.goBack();
-  await expect(page).toHaveURL(/#\/merge$/);
+  await expect(page).toHaveURL(/\/merge\/$/);
   await expect(page.getByRole("alert")).toContainText("Navigation is locked");
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await page.getByRole("button", { name: "Cancel merge" }).click();
   await expect(page.getByRole("status")).toContainText("Merge cancelled");
   await page.goBack();
   await page.getByRole("button", { name: "Discard", exact: true }).click();
-  await expect(page).toHaveURL(/#\/$/);
+  await expect(page).toHaveURL(new URL("./", test.info().project.use.baseURL).href);
 });
 
 test("downloaded results still require confirmation before leaving, while refresh loses drafts", async ({
@@ -161,7 +161,7 @@ test("downloaded results still require confirmation before leaving, while refres
   await expect(page.getByRole("button", { name: "Download PDF" })).toBeVisible();
   page.on("dialog", (dialog) => void dialog.accept());
   await page.reload();
-  await expect(page).toHaveURL(/#\/merge$/);
+  await expect(page).toHaveURL(/\/merge\/$/);
   await expect(page.getByRole("listitem")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Download PDF" })).toHaveCount(0);
 });

@@ -175,7 +175,7 @@ test("cancellation, preview/worker/download failures and guarded navigation reta
   await downloadImagePdf(page);
   await page.getByRole("link", { name: "Merge PDFs", exact: true }).click();
   await page.getByRole("button", { name: "Discard", exact: true }).click();
-  await expect(page).toHaveURL(/#\/merge$/);
+  await expect(page).toHaveURL(/\/merge\/$/);
   await expect(page.getByRole("listitem")).toHaveCount(0);
   await page.getByRole("link", { name: "Images to PDF", exact: true }).click();
   await expect(page.getByRole("radio", { name: "A4 (210 x 297 mm)", exact: true })).toBeChecked();

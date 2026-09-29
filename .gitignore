@@ -3,6 +3,7 @@ common/temp/
 common/deploy/
 dist/
 .dev/
+.prerender-*/
 *.tsbuildinfo
 .rush/
 rush-logs/
