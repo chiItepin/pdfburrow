@@ -53,6 +53,8 @@ initialization for stable ownership, not a memoization cache.
   the workspace. Dark is the default; only this preference is saved in local
   storage, never documents. If preference storage is unavailable, the switch still
   works for the visit and reports that the choice could not be saved.
+  Saved appearance is applied before the workspace loads and keeps supported
+  browser chrome in sync with theme changes.
 - Choose a tool before adding files. Home is `#/`; the implemented merge tool is
   `#/merge`; split/extraction is `#/split`; JPEG/PNG conversion is `#/images`.
   Unknown tool addresses show a recovery

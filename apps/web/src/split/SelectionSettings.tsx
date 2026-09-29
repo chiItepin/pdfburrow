@@ -55,7 +55,7 @@ export const SelectionSettings = ({
             value={settings.size}
             aria-describedby="selection-error group-help"
             aria-invalid={Boolean(settings.error)}
-            className="mt-1 min-h-10 w-full rounded-md border bg-card px-3 focus-visible:outline-2 focus-visible:outline-ring"
+            className="mt-1 min-h-10 w-full rounded-md border border-input bg-card px-3 focus-visible:outline-2 focus-visible:outline-ring"
             onChange={(event) => {
               onEdit();
               settings.setSize(event.target.value);

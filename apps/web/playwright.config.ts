@@ -21,6 +21,7 @@ export default defineConfig({
         "imageArtifacts.spec.ts",
         "navigation.spec.ts",
         "shell.spec.ts",
+        "theme.spec.ts",
         "downloads.spec.ts",
         "mergeArtifacts.spec.ts",
         "split.spec.ts",
@@ -41,6 +42,7 @@ export default defineConfig({
         "imageArtifacts.spec.ts",
         "navigation.spec.ts",
         "shell.spec.ts",
+        "theme.spec.ts",
         "downloads.spec.ts",
         "mergeArtifacts.spec.ts",
         "split.spec.ts",
@@ -56,6 +58,7 @@ export default defineConfig({
       name: "desktop-firefox",
       testMatch: [
         "shell.spec.ts",
+        "theme.spec.ts",
         "workspace.spec.ts",
         "images.spec.ts",
         "imageLifecycle.spec.ts",
@@ -74,6 +77,7 @@ export default defineConfig({
       name: "desktop-webkit",
       testMatch: [
         "shell.spec.ts",
+        "theme.spec.ts",
         "workspace.spec.ts",
         "images.spec.ts",
         "imageLifecycle.spec.ts",

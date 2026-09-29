@@ -32,6 +32,9 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   useLayoutEffect(() => {
     document.documentElement.classList.toggle("dark", preference.theme === "dark");
     document.documentElement.style.colorScheme = preference.theme;
+    document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute("content", preference.theme === "dark" ? "#191d20" : "#ffffff");
   }, [preference.theme]);
   useEffect(() => {
     const sync = (event: StorageEvent) => {
