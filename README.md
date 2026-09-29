@@ -382,8 +382,11 @@ attributed to PDFBurrow contributors; adding the project license and complete
 redistribution notices remains required before release. The shadcn attribution
 is retained in `packages/core-ui/NOTICE.txt`.
 
-No hosting workflow, backend, analytics, document persistence, or Office engine
-is included. On-device processing is the primary product promise; it does not
+Releases: read [RELEASING.md](RELEASING.md) before tagging or changing GitHub Pages
+delivery. It owns candidate qualification, owner approval, and publication verification.
+
+No backend, analytics, document persistence, or Office engine is included.
+On-device processing is the primary product promise; it does not
 imply offline availability or an absence of hosting requests. Licensing, privacy,
 and owner approval for every release commit are governed by
 [Decide licensing, privacy claims, and release readiness](https://github.com/chiItepin/pdfburrow/issues/7).

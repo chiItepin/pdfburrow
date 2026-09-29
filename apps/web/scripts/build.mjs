@@ -56,6 +56,7 @@ export const writeHtml = async () => {
 
 export const buildApplication = async () => {
   await rm(`${outputDirectory}/assets`, { recursive: true, force: true });
+  await rm(`${outputDirectory}/release.json`, { force: true });
   await Promise.all([build(buildOptions(false)), buildStyles(), writeHtml(), copyPreviewAssets()]);
   await writeFile(`${outputDirectory}/base-path.json`, JSON.stringify(basePath));
 };
