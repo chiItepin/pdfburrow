@@ -3,8 +3,29 @@ import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
-import { writeLicenseNotices } from "../apps/web/scripts/licenseNotices.mjs";
+import { isDependencyPath, writeLicenseNotices } from "../apps/web/scripts/licenseNotices.mjs";
 import { artifactHashes } from "../apps/web/scripts/releaseEvidence.mjs";
+
+test("dependency discovery recognizes full path segments with either platform separator", () => {
+  for (const filename of [
+    "/workspace/node_modules/package/index.js",
+    String.raw`C:\workspace\node_modules\package\index.js`,
+    String.raw`\\server\workspace\node_modules\package\index.js`,
+    String.raw`..\node_modules\@scope\package\index.js`,
+    "node_modules/package/index.js",
+    String.raw`node_modules\package/index.js`,
+  ]) {
+    assert.equal(isDependencyPath(filename), true, filename);
+  }
+  for (const filename of [
+    "/workspace/src/index.js",
+    "/workspace/not_node_modules/package/index.js",
+    String.raw`C:\workspace\not_node_modules\package\index.js`,
+    "/workspace/node_modules.ts",
+  ]) {
+    assert.equal(isDependencyPath(filename), false, filename);
+  }
+});
 
 test("distributed notices retain full upstream text and fail closed for missing or unfamiliar licenses", async () => {
   const directory = await mkdtemp(join(tmpdir(), "pdfburrow-notices-"));

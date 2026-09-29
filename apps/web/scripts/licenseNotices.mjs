@@ -1,12 +1,15 @@
 import { createHash } from "node:crypto";
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import { basename, dirname, resolve } from "node:path";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 
 const appDirectory = fileURLToPath(new URL("../", import.meta.url));
 const requireApp = createRequire(new URL("../package.json", import.meta.url));
 const supported = new Set(["MIT", "Apache-2.0", "ISC", "(MIT AND Zlib)", "0BSD"]);
+
+/** @param {string} filename */
+export const isDependencyPath = (filename) => /(?:^|[\\/])node_modules[\\/]/u.test(filename);
 
 /** @param {string} filename */
 const owningPackage = async (filename) => {
@@ -46,7 +49,7 @@ export const writeLicenseNotices = async (metafile, outputDirectory) => {
   );
   /** @type {Map<string, Awaited<ReturnType<typeof owningPackage>>>} */
   const packages = new Map();
-  for (const filename of [...bundled].filter((filename) => filename.includes("node_modules/"))) {
+  for (const filename of [...bundled].filter(isDependencyPath)) {
     const item = await owningPackage(resolve(appDirectory, filename));
     packages.set(item.directory, item);
   }
@@ -116,7 +119,7 @@ export const writeLicenseNotices = async (metafile, outputDirectory) => {
     .filter((name) => name.endsWith(".LEGAL.txt"))
     .sort()) {
     sections.push(
-      `\n=== Bundled legal comments: ${filename.split("/").at(-1)} ===\n`,
+      `\n=== Bundled legal comments: ${basename(filename)} ===\n`,
       await readFile(resolve(appDirectory, filename), "utf8"),
     );
   }

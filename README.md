@@ -84,7 +84,8 @@ initialization for stable ownership, not a memoization cache.
 20 inputs, 20 MiB per input, 50 MiB total inputs, 200 pages per source PDF and
 per merged/selected output job, 50 output PDFs totaling 50 MiB, and a 52 MiB ZIP.
 Images are limited to 12 million pixels each, 24 million pixels per draft, and
-8192 pixels per dimension. PDF page boxes are limited to 14,400 points per dimension;
+8192 pixels per dimension. PDF page boxes are limited to 14,400 effective points per
+dimension, after applying the page-local `UserUnit` scale (default 1);
 image-sized output pages are limited to 6144 points per dimension.
 One MiB is 1,048,576 bytes; each boundary is inclusive.
 

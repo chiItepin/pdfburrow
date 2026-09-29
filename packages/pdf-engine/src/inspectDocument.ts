@@ -1,5 +1,13 @@
 import type { PDFDocument, PDFObject } from "pdf-lib";
-import { PDFArray, PDFDict, PDFInvalidObject, PDFName, PDFRef, PDFStream } from "pdf-lib";
+import {
+  PDFArray,
+  PDFDict,
+  PDFInvalidObject,
+  PDFName,
+  PDFNumber,
+  PDFRef,
+  PDFStream,
+} from "pdf-lib";
 import { PdfError } from "./pdfError.ts";
 import { inspectPageTree } from "./inspectPageTree.ts";
 import type { PdfInfo, PdfLimits } from "./types";
@@ -117,6 +125,15 @@ export const inspectDocument = (document: PDFDocument, limits: PdfLimits = {}): 
     throw new PdfError("invalid", "This PDF has no pages.");
   }
   for (const page of pages) {
+    // UserUnit is page-local; only the page boxes below follow page-tree inheritance.
+    const unit = page.node.lookup(PDFName.of("UserUnit"));
+    const userUnit = unit === undefined ? 1 : unit instanceof PDFNumber ? unit.asNumber() : NaN;
+    if (!Number.isFinite(userUnit) || userUnit <= 0) {
+      throw new PdfError(
+        "invalid",
+        "A page has an invalid UserUnit. Export a new source copy using another PDF tool.",
+      );
+    }
     for (const box of [
       page.getMediaBox(),
       page.getCropBox(),
@@ -124,22 +141,20 @@ export const inspectDocument = (document: PDFDocument, limits: PdfLimits = {}): 
       page.getTrimBox(),
       page.getArtBox(),
     ]) {
-      enforceLimit(
-        Math.max(box.width, box.height),
-        limits.pageDimension,
-        "PDF page dimension in points",
-        "Prepare a source with smaller page dimensions.",
-      );
-      if (
-        ![box.x, box.y, box.width, box.height].every(Number.isFinite) ||
-        box.width <= 0 ||
-        box.height <= 0
-      ) {
+      const width = box.width * userUnit;
+      const height = box.height * userUnit;
+      if (![box.x, box.y, width, height].every(Number.isFinite) || width <= 0 || height <= 0) {
         throw new PdfError(
           "invalid",
           "A page has invalid dimensions. Export a new source copy using another PDF tool.",
         );
       }
+      enforceLimit(
+        Math.max(width, height),
+        limits.pageDimension,
+        "PDF page dimension in points",
+        "Prepare a source with smaller page dimensions.",
+      );
     }
     if (!Number.isInteger(page.getRotation().angle / 90)) {
       throw new PdfError(

@@ -1,7 +1,45 @@
 import { expect, test } from "@playwright/test";
-import { PDFDocument } from "pdf-lib";
+import { PDFDocument, PDFName } from "pdf-lib";
 import { imageFixture, pngChunk } from "./fixtures/imageFixtures";
 import { addSplitSource } from "./fixtures/splitHelpers";
+
+for (const tool of ["merge", "split"]) {
+  test(`${tool} validation rejects oversized UserUnit-scaled pages and accepts the exact boundary`, async ({
+    page,
+  }) => {
+    await page.goto(`./#/${tool}`);
+    const document = await PDFDocument.create();
+    const sourcePage = document.addPage([10000, 400]);
+    sourcePage.node.set(PDFName.of("UserUnit"), document.context.obj(2));
+    const upload = async () =>
+      page.locator('input[type="file"]').setInputFiles({
+        name: "scaled.pdf",
+        mimeType: "application/pdf",
+        buffer: Buffer.from(await document.save()),
+      });
+    await upload();
+    await expect(
+      page.getByText(/PDF page dimension in points: 20000 exceeds the configured limit of 14400/),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", {
+        name: tool === "merge" ? "Merge PDFs" : "Generate PDFs",
+        exact: true,
+      }),
+    ).toBeDisabled();
+    await page.getByRole("button", { name: "Remove scaled.pdf" }).click();
+    sourcePage.setWidth(7200);
+    await upload();
+    if (tool === "merge") {
+      await expect(page.getByText("Output: one PDF, 1 page, in the order above.")).toBeVisible();
+    } else {
+      await expect(page.getByRole("checkbox", { name: "Page 1", exact: true })).toBeEnabled();
+    }
+    await expect(page.getByRole("button", { name: "Retry validation of scaled.pdf" })).toHaveCount(
+      0,
+    );
+  });
+}
 
 test("draft admission rejects oversized batches without losing existing inputs", async ({
   page,
