@@ -9,10 +9,11 @@ import {
   Spinner,
   useFocusAfterCommit,
 } from "@repo/core-ui";
-import type { PdfInputRow, MoveDirection, Thumbnail } from "./types";
+import type { ImageRotation } from "@repo/pdf-engine";
+import type { InputRow, MoveDirection, Thumbnail } from "./types";
 
 interface InputCardProps {
-  input: PdfInputRow;
+  input: InputRow;
   index: number;
   total: number;
   editable: boolean;
@@ -24,6 +25,8 @@ interface InputCardProps {
   onRemove: (id: string) => void;
   onRetry: (id: string) => void;
   onRetryPreview?: (id: string) => void;
+  rotation?: ImageRotation;
+  onRotate?: (id: string, direction: "left" | "right") => void;
 }
 
 export const InputCard = ({
@@ -39,6 +42,8 @@ export const InputCard = ({
   onRemove,
   onRetry,
   onRetryPreview,
+  rotation = 0,
+  onRotate,
 }: InputCardProps) => {
   const focusAfterCommit = useFocusAfterCommit();
   const retry = (action: (id: string) => void) => {
@@ -47,7 +52,9 @@ export const InputCard = ({
   };
   const previewLabel =
     input.status !== "ready" || !thumbnail
-      ? "PDF"
+      ? input.kind === "image"
+        ? "Image"
+        : "PDF"
       : thumbnail?.state === "error"
         ? "Preview unavailable"
         : thumbnail?.state === "rendering"
@@ -78,9 +85,16 @@ export const InputCard = ({
           input.status === "pending" ? "processing" : input.status === "error" ? "error" : "done"
         }
       >
-        <AttachmentMedia variant="image" className="h-24 w-20 flex-col gap-2 border p-1">
+        <AttachmentMedia variant="image" className="size-24 flex-col gap-2 border p-1">
           {thumbnail?.state === "ready" ? (
-            <img src={thumbnail.url} alt={`First page of ${input.name}`} />
+            <img
+              src={thumbnail.url}
+              alt={
+                input.kind === "image" ? `Preview of ${input.name}` : `First page of ${input.name}`
+              }
+              className="h-full w-full object-contain"
+              style={{ transform: `rotate(${rotation}deg)` }}
+            />
           ) : (
             <>
               {thumbnail?.state === "rendering" && <Spinner aria-hidden="true" />}
@@ -99,10 +113,22 @@ export const InputCard = ({
             {input.status === "ready" &&
               ` · ${input.info.pageCount} page${input.info.pageCount === 1 ? "" : "s"}`}
           </AttachmentDescription>
+          {input.status === "ready" && "width" in input.info && (
+            <p className="mt-1 text-sm text-muted-foreground">
+              {rotation === 90 || rotation === 270
+                ? `${input.info.height} x ${input.info.width}`
+                : `${input.info.width} x ${input.info.height}`}{" "}
+              pixels
+              {" · "}
+              {rotation}° additional rotation
+            </p>
+          )}
           {input.status === "pending" && (
             <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
               {checking && <Spinner aria-hidden="true" />}
-              {checking ? "Checking PDF..." : "Waiting for validation..."}
+              {checking
+                ? `Checking ${input.kind === "image" ? "image" : "PDF"}...`
+                : "Waiting for validation..."}
             </p>
           )}
           {input.status === "error" && (
@@ -119,6 +145,26 @@ export const InputCard = ({
           )}
         </AttachmentContent>
         <AttachmentActions className="w-full">
+          {onRotate && input.status === "ready" && (
+            <>
+              <AttachmentAction
+                variant="outline"
+                disabled={!editable}
+                aria-label={`Rotate ${input.name} left`}
+                onClick={() => onRotate(input.id, "left")}
+              >
+                Rotate left
+              </AttachmentAction>
+              <AttachmentAction
+                variant="outline"
+                disabled={!editable}
+                aria-label={`Rotate ${input.name} right`}
+                onClick={() => onRotate(input.id, "right")}
+              >
+                Rotate right
+              </AttachmentAction>
+            </>
+          )}
           {reorderable && (
             <>
               <AttachmentAction

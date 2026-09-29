@@ -48,13 +48,15 @@ use React, TypeScript, shadcn/ui, and a small esbuild build; do not add Vite.
 - Import shared UI from the explicit `@repo/core-ui` barrel. It exports only the
   supported components/utilities; the stylesheet is a separate side-effect entry.
 - Use `@repo/pdf-engine` for types and capability barrels
-  `@repo/pdf-engine/merge`, `@repo/pdf-engine/split`, `@repo/pdf-engine/preview`,
+  `@repo/pdf-engine/merge`, `@repo/pdf-engine/split`, `@repo/pdf-engine/images`, `@repo/pdf-engine/preview`,
   `@repo/pdf-engine/image-preview`, and `@repo/pdf-engine/bundle` for lazy runtime APIs.
   Do not combine preview libraries and PDF generation in an eager root barrel.
   `@repo/pdf-engine/selection` is a lightweight, React-free planner shared by the
   split settings preview and worker; it does not load PDF libraries on the main thread.
   `@repo/pdf-engine/filename` is the dependency-free sanitizer shared by planning,
   generation, and download storage. Keep filename normalization in this single implementation.
+  `@repo/pdf-engine/image-layout` owns lightweight image geometry and output naming
+  without importing browser decoders or PDF generation libraries.
 - Use explicit named exports in package/feature entry barrels. Avoid `export *`,
   barrels in every folder, cross-package `/src/` imports, and internal imports
   through the package's own barrel (which can create cycles).

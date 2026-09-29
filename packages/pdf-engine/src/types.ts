@@ -41,7 +41,7 @@ export interface MergeRequest {
 }
 
 export interface PdfProgress {
-  readonly phase: "validating" | "copying" | "saving";
+  readonly phase: "validating" | "copying" | "converting" | "saving";
   readonly completed: number;
   readonly total: number;
 }

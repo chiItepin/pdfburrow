@@ -2,6 +2,25 @@ import { expect, test } from "@playwright/test";
 import { PDFDocument } from "pdf-lib";
 import { readFile } from "node:fs/promises";
 import { addSplitSource, downloadSplit, generateSplit } from "./fixtures/splitHelpers";
+import { imageFixture, generateImages, downloadImagePdf } from "./fixtures/imageFixtures";
+
+test("development image workers load locally and produce a real image-sized PDF", async ({
+  page,
+}) => {
+  await page.goto("./#/images");
+  await page
+    .locator('input[type="file"]')
+    .setInputFiles(await imageFixture(page, "development.png", 960, 480));
+  await page.getByRole("radio", { name: "Image size (96 pixels per inch)" }).check();
+  await expect(page.getByRole("img", { name: "Preview of development.png" })).toBeVisible();
+  await generateImages(page);
+  const output = await downloadImagePdf(page);
+  expect(output.name).toBe("development-images.pdf");
+  expect((await PDFDocument.load(output.bytes)).getPage(0).getSize()).toEqual({
+    width: 720,
+    height: 360,
+  });
+});
 
 test("development split workers produce real numbered PDFs", async ({ page }) => {
   await page.goto("./#/split");

@@ -16,6 +16,9 @@ export default defineConfig({
       name: "desktop-chromium",
       testMatch: [
         "workspace.spec.ts",
+        "images.spec.ts",
+        "imageLifecycle.spec.ts",
+        "imageArtifacts.spec.ts",
         "navigation.spec.ts",
         "downloads.spec.ts",
         "mergeArtifacts.spec.ts",
@@ -32,6 +35,9 @@ export default defineConfig({
       name: "mobile-chromium",
       testMatch: [
         "workspace.spec.ts",
+        "images.spec.ts",
+        "imageLifecycle.spec.ts",
+        "imageArtifacts.spec.ts",
         "navigation.spec.ts",
         "downloads.spec.ts",
         "mergeArtifacts.spec.ts",
@@ -48,6 +54,9 @@ export default defineConfig({
       name: "desktop-firefox",
       testMatch: [
         "workspace.spec.ts",
+        "images.spec.ts",
+        "imageLifecycle.spec.ts",
+        "imageArtifacts.spec.ts",
         "mergeArtifacts.spec.ts",
         "split.spec.ts",
         "splitArtifacts.spec.ts",
@@ -62,6 +71,9 @@ export default defineConfig({
       name: "desktop-webkit",
       testMatch: [
         "workspace.spec.ts",
+        "images.spec.ts",
+        "imageLifecycle.spec.ts",
+        "imageArtifacts.spec.ts",
         "mergeArtifacts.spec.ts",
         "split.spec.ts",
         "splitArtifacts.spec.ts",

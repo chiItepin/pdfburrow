@@ -1,7 +1,7 @@
 import { Button, ConfirmDiscard, FileDropzone } from "@repo/core-ui";
 import { InputCard } from "../workspace/InputCard";
 import { PreservationNotice } from "../workspace/PreservationNotice";
-import type { usePdfWorkspace } from "../workspace/usePdfWorkspace";
+import type { useDocumentWorkspace } from "../workspace/useDocumentWorkspace";
 import { PagePicker } from "./PagePicker";
 import { SelectionSettings } from "./SelectionSettings";
 import { useSplitSettings } from "./useSplitSettings";
@@ -12,7 +12,7 @@ import { ModePicker } from "./ModePicker";
 export const SplitWorkspace = ({
   workspace,
 }: {
-  workspace: ReturnType<typeof usePdfWorkspace>;
+  workspace: ReturnType<typeof useDocumentWorkspace>;
 }) => {
   const { draft, execution, focus, capable, confirmation } = workspace;
   const { draftHeading, resultHeading, jobError } = focus;

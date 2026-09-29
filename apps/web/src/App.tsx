@@ -1,6 +1,7 @@
 import { ConfirmDiscard, PageFrame } from "@repo/core-ui";
 import { MergeWorkspace } from "./merge";
-import { usePdfWorkspace } from "./workspace/usePdfWorkspace";
+import { useDocumentWorkspace } from "./workspace/useDocumentWorkspace";
+import { ImageWorkspace } from "./images";
 import { SplitWorkspace } from "./split";
 import { ToolNavigation } from "./workspace/ToolNavigation";
 import { ToolIntroduction } from "./workspace/ToolIntroduction";
@@ -9,7 +10,7 @@ import { useToolNavigation } from "./workspace/useToolNavigation";
 import { routeTitles } from "./workspace/routes";
 
 export const App = () => {
-  const workspace = usePdfWorkspace();
+  const workspace = useDocumentWorkspace();
   const { route, heading, confirmation, notice, request, keep, discard } = useToolNavigation({
     hasWork: workspace.draft.inputs.length > 0,
     locked: workspace.execution.locked,
@@ -39,11 +40,14 @@ export const App = () => {
         <MergeWorkspace workspace={workspace} />
       ) : route === "split" ? (
         <SplitWorkspace key={workspace.draft.inputs[0]?.id ?? "empty"} workspace={workspace} />
+      ) : route === "images" ? (
+        <ImageWorkspace key={workspace.draft.revision} workspace={workspace} />
       ) : (
         <ToolIntroduction
           route={route}
           onMerge={() => request("merge")}
           onSplit={() => request("split")}
+          onImages={() => request("images")}
         />
       )}
       <WorkspaceFooter />

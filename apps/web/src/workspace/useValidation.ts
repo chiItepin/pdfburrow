@@ -1,15 +1,17 @@
 import { useEffect } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import type { FileRegistry } from "./fileRegistry";
-import type { PdfInputRow } from "./types";
+import type { InputRow } from "./types";
 
 export const useValidation = (
-  inputs: readonly PdfInputRow[],
+  inputs: readonly InputRow[],
   files: FileRegistry,
-  setInputs: Dispatch<SetStateAction<PdfInputRow[]>>,
+  setInputs: Dispatch<SetStateAction<InputRow[]>>,
   announce: (message: string) => void,
 ) => {
-  const validationId = inputs.find((input) => input.status === "pending")?.id;
+  const pending = inputs.find((input) => input.status === "pending");
+  const validationId = pending?.id;
+  const kind = pending?.kind;
   useEffect(() => {
     if (!validationId) {
       return;
@@ -32,11 +34,14 @@ export const useValidation = (
     const controller = new AbortController();
     const validate = async () => {
       try {
-        const { validatePdf } = await import("@repo/pdf-engine/merge");
+        const validateInput =
+          kind === "image"
+            ? (await import("@repo/pdf-engine/images")).validateImage
+            : (await import("@repo/pdf-engine/merge")).validatePdf;
         if (controller.signal.aborted) {
           return;
         }
-        const outcome = await validatePdf(
+        const outcome = await validateInput(
           { id: validationId, name: file.name, blob: file },
           { signal: controller.signal },
         );
@@ -56,7 +61,7 @@ export const useValidation = (
         );
         announce(
           outcome.kind === "success"
-            ? `${file.name}: PDF validation finished.`
+            ? `${file.name}: ${kind === "image" ? "Image" : "PDF"} validation finished.`
             : `${file.name} needs attention. Retry validation or remove this file.`,
         );
       } catch {
@@ -70,7 +75,7 @@ export const useValidation = (
                   ...input,
                   status: "error",
                   message:
-                    "The local PDF engine could not load. Retry validation or reload after saving your work elsewhere.",
+                    "The local validation engine could not load. Retry validation or reload after saving your work elsewhere.",
                 }
               : input,
           ),
@@ -80,6 +85,6 @@ export const useValidation = (
     };
     void validate();
     return () => controller.abort();
-  }, [validationId, files, setInputs, announce]);
+  }, [validationId, kind, files, setInputs, announce]);
   return validationId;
 };

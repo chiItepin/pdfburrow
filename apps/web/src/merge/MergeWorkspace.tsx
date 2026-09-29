@@ -3,7 +3,7 @@ import { FilePicker } from "./FilePicker";
 import { InputList } from "../workspace/InputList";
 import { MergeResult } from "./MergeResult";
 import { PreservationNotice } from "../workspace/PreservationNotice";
-import type { usePdfWorkspace } from "../workspace/usePdfWorkspace";
+import type { useDocumentWorkspace } from "../workspace/useDocumentWorkspace";
 import { usePreviews } from "../workspace/usePreviews";
 import { renderPdfPreview } from "../workspace/previewRenderers";
 import { describeJobStatus } from "./jobStatus";
@@ -13,7 +13,7 @@ import { MergeProgress } from "./MergeProgress";
 export const MergeWorkspace = ({
   workspace,
 }: {
-  workspace: ReturnType<typeof usePdfWorkspace>;
+  workspace: ReturnType<typeof useDocumentWorkspace>;
 }) => {
   const { draft, execution, focus, capable, confirmation } = workspace;
   const { draftHeading, resultHeading, jobError } = focus;

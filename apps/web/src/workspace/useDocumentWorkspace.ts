@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { useFocusAfterCommit } from "@repo/core-ui";
-import type { DiscardAction, MoveDirection } from "./types";
-import { usePdfDraft } from "./usePdfDraft";
+import type { DiscardAction, InputRow, MoveDirection } from "./types";
+import { useInputDraft } from "./useInputDraft";
 import { useDocumentJob } from "./useDocumentJob";
 import { useWorkspaceLifecycle } from "./useWorkspaceLifecycle";
 
-export const usePdfWorkspace = () => {
+export const useDocumentWorkspace = () => {
   const [notice, announce] = useState("");
   const [confirmation, setConfirmation] = useState<DiscardAction | null>(null);
-  const draft = usePdfDraft(announce);
+  const draft = useInputDraft(announce);
   const execution = useDocumentJob(announce);
   const focus = useWorkspaceLifecycle(draft.inputs.length, execution.job.phase);
   const focusAfterCommit = useFocusAfterCommit();
@@ -17,12 +17,12 @@ export const usePdfWorkspace = () => {
     typeof Blob.prototype.arrayBuffer === "function" &&
     typeof crypto.randomUUID === "function";
 
-  const addFiles = (files: FileList | readonly File[]) => {
+  const addFiles = (files: FileList | readonly File[], kind: InputRow["kind"] = "pdf") => {
     if (!execution.editable || !capable) {
       return;
     }
     execution.editDraft();
-    draft.addFiles(files);
+    draft.addFiles(files, kind);
   };
   const removeFile = (id: string) => {
     if (!execution.editable) {

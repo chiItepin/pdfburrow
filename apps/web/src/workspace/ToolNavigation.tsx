@@ -17,7 +17,7 @@ export const ToolNavigation = ({
         ["home", "Home"],
         ["merge", "Merge PDFs"],
         ["split", "Split / Extract"],
-        ["images", "Images to PDF (not available)"],
+        ["images", "Images to PDF"],
       ] as const
     ).map(([value, label]) => (
       <Button key={value} variant={route === value ? "secondary" : "ghost"} asChild>

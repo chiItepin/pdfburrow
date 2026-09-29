@@ -1,13 +1,14 @@
 # PDFBurrow
 
-A React + TypeScript local document workspace with **Merge PDFs** and
-**Split / Extract**. Combine whole PDFs or choose pages from one source, then
-explicitly download PDFs or a ZIP of multiple outputs.
-**JPEG/PNG conversion is not implemented.**
+A React + TypeScript local document workspace with **Merge PDFs**,
+**Split / Extract**, and **Images to PDF**. Combine whole PDFs, choose pages from
+one source, or convert ordered static JPEG/PNG images, then explicitly download
+PDFs or a ZIP of multiple outputs.
 
 The [PDFBurrow MVP map](https://github.com/chiItepin/pdfburrow/issues/1) is the
-decision index. This workspace implements merge, split/extraction and the shared file-to-download workflow,
-not the entire MVP. It is not a release; the selected project license has not yet
+decision index. This workspace implements the three MVP tools and the shared
+file-to-download workflow, but still lacks release calibration and complete
+compatibility evidence. It is not a release; the selected project license has not yet
 been added.
 
 ## Run locally
@@ -45,8 +46,8 @@ initialization for stable ownership, not a memoization cache.
 ## Shared workspace
 
 - Choose a tool before adding files. Home is `#/`; the implemented merge tool is
-  `#/merge`; split/extraction is `#/split`. `#/images` is an explicitly unavailable
-  development placeholder, not a working conversion. Unknown tool addresses show a recovery
+  `#/merge`; split/extraction is `#/split`; JPEG/PNG conversion is `#/images`.
+  Unknown tool addresses show a recovery
   screen. Hashes and history state identify tools only, never documents or settings.
 - There is one in-memory draft, not one draft per tool. Home, tool changes, and
   browser Back/Forward require confirmation before discarding nonempty work,
@@ -56,36 +57,36 @@ initialization for stable ownership, not a memoization cache.
 - Inputs come before settings in reading/tab order. Desktop places settings beside
   the input list; small screens stack them. Dragging is optional; keyboard ordering,
   removal, focus restoration, and status announcements remain available.
-- `apps/web/src/workspace` owns the file registry, PDF validation queue,
+- `apps/web/src/workspace` owns the file registry, required PDF/image validation queue,
   windowed inputs, preview cache, document job lifecycle, and output/download
-  ownership. Merge and split share one draft/job owner, preservation acknowledgement,
-  and download lifecycle; each feature supplies its operation and settings.
+  ownership. All three tools share one draft/job owner and download lifecycle;
+  PDF tools additionally share preservation acknowledgement. Each feature supplies its operation and settings.
   `core-ui` owns the reusable file dropzone and dialog.
 - Shared downloads retain only metadata in React state and keep Blob references
   in the output store. A single output downloads directly as PDF. Multiple outputs
   expose individual downloads plus **Prepare ZIP for all PDFs**, followed by an
   explicit **Download ZIP**. No download starts just because packaging finished.
-  Split uses these multi-output controls; merge still produces exactly one PDF.
+  Split and separate-image conversion use these multi-output controls; merge still produces exactly one PDF.
 - ZIP packaging uses a separate, lazy fflate worker. Cancellation terminates it
   before unlocking, without discarding generated PDFs. Packaging/download errors
   permit explicit retry; editing/reset releases output and ZIP URLs. Filenames are
   sanitized and disambiguated once, so individual names and ZIP entries agree.
 - The shared preview queue accepts separate lazy PDF and JPEG/PNG renderers.
   Optional image thumbnails run in a disposable local worker, fit within 144 pixels,
-  and never modify originals. This is preview infrastructure, not image conversion
-  or required image-input validation; those still belong to the image tool.
+  and never modify originals. Required image decoding and conversion have a separate
+  disposable worker; optional previews never establish export support.
 - The footer opens local `privacy.html` and `notices.html` disclosures in a new tab
   without discarding work. The notices page explicitly records incomplete release
   licensing, rather than claiming a completed compliance audit.
 
-`PdfLimits`, `BundleLimits`, and `ImagePreviewLimits` are enforcement points for
+`PdfLimits`, `ImageLimits`, `BundleLimits`, and `ImagePreviewLimits` are enforcement points for
 measured release values, not prepopulated production limits. The registry and
 output store report retained raw bytes/counts; ZIP progress reports actual entries
 and packaging bytes. These are not measurements of total browser/decoded memory.
-Image pixel limits can be checked after decoding, not a guarantee against decode
-allocation failure. Physical-device calibration, image validation,
-and image-specific settings belong to their respective implementation/release
-tickets; shared infrastructure does not claim those tools are complete.
+Image header dimensions and aggregate pixel budgets are checked before generation
+decoding; decoded dimensions are checked again. These checks do not guarantee
+against decoder allocation failure. Physical-device calibration and measured
+production thresholds remain release work.
 
 ## Merge behavior and limitations
 
@@ -197,6 +198,63 @@ count; source byte limits and full structural validation still apply.
 These are calibration hooks, not measured production limits. No size-target
 splitting, compression, repair, encrypted-PDF support, or remote fallback is added.
 
+## Images to PDF behavior
+
+Open `#/images` and add static JPEG or PNG files. Content inspection and required
+worker decoding determine support, not the extension or MIME label. Valid
+mislabeled images show a format-mismatch notice; unsupported content, corrupt or
+undecodable images, invalid dimensions, and animated PNGs remain visible and
+block generation until retried successfully or removed. Animated PNGs must be
+exported as a still image externally; no frame is silently selected.
+PNG chunk checksums, the compressed pixel stream, scanline lengths/filters
+(including interlacing), and JPEG end markers are checked rather than trusting
+permissive browser decoding to detect truncation. PNG integrity checking requires
+local decompression-stream support; missing capabilities fail explicitly.
+
+- Each input produces one page in displayed file order. Reorder with Move up/down
+  or drag, including across the eight-item input windows. Rotate left/right in
+  90-degree steps after EXIF orientation correction, including mirrored EXIF variants.
+  Thumbnails show the corrected image and manual rotation, not a paper-layout proof.
+- Defaults are one combined PDF, A4, Auto orientation per image, and 10 mm margins.
+  Letter, Portrait/Landscape overrides, and 0/20 mm margins are also available.
+  Auto uses landscape only when the corrected/rotated image is wider than tall.
+  Images are centered and fit fully with equal margins: no clipping or stretching.
+  Small images may be enlarged for placement, which does not manufacture detail.
+- Image size makes pages at exactly 96 pixels per inch (0.75 PDF points per pixel).
+  It ignores embedded DPI, margins, and orientation overrides. Rotation swaps page
+  dimensions. Large inputs may create physically large pages.
+- The worker decodes one image at a time, composites transparency onto white, and
+  normalizes the corrected/rotated browser pixels to lossless PNG at native pixel
+  dimensions before embedding. JPEG inputs are not lossily recompressed, but are
+  not retained as original JPEG streams; resulting PDFs may be substantially larger.
+  There is no downsampling or compression fallback. This is not a guarantee of
+  universal color-profile, bit-depth, or metadata preservation.
+- Combined output is `<first-image-stem>-images.pdf`. Separate output uses
+  `<image-stem>-converted.pdf` with the shared sanitizer and deterministic collision
+  suffixes. Multiple outputs use an explicitly prepared `<first-image-stem>-images.zip`
+  whose entries match individual filenames. A single separate output retains its
+  `-converted.pdf` name and downloads directly without a ZIP.
+- Conversion locks editing and stops optional previews. Cancel terminates the
+  worker before unlocking and retains images, ordering, rotations, and settings.
+  Failures never publish partial PDFs. Edit/reset/navigation use shared safe
+  confirmations; reset releases originals, previews, outputs, and ZIP resources
+  and restores default image settings. Nothing downloads automatically.
+- `ImageLimits` supports input counts/bytes, per-image and total decoded pixels,
+  maximum pixel dimension, output page dimensions in points, and output counts/bytes.
+  Passed limits are checked before expensive work where possible and fail with
+  actionable errors rather than resizing. Production numeric values remain
+  uncalibrated; large images can still exhaust browser memory.
+
+Browser coverage inspects real PDF page/placement geometry, all eight EXIF
+variants and every manual quarter-turn, mirrored content, transparency, embedded
+300-DPI metadata, tiny and tall/wide images, and native embedded RGB bytes against
+browser-decoded pixels. It also covers combined/separate PDF and ZIP naming,
+failures, cancellation, explicit downloads, and 20 reset cycles with worker/URL
+cleanup. Chromium, Firefox, WebKit, and mobile emulation are evidence for those
+test builds, not the required physical-device or current/previous-major matrix.
+No HEIC, WebP, TIFF, animated PNG, collage, free-angle rotation, custom margin,
+or background-color support is added.
+
 ## Repository guide
 
 **[CODING_STANDARDS.md](CODING_STANDARDS.md)** owns coding conventions: focused
@@ -206,12 +264,12 @@ Components use PascalCase `.tsx` filenames; other project-owned JS/TS sources,
 tests, and build scripts use camelCase, enforced by lint. Conventional config
 names and dotted test/worker suffixes are retained.
 
-| Package               | Responsibility                                                                       |
-| --------------------- | ------------------------------------------------------------------------------------ |
-| `apps/web`            | React app, shared workspace, merge/split views and hooks, and build scripts          |
-| `packages/core-ui`    | Shared shadcn primitives, reusable compositions, utilities, and theme                |
-| `packages/pdf-engine` | React-free PDF validation/generation, image/PDF previews, ZIP packaging, and workers |
-| `packages/tooling`    | Shared TypeScript, ESLint, and formatter tooling                                     |
+| Package               | Responsibility                                                                    |
+| --------------------- | --------------------------------------------------------------------------------- |
+| `apps/web`            | React app, shared workspace, merge/split/image views and hooks, and build scripts |
+| `packages/core-ui`    | Shared shadcn primitives, reusable compositions, utilities, and theme             |
+| `packages/pdf-engine` | React-free PDF/image validation/generation, previews, ZIP packaging, and workers  |
+| `packages/tooling`    | Shared TypeScript, ESLint, and formatter tooling                                  |
 
 Rush owns installation and `common/config/rush/pnpm-lock.yaml`. Do not run
 `npm install` or `pnpm install` at the root or inside packages.
