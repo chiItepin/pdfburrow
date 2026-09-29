@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { PDFDocument } from "pdf-lib";
+import { closeToolSidebar, navigateToTool, openToolSidebar } from "./fixtures/workspaceNavigation";
 
 const addPdf = async (page: Page) => {
   const document = await PDFDocument.create();
@@ -17,9 +18,7 @@ test("tool-first entry, bookmarks and local disclosures are truthful and base-aw
   request,
 }) => {
   await page.goto("./");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-    "PDF tools that run on your device. No uploads.",
-  );
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Home");
   await expect(page.locator('input[type="file"]')).toHaveCount(0);
   await page.getByRole("button", { name: "Open Merge PDFs" }).click();
   await expect(page).toHaveURL(/#\/merge$/);
@@ -51,18 +50,19 @@ test("tool changes keep work by default and discard it only after confirmation",
   await page.goto("./#/merge");
   await addPdf(page);
   const home = page.getByRole("link", { name: "Home", exact: true });
-  await home.click();
+  await navigateToTool(page, "Home");
   await expect(page.getByRole("button", { name: "Keep working" })).toBeFocused();
   await expect(page).toHaveURL(/#\/merge$/);
   await page.keyboard.press("Escape");
-  await expect(home).toBeFocused();
-  await expect(page.getByRole("listitem")).toHaveCount(1);
-  await page.getByRole("link", { name: "Split / Extract", exact: true }).click();
+  const trigger = page.getByRole("button", { name: "Open sidebar", exact: true });
+  await expect((await trigger.isVisible()) ? trigger : home).toBeFocused();
+  await expect(page.locator("[data-workspace-content]").getByRole("listitem")).toHaveCount(1);
+  await navigateToTool(page, "Split / Extract");
   await page.getByRole("button", { name: "Discard", exact: true }).click();
   await expect(page).toHaveURL(/#\/split$/);
   await expect(page.getByRole("heading", { level: 1 })).toBeFocused();
-  await page.getByRole("link", { name: "Merge PDFs", exact: true }).click();
-  await expect(page.getByRole("listitem")).toHaveCount(0);
+  await navigateToTool(page, "Merge PDFs");
+  await expect(page.locator("[data-workspace-content]").getByRole("listitem")).toHaveCount(0);
   expect(page.url()).not.toContain("private-document");
   expect(await page.evaluate(() => JSON.stringify(history.state))).not.toContain(
     "private-document",
@@ -85,8 +85,9 @@ test("Back and Forward preserve history entries when a dirty navigation is refus
   await expect(page).toHaveURL(/#\/$/);
   await page.goForward();
   await expect(page).toHaveURL(/#\/merge$/);
-  await expect(page.getByRole("listitem")).toHaveCount(0);
-  await page.getByRole("link", { name: "Split / Extract", exact: true }).click();
+  await expect(page.locator("[data-workspace-content]").getByRole("listitem")).toHaveCount(0);
+  await navigateToTool(page, "Split / Extract");
+  await expect(page).toHaveURL(/#\/split$/);
   await page.goBack();
   await addPdf(page);
   await page.goForward();
@@ -109,7 +110,7 @@ test("manual hash changes cannot bypass confirmation or carry files to another t
   await expect(page.getByRole("dialog")).toBeVisible();
   await expect(page).toHaveURL(/#\/merge$/);
   await page.getByRole("button", { name: "Keep working" }).click();
-  await expect(page.getByRole("listitem")).toHaveCount(1);
+  await expect(page.locator("[data-workspace-content]").getByRole("listitem")).toHaveCount(1);
   await page.goForward();
   await page.getByRole("button", { name: "Discard", exact: true }).click();
   await expect(page).toHaveURL(/#\/images$/);
@@ -129,10 +130,12 @@ test("processing locks tool navigation and history until confirmed cancellation"
   );
   await page.getByRole("checkbox").check();
   await page.getByRole("button", { name: "Merge PDFs", exact: true }).click();
+  await openToolSidebar(page);
   await expect(page.getByRole("link", { name: "Home", exact: true })).toHaveAttribute(
     "aria-disabled",
     "true",
   );
+  await closeToolSidebar(page);
   await page.goBack();
   await expect(page).toHaveURL(/#\/merge$/);
   await expect(page.getByRole("alert")).toContainText("Navigation is locked");
@@ -155,13 +158,13 @@ test("downloaded results still require confirmation before leaving, while refres
   const downloaded = page.waitForEvent("download");
   await page.getByRole("button", { name: "Download PDF" }).click();
   await downloaded;
-  await page.getByRole("link", { name: "Home", exact: true }).click();
+  await navigateToTool(page, "Home");
   await expect(page.getByRole("dialog")).toBeVisible();
   await page.getByRole("button", { name: "Keep working" }).click();
   await expect(page.getByRole("button", { name: "Download PDF" })).toBeVisible();
   page.on("dialog", (dialog) => void dialog.accept());
   await page.reload();
   await expect(page).toHaveURL(/#\/merge$/);
-  await expect(page.getByRole("listitem")).toHaveCount(0);
+  await expect(page.locator("[data-workspace-content]").getByRole("listitem")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Download PDF" })).toHaveCount(0);
 });

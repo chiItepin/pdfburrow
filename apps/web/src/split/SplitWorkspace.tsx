@@ -8,6 +8,8 @@ import { useSplitSettings } from "./useSplitSettings";
 import { useSplitJob } from "./useSplitJob";
 import { SplitResult } from "./SplitResult";
 import { ModePicker } from "./ModePicker";
+import { OutputPrediction } from "./OutputPrediction";
+import { ToolSettingsSidebar } from "../workspace/ToolSettingsSidebar";
 
 export const SplitWorkspace = ({
   workspace,
@@ -40,7 +42,7 @@ export const SplitWorkspace = ({
         <p className="mt-2 text-sm text-muted-foreground">
           Choose pages or ranges from one PDF. Your original stays unchanged.
         </p>
-        <div className="mt-4 grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="mt-6">
           <div className="min-w-0">
             <FileDropzone
               regionLabel="Add a source PDF"
@@ -81,16 +83,6 @@ export const SplitWorkspace = ({
                 />
               </ol>
             )}
-            {draft.ready && (
-              <ModePicker
-                mode={settings.mode}
-                disabled={!editable}
-                onChange={(mode) => {
-                  execution.editDraft();
-                  settings.setMode(mode);
-                }}
-              />
-            )}
             {input && draft.ready && settings.mode === "selected" && (
               <PagePicker
                 sourceId={input.id}
@@ -112,25 +104,8 @@ export const SplitWorkspace = ({
               />
             )}
           </div>
-          <section className="min-w-0 lg:pt-5" aria-labelledby="settings-heading">
-            <h3 id="settings-heading" className="text-lg font-semibold">
-              Split / Extract settings
-            </h3>
-            {draft.ready ? (
-              <SelectionSettings
-                settings={settings}
-                pageCount={draft.pageCount}
-                disabled={!editable}
-                onEdit={execution.editDraft}
-                announce={workspace.announce}
-              />
-            ) : (
-              <p className="mt-4 text-sm">
-                {input
-                  ? "Resolve input errors and wait for validation before choosing pages."
-                  : "Add one PDF to choose pages and see exactly what will be generated."}
-              </p>
-            )}
+          <section className="tool-actions" aria-label="Split output">
+            {settings.plan && <OutputPrediction plan={settings.plan} />}
             {input && (
               <PreservationNotice
                 action="generate"
@@ -171,6 +146,33 @@ export const SplitWorkspace = ({
               </p>
             )}
           </section>
+          <ToolSettingsSidebar title="Split / Extract settings">
+            {draft.ready ? (
+              <>
+                <ModePicker
+                  mode={settings.mode}
+                  disabled={!editable}
+                  onChange={(mode) => {
+                    execution.editDraft();
+                    settings.setMode(mode);
+                  }}
+                />
+                <SelectionSettings
+                  settings={settings}
+                  pageCount={draft.pageCount}
+                  disabled={!editable}
+                  onEdit={execution.editDraft}
+                  announce={workspace.announce}
+                />
+              </>
+            ) : (
+              <p className="mt-6 text-sm leading-relaxed text-muted-foreground">
+                {input
+                  ? "Resolve input errors and wait for validation before choosing pages."
+                  : "Add one PDF to choose pages and see exactly what will be generated."}
+              </p>
+            )}
+          </ToolSettingsSidebar>
         </div>
       </section>
       {job.phase === "complete" && settings.plan && (

@@ -1,5 +1,4 @@
 import { RangeEditor } from "./RangeEditor";
-import { OutputPrediction } from "./OutputPrediction";
 import type { useSplitSettings } from "./useSplitSettings";
 
 export const SelectionSettings = ({
@@ -56,7 +55,7 @@ export const SelectionSettings = ({
             value={settings.size}
             aria-describedby="selection-error group-help"
             aria-invalid={Boolean(settings.error)}
-            className="mt-1 min-h-10 w-full rounded-md border bg-white px-3 focus-visible:outline-2 focus-visible:outline-ring"
+            className="mt-1 min-h-10 w-full rounded-md border border-input bg-card px-3 focus-visible:outline-2 focus-visible:outline-ring"
             onChange={(event) => {
               onEdit();
               settings.setSize(event.target.value);
@@ -74,6 +73,5 @@ export const SelectionSettings = ({
     <p id="selection-error" className="mt-3 text-sm">
       {settings.error}
     </p>
-    {settings.plan && <OutputPrediction plan={settings.plan} />}
   </>
 );

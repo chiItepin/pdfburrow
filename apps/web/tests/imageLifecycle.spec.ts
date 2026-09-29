@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { imageFixture, generateImages, downloadImagePdf } from "./fixtures/imageFixtures";
+import { withToolSettings } from "./fixtures/toolSettings";
 
 test("twenty image/edit/ZIP/reset cycles release workers and URLs and reset settings", async ({
   page,
@@ -40,8 +41,10 @@ test("twenty image/edit/ZIP/reset cycles release workers and URLs and reset sett
   for (let cycle = 0; cycle < 20; cycle++) {
     await page.locator('input[type="file"]').setInputFiles([first, second]);
     await expect(page.getByRole("button", { name: "Convert to PDF", exact: true })).toBeEnabled();
-    await page.getByRole("radio", { name: "One PDF per image" }).check();
-    await page.getByRole("radio", { name: "Image size (96 pixels per inch)" }).check();
+    await withToolSettings(page, async () => {
+      await page.getByRole("radio", { name: "One PDF per image" }).check();
+      await page.getByRole("radio", { name: "Image size (96 pixels per inch)" }).check();
+    });
     await page.getByRole("button", { name: "Rotate picture.png right" }).click();
     await generateImages(page);
     if (cycle === 0) {
@@ -69,7 +72,9 @@ test("twenty image/edit/ZIP/reset cycles release workers and URLs and reset sett
     await page.getByRole("button", { name: "Start over" }).click();
     await page.getByRole("button", { name: "Discard", exact: true }).click();
     await expect(page.getByRole("button", { name: "Add images", exact: true })).toBeFocused();
-    await expect(page.getByRole("radio", { name: "A4 (210 x 297 mm)", exact: true })).toBeChecked();
+    await withToolSettings(page, () =>
+      expect(page.getByRole("radio", { name: "A4 (210 x 297 mm)", exact: true })).toBeChecked(),
+    );
     await expect
       .poll(() => page.evaluate(() => Reflect.get(window, "imageResources")))
       .toEqual({ workers: 0, urls: 0 });

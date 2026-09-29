@@ -1,6 +1,7 @@
 import { expect, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import type { ImageLimits, ImageRotation, ImageSettings } from "@repo/pdf-engine";
+import { closeToolSettings } from "./toolSettings";
 
 export interface ImageFixture {
   name: string;
@@ -144,6 +145,7 @@ export const engineImages = async (
   );
 
 export const generateImages = async (page: Page) => {
+  await closeToolSettings(page);
   await page.getByRole("button", { name: /^(Convert to PDF|Retry conversion)$/ }).click();
   await expect(page.getByRole("heading", { name: "Your image PDFs are ready" })).toBeFocused();
 };

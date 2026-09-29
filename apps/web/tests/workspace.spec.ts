@@ -42,14 +42,23 @@ test("real merge downloads ordered pages and works locally without document requ
   expect(requests.some((request) => request.url.includes("preview.js"))).toBe(false);
   await expect(page.getByRole("button", { name: "Add PDFs" })).toHaveCSS(
     "background-color",
-    "rgb(32, 91, 73)",
+    "rgb(147, 212, 183)",
   );
-  await expect(page.getByRole("main")).toHaveCSS("max-width", "1152px");
-  await page.getByRole("link", { name: "Images to PDF", exact: true }).focus();
+  await page.getByRole("heading", { name: "Merge PDFs", exact: true }).focus();
   // macOS WebKit uses Option-Tab to include buttons in native keyboard navigation.
   await page.keyboard.press(
     browserName === "webkit" && process.platform === "darwin" ? "Alt+Tab" : "Tab",
   );
+  await expect(page.getByRole("button", { name: /^(Open|Close) settings$/ })).toBeFocused();
+  await page.keyboard.press(
+    browserName === "webkit" && process.platform === "darwin" ? "Alt+Tab" : "Tab",
+  );
+  if (browserName === "firefox") {
+    await expect(
+      page.getByRole("region", { name: "Document workspace", exact: true }),
+    ).toBeFocused();
+    await page.keyboard.press("Tab");
+  }
   await expect(page.getByRole("button", { name: "Add PDFs" })).toBeFocused();
   await ready(page);
   await page.getByRole("checkbox").check();
@@ -58,7 +67,9 @@ test("real merge downloads ordered pages and works locally without document requ
   await page.keyboard.press("Enter");
   await expect(up).toBeFocused();
   await expect(page.getByRole("checkbox")).toBeChecked();
-  await expect(page.getByRole("listitem").first()).toContainText("second.pdf");
+  await expect(
+    page.locator("[data-workspace-content]").getByRole("listitem").first(),
+  ).toContainText("second.pdf");
   await expect(page.getByRole("img", { name: "First page of second.pdf" })).toBeVisible();
   const originalPreview = await page
     .getByRole("img", { name: "First page of second.pdf" })
@@ -113,7 +124,7 @@ test("unsupported input blocks merging and removal resets acknowledgement and pr
   await expect(page.getByRole("button", { name: "Merge PDFs", exact: true })).toBeDisabled();
   await page.getByRole("button", { name: "Remove form.pdf" }).click();
   await expect(page.getByRole("button", { name: "Remove valid.pdf" })).toBeFocused();
-  await expect(page.getByRole("listitem")).toHaveCount(1);
+  await expect(page.locator("[data-workspace-content]").getByRole("listitem")).toHaveCount(1);
   await merge(page);
 });
 
@@ -148,7 +159,7 @@ test("cancellation stops synchronous worker execution and restores the unchanged
   await page.getByRole("button", { name: "Cancel merge" }).click();
   await expect(page.getByRole("status")).toContainText("Merge cancelled");
   await expect(page.getByRole("heading", { name: "Your PDFs", exact: true })).toBeFocused();
-  await expect(page.getByRole("listitem")).toHaveCount(2);
+  await expect(page.locator("[data-workspace-content]").getByRole("listitem")).toHaveCount(2);
   await page.unroute("**/merge.worker.js");
   await merge(page);
 });
@@ -167,10 +178,10 @@ test("unsaved results and reset use safe discard confirmation", async ({ page })
   await page.getByRole("button", { name: "Edit inputs" }).click();
   await page.getByRole("button", { name: "Discard", exact: true }).click();
   await expect(page.getByRole("button", { name: "Download PDF" })).toHaveCount(0);
-  await expect(page.getByRole("listitem")).toHaveCount(2);
+  await expect(page.locator("[data-workspace-content]").getByRole("listitem")).toHaveCount(2);
   await page.getByRole("button", { name: "Start over" }).click();
   await page.getByRole("button", { name: "Discard", exact: true }).click();
-  await expect(page.getByRole("listitem")).toHaveCount(0);
+  await expect(page.locator("[data-workspace-content]").getByRole("listitem")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Add PDFs" })).toBeFocused();
 });
 
@@ -333,16 +344,22 @@ test("native dragging crosses input-list pages without cancelling the drag", asy
     );
     await expect(page.locator("html")).toHaveAttribute("data-native-drag-event", "dragend");
     await expect(page.getByRole("checkbox")).toBeChecked();
-    expect(await page.getByRole("listitem").count()).toBeLessThanOrEqual(8);
+    expect(
+      await page.locator("[data-workspace-content]").getByRole("listitem").count(),
+    ).toBeLessThanOrEqual(8);
     expect(await page.getByRole("img").count()).toBeLessThanOrEqual(8);
   };
 
   await dragAcrossPage("Next", 9);
-  await expect(page.getByRole("listitem")).toHaveCount(1);
-  await expect(page.getByRole("listitem")).toContainText("9. input-8.pdf");
+  await expect(page.locator("[data-workspace-content]").getByRole("listitem")).toHaveCount(1);
+  await expect(page.locator("[data-workspace-content]").getByRole("listitem")).toContainText(
+    "9. input-8.pdf",
+  );
   await dragAcrossPage("Previous", 8);
-  await expect(page.getByRole("listitem")).toHaveCount(8);
-  await expect(page.getByRole("listitem").last()).toContainText("8. input-8.pdf");
+  await expect(page.locator("[data-workspace-content]").getByRole("listitem")).toHaveCount(8);
+  await expect(page.locator("[data-workspace-content]").getByRole("listitem").last()).toContainText(
+    "8. input-8.pdf",
+  );
   await dragAcrossPage("Next", 9);
   await merge(page);
   const downloadPromise = page.waitForEvent("download");
@@ -367,14 +384,18 @@ test("cross-page keyboard ordering and file-upload drops remain independent", as
   await down.focus();
   await page.keyboard.press("Enter");
   await expect(down).toBeFocused();
-  await expect(page.getByRole("listitem")).toHaveCount(1);
-  await expect(page.getByRole("listitem")).toContainText("9. input-8.pdf");
+  await expect(page.locator("[data-workspace-content]").getByRole("listitem")).toHaveCount(1);
+  await expect(page.locator("[data-workspace-content]").getByRole("listitem")).toContainText(
+    "9. input-8.pdf",
+  );
   const up = page.getByRole("button", { name: "Move input-8.pdf up" });
   await up.focus();
   await page.keyboard.press("Enter");
   await expect(up).toBeFocused();
-  await expect(page.getByRole("listitem")).toHaveCount(8);
-  await expect(page.getByRole("listitem").last()).toContainText("8. input-8.pdf");
+  await expect(page.locator("[data-workspace-content]").getByRole("listitem")).toHaveCount(8);
+  await expect(page.locator("[data-workspace-content]").getByRole("listitem").last()).toContainText(
+    "8. input-8.pdf",
+  );
   await expect(page.getByRole("checkbox")).toBeChecked();
 
   const file = await pdf("uploaded.pdf");
@@ -395,7 +416,11 @@ test("cross-page keyboard ordering and file-upload drops remain independent", as
   await expect(page.getByText("Output: one PDF, 10 pages, in the order above.")).toBeVisible();
   await expect(page.getByRole("checkbox")).not.toBeChecked();
   await next.click();
-  await expect(page.getByRole("listitem")).toHaveCount(2);
-  await expect(page.getByRole("listitem").first()).toContainText("9. input-9.pdf");
-  await expect(page.getByRole("listitem").last()).toContainText("10. uploaded.pdf");
+  await expect(page.locator("[data-workspace-content]").getByRole("listitem")).toHaveCount(2);
+  await expect(
+    page.locator("[data-workspace-content]").getByRole("listitem").first(),
+  ).toContainText("9. input-9.pdf");
+  await expect(page.locator("[data-workspace-content]").getByRole("listitem").last()).toContainText(
+    "10. uploaded.pdf",
+  );
 });

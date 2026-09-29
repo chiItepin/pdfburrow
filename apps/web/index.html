@@ -1,10 +1,30 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#f6f8fa" />
+    <meta name="theme-color" content="#191d20" />
     <title>PDFBurrow - Local PDF tools</title>
+    <script>
+      (() => {
+        let theme = "dark";
+        try {
+          const saved = localStorage.getItem("pdfburrow-theme");
+          if (saved === "light" || saved === "dark") {
+            theme = saved;
+          } else if (saved !== null) {
+            console.warn("PDFBurrow found an invalid saved theme preference.");
+          }
+        } catch (error) {
+          console.warn("PDFBurrow could not read the initial theme preference.", error);
+        }
+        document.documentElement.classList.toggle("dark", theme === "dark");
+        document.documentElement.style.colorScheme = theme;
+        document
+          .querySelector('meta[name="theme-color"]')
+          .setAttribute("content", theme === "dark" ? "#191d20" : "#ffffff");
+      })();
+    </script>
     <link rel="stylesheet" href="%BASE_PATH%assets/styles.css" />
   </head>
   <body>

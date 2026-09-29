@@ -10,8 +10,8 @@ export const ModePicker = ({
   onChange: (mode: SplitSelection["mode"]) => void;
 }) => (
   <fieldset disabled={disabled} className="mt-6">
-    <legend className="text-lg font-semibold">Choose an operation</legend>
-    <div className="mt-2 grid gap-x-4 sm:grid-cols-2">
+    <legend className="font-medium">Choose an operation</legend>
+    <div className="mt-2 grid gap-1">
       {(
         [
           ["selected", "Selected pages"],

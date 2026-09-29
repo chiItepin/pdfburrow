@@ -58,7 +58,7 @@ export const RangeEditor = ({
                       Number(range[field]) > pageCount ||
                       Number(range.end) < Number(range.start)
                     }
-                    className="mt-1 min-h-10 w-full rounded-md border bg-white px-3 focus-visible:outline-2 focus-visible:outline-ring"
+                    className="mt-1 min-h-10 w-full rounded-md border border-input bg-card px-3 focus-visible:outline-2 focus-visible:outline-ring"
                     value={range[field]}
                     onChange={(event) => change(range.id, field, event.target.value)}
                   />

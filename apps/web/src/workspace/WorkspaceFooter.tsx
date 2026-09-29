@@ -1,5 +1,8 @@
 export const WorkspaceFooter = () => (
-  <footer className="border-t pt-6 text-sm leading-relaxed text-muted-foreground">
+  <footer className="py-6 text-xs leading-relaxed text-muted-foreground">
+    <p className="mb-3 text-sm text-foreground">
+      PDFBurrow processes your documents in this browser, without uploading them.
+    </p>
     <p>
       Files stay in this tab's memory. Refreshing or closing the tab loses your work; original files
       and downloaded copies are unchanged. Browser leave warnings are best effort.
@@ -8,7 +11,7 @@ export const WorkspaceFooter = () => (
       Development build: browser coverage and safe workload limits are not yet calibrated. Large or
       complex files may exhaust browser memory. Offline use is not promised.
     </p>
-    <div className="mt-3 flex flex-wrap gap-x-5 gap-y-3 text-primary underline">
+    <div className="mt-3 flex flex-wrap gap-x-5 text-sm underline underline-offset-4 [&>a]:py-2 hover:[&>a]:text-foreground">
       <a href="https://github.com/chiItepin/pdfburrow" target="_blank" rel="noreferrer">
         Source code
       </a>
