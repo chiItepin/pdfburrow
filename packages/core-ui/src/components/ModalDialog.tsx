@@ -1,7 +1,7 @@
 import { useId, useLayoutEffect, useRef } from "react";
 import type { ReactNode, KeyboardEventHandler } from "react";
 
-export const MarkupDialog = ({
+export const ModalDialog = ({
   title,
   children,
   onCancel,

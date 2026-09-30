@@ -4,7 +4,12 @@ import { createRequire } from "node:module";
 import test from "node:test";
 import { inspectMarkupPdf, flattenMarkup } from "../packages/pdf-engine/src/markupDocuments.ts";
 import { inverseTransform } from "../packages/pdf-engine/src/markupGeometry.ts";
-import { layoutNote, resizeMarkup, strokeObject } from "../packages/pdf-engine/src/markupLayout.ts";
+import {
+  layoutNote,
+  createNoteFontFeatures,
+  resizeMarkup,
+  strokeObject,
+} from "../packages/pdf-engine/src/markupLayout.ts";
 import { inspectPdf } from "../packages/pdf-engine/src/pdf.ts";
 import { inspectArtifact } from "../apps/web/tests/fixtures/pdfArtifacts.ts";
 
@@ -22,6 +27,7 @@ const {
 const fontBytes = new Uint8Array(
   await readFile(require.resolve("pdfjs-dist/standard_fonts/LiberationSans-Regular.ttf")),
 );
+const fontkit = require("@pdf-lib/fontkit");
 const fixture = async (mutate = () => {}) => {
   const document = await PDFDocument.create();
   const font = await document.embedFont(StandardFonts.Helvetica);
@@ -53,6 +59,22 @@ const contentStreams = (document, page) => {
   return (contents instanceof PDFArray ? contents.asArray() : [contents]).map((item) =>
     Buffer.from(decodePDFRawStream(document.context.lookup(item)).decode()).toString("hex"),
   );
+};
+const darkPixelsNear = (page, x, y) => {
+  let count = 0;
+  for (let row = Math.floor(y) - 2; row <= Math.floor(y) + 2; row++) {
+    for (let column = Math.floor(x) - 2; column <= Math.floor(x) + 2; column++) {
+      const offset = (row * page.width + column) * 4;
+      if (
+        page.pixels[offset] < 96 &&
+        page.pixels[offset + 1] < 96 &&
+        page.pixels[offset + 2] < 96
+      ) {
+        count++;
+      }
+    }
+  }
+  return count;
 };
 
 test("markup flattens all four types across rotated/cropped/UserUnit pages without rasterizing or losing base content", async () => {
@@ -142,6 +164,21 @@ test("markup flattens all four types across rotated/cropped/UserUnit pages witho
     const offset = (16 * page.width + 16) * 4;
     assert.deepEqual([...page.pixels.subarray(offset, offset + 3)], [255, 255, 179]);
     assert.notDeepEqual(page.pixels, before[index].pixels);
+    for (const [label, x, y] of [
+      ["ink", 35, 80],
+      ["first signature stroke", 112.5, 107.5],
+      ["second signature stroke", 132.5, 102.5],
+    ]) {
+      assert.equal(
+        darkPixelsNear(before[index], x, y),
+        0,
+        `${label} source region is blank on page ${index + 1}`,
+      );
+      assert.ok(
+        darkPixelsNear(page, x, y) >= 2,
+        `${label} renders at its expected physical position on page ${index + 1}`,
+      );
+    }
     const geometry = info.pages[index];
     const inverse = inverseTransform(geometry.transform);
     const [a, b, c, d, e, f] = inverse;
@@ -155,6 +192,41 @@ test("markup flattens all four types across rotated/cropped/UserUnit pages witho
     (await inspectMarkupPdf({ id: "saved", name: "saved.pdf", blob: output.blob })).pageCount,
     12,
   );
+});
+
+test("note wrapping and rendered PDF widths use plain glyph advances for kerning and ligature-prone text", async () => {
+  const texts = ["AV To Wa", "office affine fi fl ffi ffl", "España — café €"];
+  const document = await PDFDocument.create();
+  texts.forEach(() => document.addPage([400, 500]));
+  document.registerFontkit(fontkit);
+  const font = await document.embedFont(fontBytes, {
+    subset: true,
+    features: createNoteFontFeatures(),
+  });
+  const input = { id: "notes", name: "notes.pdf", blob: new Blob([await document.save()]) };
+  const objects = texts.map((text, index) => {
+    const layout = layoutNote(text, 180, fontBytes);
+    assert.equal(layout.lines.length, 1);
+    const width = font.widthOfTextAtSize(text, 12);
+    assert.ok(layoutNote(text, width - 0.01, fontBytes).lines.length > 1);
+    return {
+      id: `note-${index}`,
+      page: index + 1,
+      kind: "note",
+      x: 20,
+      y: 30,
+      width: 180,
+      height: layout.height,
+      text: layout.text,
+    };
+  });
+  const output = await flattenMarkup({ input, objects, acknowledged: true }, fontBytes, () => {});
+  const pages = await inspectArtifact(new Uint8Array(await output.blob.arrayBuffer()));
+  for (const [index, page] of pages.entries()) {
+    const items = page.textItems.filter((item) => item.text === texts[index]);
+    assert.equal(items.length, 1);
+    assert.ok(Math.abs(items[0].width - font.widthOfTextAtSize(texts[index], 12)) < 0.001);
+  }
 });
 
 test("annotation rejection is markup-only and empty arrays remain supported", async () => {

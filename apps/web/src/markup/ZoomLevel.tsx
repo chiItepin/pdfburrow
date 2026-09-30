@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { Button } from "@repo/core-ui";
+import { Button, ModalDialog } from "@repo/core-ui";
 import type { MarkupZoom } from "./MarkupPage";
-import { MarkupDialog } from "./MarkupDialog";
 
 export const ZoomLevel = ({
   zoom,
@@ -23,7 +22,7 @@ export const ZoomLevel = ({
     onZoom(number);
   };
   return (
-    <MarkupDialog title="Zoom level" onCancel={onCancel}>
+    <ModalDialog title="Zoom level" onCancel={onCancel}>
       <form
         noValidate
         onSubmit={(event) => {
@@ -58,6 +57,6 @@ export const ZoomLevel = ({
           <Button type="submit">Apply zoom</Button>
         </div>
       </form>
-    </MarkupDialog>
+    </ModalDialog>
   );
 };

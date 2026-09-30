@@ -18,7 +18,7 @@ import { loadValidatedPdf, enforceLimit } from "./pdf.ts";
 import { PdfError } from "./pdfError.ts";
 import { pdfStem } from "./pdfFilename.ts";
 import { inspectMarkupAnnotations, inverseTransform, markupGeometry } from "./markupGeometry.ts";
-import { layoutNote, markupBoundsError } from "./markupLayout.ts";
+import { createNoteFontFeatures, layoutNote, markupBoundsError } from "./markupLayout.ts";
 import type { MarkupInfo, MarkupRequest } from "./markupTypes.ts";
 import type { PdfInput, PdfLimits, PdfOutput, PdfProgress } from "./types";
 
@@ -44,7 +44,7 @@ export const flattenMarkup = async (
   inspectMarkupAnnotations(document);
   document.registerFontkit(fontkit);
   const font = request.objects.some((object) => object.kind === "note")
-    ? await document.embedFont(fontBytes, { subset: true })
+    ? await document.embedFont(fontBytes, { subset: true, features: createNoteFontFeatures() })
     : null;
   const pages = document.getPages();
   for (const [index, object] of request.objects.entries()) {

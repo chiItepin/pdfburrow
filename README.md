@@ -69,7 +69,8 @@ local stroke history remains separate until **Use signature** inserts one object
 A visual signature is not cryptographic signing, identity verification, or a legal-validity guarantee.
 
 Notes use locally shipped, subset-embedded Liberation Sans Regular at 12 points and
-14.4-point line spacing. NFC-normalized printable ASCII, Latin-1/Extended-A, supported
+14.4-point line spacing. Preview, wrapping, and export disable kerning and optional
+ligatures so glyph spacing stays consistent. NFC-normalized printable ASCII, Latin-1/Extended-A, supported
 Western European accents, newlines and common punctuation are checked against font glyphs.
 Unsupported characters and visible-page overflow are rejected before saving, not substituted
 or clipped. All mark sizes are physical points from the rotated, visible page's top-left,

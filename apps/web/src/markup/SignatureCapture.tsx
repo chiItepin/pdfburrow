@@ -1,8 +1,7 @@
 import { useRef, useState } from "react";
 import type { KeyboardEvent, PointerEvent } from "react";
-import { Button } from "@repo/core-ui";
+import { Button, ModalDialog } from "@repo/core-ui";
 import type { MarkupPoint } from "@repo/pdf-engine";
-import { MarkupDialog } from "./MarkupDialog";
 
 export const SignatureCapture = ({
   onCancel,
@@ -104,7 +103,7 @@ export const SignatureCapture = ({
     }
   };
   return (
-    <MarkupDialog
+    <ModalDialog
       title="Draw your signature"
       onCancel={onCancel}
       onKeyDown={(event) => {
@@ -216,6 +215,6 @@ export const SignatureCapture = ({
           Use signature
         </Button>
       </div>
-    </MarkupDialog>
+    </ModalDialog>
   );
 };

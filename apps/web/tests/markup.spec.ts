@@ -472,3 +472,32 @@ test("markup picker keeps its chevron inset and centered with long values at des
   await expect(page.getByRole("menuitem", { name: "Edit note...", exact: true })).toBeDisabled();
   await page.keyboard.press("Escape");
 });
+
+test("note preview and downloaded PDF use matching unkerned glyph spacing", async ({ page }) => {
+  await open(page);
+  const text = "AV To Wa office affine ffi ffl";
+  await menuCommand(page, "Tools", "Place note at center");
+  await page.getByRole("textbox", { name: "Note text", exact: true }).fill(text);
+  await page.getByRole("button", { name: "Save note", exact: true }).click();
+  const line = page.locator("[data-markup-id] tspan");
+  await expect(line).toHaveCount(1);
+  const previewWidth = await line.evaluate((element) => {
+    if (!(element instanceof SVGTextContentElement)) {
+      throw new Error("The note preview is not SVG text.");
+    }
+    return element.getComputedTextLength();
+  });
+  await page.getByRole("checkbox").check();
+  await menuCommand(page, "File", "Generate PDF");
+  await expect(page.getByRole("button", { name: "Download PDF", exact: true })).toBeEnabled();
+  const pending = page.waitForEvent("download");
+  await menuCommand(page, "File", "Download PDF");
+  const path = await (await pending).path();
+  if (!path) {
+    throw new Error("The note PDF download is missing.");
+  }
+  const artifact = await inspectArtifact(new Uint8Array(await readFile(path)));
+  const items = artifact[0]!.textItems.filter((item) => item.text === text);
+  expect(items).toHaveLength(1);
+  expect(Math.abs(items[0]!.width - previewWidth)).toBeLessThan(0.25);
+});

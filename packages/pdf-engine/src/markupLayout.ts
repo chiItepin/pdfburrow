@@ -2,6 +2,15 @@ import fontkit from "@pdf-lib/fontkit";
 import { PdfError } from "./pdfError.ts";
 import type { MarkupGeometry, MarkupObject, MarkupPoint } from "./markupTypes.ts";
 
+// Fontkit expands feature maps in place; each shaping operation needs its own map.
+export const createNoteFontFeatures = () => ({
+  kern: false,
+  liga: false,
+  clig: false,
+  dlig: false,
+  hlig: false,
+});
+
 export const layoutNote = (text: string, width: number, bytes: Uint8Array) => {
   const font = fontkit.create(bytes);
   if (!("unitsPerEm" in font)) {
@@ -26,7 +35,10 @@ export const layoutNote = (text: string, width: number, bytes: Uint8Array) => {
     }
   }
   const measure = (value: string) =>
-    (font.layout(value).glyphs.reduce((sum, glyph) => sum + glyph.advanceWidth, 0) * 12) /
+    (font
+      .layout(value, createNoteFontFeatures())
+      .glyphs.reduce((sum, glyph) => sum + glyph.advanceWidth, 0) *
+      12) /
     font.unitsPerEm;
   const lines: string[] = [];
   for (const paragraph of normalized.split("\n")) {

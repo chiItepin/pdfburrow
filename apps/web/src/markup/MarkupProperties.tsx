@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { Button } from "@repo/core-ui";
+import { Button, ModalDialog } from "@repo/core-ui";
 import { layoutNote, markupBoundsError, resizeMarkup } from "@repo/pdf-engine/markup-layout";
 import type { MarkupGeometry, MarkupObject } from "@repo/pdf-engine";
-import { MarkupDialog } from "./MarkupDialog";
 
 export const MarkupProperties = ({
   object,
@@ -54,7 +53,7 @@ export const MarkupProperties = ({
         ? (["x", "y", "width"] as const)
         : (["x", "y", "scale"] as const);
   return (
-    <MarkupDialog title="Move / size markup" onCancel={onCancel}>
+    <ModalDialog title="Move / size markup" onCancel={onCancel}>
       <p className="mb-4 text-sm text-muted-foreground">
         Position from the visible page's top-left, in PDF points. Drawn marks scale proportionally,
         including stroke width.
@@ -85,6 +84,6 @@ export const MarkupProperties = ({
           Apply
         </Button>
       </div>
-    </MarkupDialog>
+    </ModalDialog>
   );
 };

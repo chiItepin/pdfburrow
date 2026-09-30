@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { Button } from "@repo/core-ui";
+import { Button, ModalDialog } from "@repo/core-ui";
 import { layoutNote, markupBoundsError } from "@repo/pdf-engine/markup-layout";
 import type { MarkupGeometry, MarkupObject, MarkupPoint } from "@repo/pdf-engine";
-import { MarkupDialog } from "./MarkupDialog";
 
 export const NoteEditor = ({
   object,
@@ -45,7 +44,7 @@ export const NoteEditor = ({
     error = failure instanceof Error ? failure.message : "The note could not be measured.";
   }
   return (
-    <MarkupDialog title={object ? "Edit text note" : "Add text note"} onCancel={onCancel}>
+    <ModalDialog title={object ? "Edit text note" : "Add text note"} onCancel={onCancel}>
       <p className="mb-4 text-sm text-muted-foreground">
         12-point black Liberation Sans. Western European text and common punctuation; notes wrap to
         their width.
@@ -90,6 +89,6 @@ export const NoteEditor = ({
           Save note
         </Button>
       </div>
-    </MarkupDialog>
+    </ModalDialog>
   );
 };

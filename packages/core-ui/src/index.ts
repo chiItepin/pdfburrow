@@ -25,6 +25,7 @@ export { Spinner } from "./primitives/Spinner";
 export { Toaster } from "./primitives/Sonner";
 export { toast } from "sonner";
 export { ConfirmDiscard } from "./components/ConfirmDiscard";
+export { ModalDialog } from "./components/ModalDialog";
 export { PageFrame } from "./components/PageFrame";
 export { FileDropzone } from "./components/FileDropzone";
 export { cn } from "./lib/utils";

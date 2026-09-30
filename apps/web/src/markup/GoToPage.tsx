@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { Button } from "@repo/core-ui";
-import { MarkupDialog } from "./MarkupDialog";
+import { Button, ModalDialog } from "@repo/core-ui";
 
 export const GoToPage = ({
   page,
@@ -25,7 +24,7 @@ export const GoToPage = ({
     onPage(number);
   };
   return (
-    <MarkupDialog title="Go to page" onCancel={onCancel}>
+    <ModalDialog title="Go to page" onCancel={onCancel}>
       <form
         noValidate
         onSubmit={(event) => {
@@ -58,6 +57,6 @@ export const GoToPage = ({
           <Button type="submit">Go</Button>
         </div>
       </form>
-    </MarkupDialog>
+    </ModalDialog>
   );
 };
