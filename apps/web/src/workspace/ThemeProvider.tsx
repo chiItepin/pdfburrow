@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useState } from "react";
 import type { ReactNode } from "react";
+import { useHydrated } from "./useHydrated";
 
 type Theme = "light" | "dark";
 const storageKey = "pdfburrow-theme";
@@ -31,14 +32,18 @@ interface ThemeContextValue {
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
+  const hydrated = useHydrated();
   const [preference, setPreference] = useState(readTheme);
   useLayoutEffect(() => {
+    if (!hydrated) {
+      return;
+    }
     document.documentElement.classList.toggle("dark", preference.theme === "dark");
     document.documentElement.style.colorScheme = preference.theme;
     document
       .querySelector('meta[name="theme-color"]')
       ?.setAttribute("content", preference.theme === "dark" ? "#191d20" : "#ffffff");
-  }, [preference.theme]);
+  }, [hydrated, preference.theme]);
   useEffect(() => {
     const sync = (event: StorageEvent) => {
       if (event.key === storageKey || event.key === null) {
@@ -59,7 +64,15 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     setPreference({ theme, error });
   };
   return (
-    <ThemeContext.Provider value={{ ...preference, setTheme }}>{children}</ThemeContext.Provider>
+    <ThemeContext.Provider
+      value={{
+        theme: hydrated ? preference.theme : "dark",
+        error: hydrated ? preference.error : "",
+        setTheme,
+      }}
+    >
+      {children}
+    </ThemeContext.Provider>
   );
 };
 

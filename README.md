@@ -460,6 +460,10 @@ types, and indexing policy. Routing, prerendering, canonical URLs, and sitemap
 generation consume it. Add a page definition there and supply its React UI or
 public HTML template; the build does not maintain a second route list or
 special-case disclosure names. Only React pages are passed to the React renderer.
+The client hydrates that same tree using its emitted registry route, then applies
+legacy hash bookmarks. Theme preferences, responsive layouts, and browser capability
+checks use matching server snapshots during hydration before reading browser state,
+so the initial HTML is reused without false unsupported-browser warnings.
 
 `PDFBURROW_SITE_ORIGIN` defaults to `https://chiitepin.github.io` and must be an
 HTTPS origin with no trailing slash, path, credentials, query, or fragment.

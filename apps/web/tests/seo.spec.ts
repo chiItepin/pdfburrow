@@ -53,6 +53,7 @@ test("search pages contain readable content, crawlable links and unique metadata
         await expect(page.getByText("Your theme could not be saved", { exact: false })).toHaveCount(
           0,
         );
+        await expect(page.getByText(/This browser cannot (?:run|convert)/)).toHaveCount(0);
         await expect(
           page.getByRole("link", { name: "Merge PDFs", exact: true, includeHidden: true }),
         ).toHaveAttribute("href", `${basePath}merge/`);
@@ -61,6 +62,9 @@ test("search pages contain readable content, crawlable links and unique metadata
         expect(schema.url).toBe(`${siteOrigin}${basePath}${path}`);
         if (path) {
           await expect(page.getByRole("heading", { name: /^How to/ })).toBeVisible();
+          const guide = page.getByRole("region", { name: /^How to/ });
+          await expect(guide.getByRole("list")).toHaveJSProperty("tagName", "OL");
+          await expect(guide.getByRole("listitem")).toHaveCount(3);
           expect(schema.offers.price).toBe("0");
           expect(schema.aggregateRating).toBeUndefined();
         }

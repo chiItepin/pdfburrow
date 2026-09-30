@@ -74,7 +74,9 @@ export const writeStaticPages = async () => {
       const html =
         page.source === "html"
           ? await readFile(new URL(`../public/${page.template}`, import.meta.url), "utf8")
-          : template.replace("%PAGE_CONTENT%", () => renderPage(page));
+          : template
+              .replace("%PAGE_CONTENT%", () => renderPage(page))
+              .replace("%PAGE_ROUTE%", () => escapeHtml(page.route));
       const metadata = pageMetadata(page, basePath, siteOrigin);
       const schema = structuredData(page, basePath, siteOrigin);
       const destination = join(outputDirectory, pageFilename(page));

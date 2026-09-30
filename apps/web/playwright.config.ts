@@ -25,6 +25,7 @@ export default defineConfig({
     {
       name: "desktop-chromium",
       testMatch: [
+        "hydration.spec.ts",
         "seo.spec.ts",
         "workspace.spec.ts",
         "images.spec.ts",
@@ -49,6 +50,7 @@ export default defineConfig({
     {
       name: "mobile-chromium",
       testMatch: [
+        "hydration.spec.ts",
         "seo.spec.ts",
         "workspace.spec.ts",
         "images.spec.ts",
@@ -73,6 +75,7 @@ export default defineConfig({
     {
       name: "desktop-firefox",
       testMatch: [
+        "hydration.spec.ts",
         "shell.spec.ts",
         "theme.spec.ts",
         "workspace.spec.ts",
@@ -94,6 +97,7 @@ export default defineConfig({
     {
       name: "desktop-webkit",
       testMatch: [
+        "hydration.spec.ts",
         "shell.spec.ts",
         "theme.spec.ts",
         "workspace.spec.ts",
@@ -114,7 +118,12 @@ export default defineConfig({
     },
     {
       name: "development-chromium",
-      testMatch: ["development.spec.ts", "compressedPreviews.spec.ts", "seo.spec.ts"],
+      testMatch: [
+        "development.spec.ts",
+        "compressedPreviews.spec.ts",
+        "seo.spec.ts",
+        "hydration.spec.ts",
+      ],
       use: { ...devices["Desktop Chrome"], baseURL: `${developmentOrigin}${basePath}` },
     },
   ],

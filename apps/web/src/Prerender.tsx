@@ -1,3 +1,4 @@
+import { StrictMode } from "react";
 import { renderToString } from "react-dom/server";
 import { App } from "./App";
 import { ThemeProvider } from "./workspace/ThemeProvider";
@@ -8,7 +9,9 @@ export { pageMetadata, structuredData } from "./workspace/pageMetadata";
 
 export const renderPage = (page: ReactPage) =>
   renderToString(
-    <ThemeProvider>
-      <App initialRoute={page.route} />
-    </ThemeProvider>,
+    <StrictMode>
+      <ThemeProvider>
+        <App initialRoute={page.route} />
+      </ThemeProvider>
+    </StrictMode>,
   );

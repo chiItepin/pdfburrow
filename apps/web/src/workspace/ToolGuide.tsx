@@ -43,11 +43,11 @@ export const ToolGuide = ({ route }: { route: ToolRoute }) => {
       <h2 id="tool-guide-heading" className="text-xl font-semibold">
         {guide.title}
       </h2>
-      <div className="mt-3 max-w-prose space-y-2">
+      <ol className="mt-3 max-w-prose list-decimal space-y-2 pl-6">
         {guide.steps.map((step) => (
-          <p key={step}>{step}</p>
+          <li key={step}>{step}</li>
         ))}
-      </div>
+      </ol>
       <p className="mt-4 max-w-prose text-sm text-muted-foreground">{guide.detail}</p>
     </section>
   );

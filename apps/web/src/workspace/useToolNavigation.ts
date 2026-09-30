@@ -5,14 +5,21 @@ import { readRoute } from "./routes";
 import type { ToolRoute } from "./routes";
 import { siteBasePath } from "./site";
 import { updatePageMetadata } from "./updatePageMetadata";
+import { useHydrated } from "./useHydrated";
 
 export const useToolNavigation = (guard: NavigationGuard, initialRoute?: ToolRoute) => {
+  const hydrated = useHydrated();
+  const [wasHydrated, setWasHydrated] = useState(hydrated);
   const latest = useRef(guard);
   const controller = useRef<ReturnType<typeof createNavigation> | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const [route, setRoute] = useState(() => initialRoute ?? readRoute(location, siteBasePath));
   const [confirmation, setConfirmation] = useState(false);
   const [notice, setNotice] = useState("");
+  if (hydrated !== wasHydrated) {
+    setWasHydrated(hydrated);
+    setRoute(readRoute(location, siteBasePath));
+  }
   useLayoutEffect(() => {
     latest.current = guard;
   });
