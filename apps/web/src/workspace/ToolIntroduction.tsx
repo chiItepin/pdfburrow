@@ -1,6 +1,8 @@
 import { Button } from "@repo/core-ui";
 import { ArrowUpRight } from "lucide-react";
 import type { ToolRoute } from "./routes";
+import { routePath } from "./routes";
+import { siteBasePath } from "./site";
 import { tools } from "./tools";
 
 export const ToolIntroduction = ({
@@ -25,17 +27,28 @@ export const ToolIntroduction = ({
           key={value}
           variant="ghost"
           className="h-auto w-full justify-start gap-4 rounded-none px-2 py-6 text-left whitespace-normal sm:gap-5"
-          aria-label={`Open ${label}`}
-          onClick={() => onNavigate(value)}
+          asChild
         >
-          <Icon className="size-5! text-primary" strokeWidth={1.5} aria-hidden="true" />
-          <span className="flex-1">
-            <span className="block text-base font-medium">{label}</span>
-            <span className="mt-1 block text-sm leading-relaxed font-normal text-muted-foreground">
-              {description}
+          <a
+            href={routePath(value, siteBasePath)}
+            aria-label={`Open ${label}`}
+            onClick={(event) => {
+              if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+                return;
+              }
+              event.preventDefault();
+              onNavigate(value);
+            }}
+          >
+            <Icon className="size-5! text-primary" strokeWidth={1.5} aria-hidden="true" />
+            <span className="flex-1">
+              <span className="block text-base font-medium">{label}</span>
+              <span className="mt-1 block text-sm leading-relaxed font-normal text-muted-foreground">
+                {description}
+              </span>
             </span>
-          </span>
-          <ArrowUpRight className="text-muted-foreground" aria-hidden="true" />
+            <ArrowUpRight className="text-muted-foreground" aria-hidden="true" />
+          </a>
         </Button>
       ))}
     </div>

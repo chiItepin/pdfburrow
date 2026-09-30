@@ -4,7 +4,7 @@
     {
       "operationName": "build",
       "outputFolderNames": ["dist"],
-      "dependsOnEnvVars": ["PDFBURROW_BASE_PATH"]
+      "dependsOnEnvVars": ["PDFBURROW_BASE_PATH", "PDFBURROW_SITE_ORIGIN"]
     }
   ]
 }

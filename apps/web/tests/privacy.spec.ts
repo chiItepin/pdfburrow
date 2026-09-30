@@ -1,6 +1,7 @@
 import { expect, test, type BrowserContext, type Request } from "@playwright/test";
 import { createHash } from "node:crypto";
 import { readdir } from "node:fs/promises";
+import { navigateToTool } from "./fixtures/workspaceNavigation";
 import {
   exercisePrivateWorkflows,
   privateMarker,
@@ -59,7 +60,8 @@ test("document success, failures, cancellation and reset request only static ass
   await page.goto("./#/merge");
   const inputs = await privacyInputs(page);
   await exercisePrivateWorkflows(page, inputs);
-  await page.getByRole("link", { name: "Merge PDFs", exact: true }).click();
+  await navigateToTool(page, "Merge PDFs");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Merge PDFs");
   await page.locator('input[type="file"]').setInputFiles({
     name: `${privateMarker}-corrupt.pdf`,
     mimeType: "application/pdf",

@@ -146,7 +146,7 @@ test("cancellation, worker/resource failures and optional preview errors preserv
   await page.evaluate(() => {
     location.hash = "#/merge";
   });
-  await expect(page).toHaveURL(/#\/split$/);
+  await expect(page).toHaveURL(/\/split\/$/);
   await page.getByRole("button", { name: "Cancel generation" }).click();
   await expect(
     page.getByRole("region", { name: "Split output" }).getByRole("status"),
@@ -294,10 +294,10 @@ test("unsupported sources stay visible and cannot be acknowledged away", async (
   await expect(page.getByRole("button", { name: "Download PDF", exact: true })).toBeVisible();
   await navigateToTool(page, "Merge PDFs");
   await page.getByRole("button", { name: "Discard", exact: true }).click();
-  await expect(page).toHaveURL(/#\/merge$/);
+  await expect(page).toHaveURL(/\/merge\/$/);
   await expect(page.locator("[data-workspace-content]").getByRole("listitem")).toHaveCount(0);
   await page.goBack();
-  await expect(page).toHaveURL(/#\/split$/);
+  await expect(page).toHaveURL(/\/split\/$/);
   await addSplitSource(page, 1);
   await withToolSettings(page, () =>
     expect(page.getByRole("radio", { name: "Selected pages", exact: true })).toBeChecked(),

@@ -183,7 +183,7 @@ test("cancellation, preview/worker/download failures and guarded navigation reta
   await downloadImagePdf(page);
   await navigateToTool(page, "Merge PDFs");
   await page.getByRole("button", { name: "Discard", exact: true }).click();
-  await expect(page).toHaveURL(/#\/merge$/);
+  await expect(page).toHaveURL(/\/merge\/$/);
   await expect(page.locator("[data-workspace-content]").getByRole("listitem")).toHaveCount(0);
   await navigateToTool(page, "Images to PDF");
   await withToolSettings(page, () =>

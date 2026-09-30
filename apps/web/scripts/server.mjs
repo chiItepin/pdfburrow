@@ -10,6 +10,7 @@ const contentTypes = new Map([
   [".css", "text/css; charset=utf-8"],
   [".json", "application/json"],
   [".map", "application/json"],
+  [".xml", "application/xml; charset=utf-8"],
   [".txt", "text/plain; charset=utf-8"],
 ]);
 
@@ -30,13 +31,21 @@ const serveRequest = async (request, response) => {
     response.writeHead(302, { Location: basePath }).end();
     return;
   }
-  const file = resolve(outputDirectory, pathname.slice(basePath.length) || "index.html");
+  let file = resolve(outputDirectory, pathname.slice(basePath.length) || "index.html");
   if (!pathname.startsWith(basePath) || !file.startsWith(`${outputDirectory}${sep}`)) {
     response.writeHead(404).end("Not found");
     return;
   }
   try {
-    const info = await stat(file);
+    let info = await stat(file);
+    if (info.isDirectory()) {
+      if (!pathname.endsWith("/")) {
+        response.writeHead(301, { Location: `${pathname}/` }).end();
+        return;
+      }
+      file = resolve(file, "index.html");
+      info = await stat(file);
+    }
     if (!info.isFile()) {
       response.writeHead(404).end("Not found");
       return;

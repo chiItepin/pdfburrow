@@ -1,6 +1,6 @@
 import { build, context } from "esbuild";
 import { execFile } from "node:child_process";
-import { copyFile, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, rm, writeFile } from "node:fs/promises";
 import { basename } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
@@ -12,6 +12,7 @@ import {
   outputDirectory,
   pdfJsDirectory,
 } from "./buildOptions.mjs";
+import { writeStaticPages } from "./staticPages.mjs";
 
 const copyPreviewAssets = async () => {
   const destination = `${outputDirectory}/assets/pdfjs`;
@@ -45,15 +46,7 @@ export const buildStyles = async () => {
   });
 };
 
-export const writeHtml = async () => {
-  await mkdir(outputDirectory, { recursive: true });
-  const template = await readFile(new URL("../index.html", import.meta.url), "utf8");
-  await writeFile(`${outputDirectory}/index.html`, template.replaceAll("%BASE_PATH%", basePath));
-  for (const name of ["privacy.html", "notices.html", "limits.html"]) {
-    const page = await readFile(new URL(`../public/${name}`, import.meta.url), "utf8");
-    await writeFile(`${outputDirectory}/${name}`, page.replaceAll("%BASE_PATH%", basePath));
-  }
-};
+export const writeHtml = writeStaticPages;
 
 /** @param {boolean} development */
 const applicationOptions = (development) => {
@@ -80,9 +73,24 @@ export const buildApplication = async () => {
 
 export const watchApplication = async () => {
   await copyPreviewAssets();
-  await writeHtml();
   await buildStyles();
-  const builder = await context(applicationOptions(true));
+  const options = applicationOptions(true);
+  const builder = await context({
+    ...options,
+    plugins: [
+      ...(options.plugins ?? []),
+      {
+        name: "static-pages",
+        setup: (builder) => {
+          builder.onEnd(async (result) => {
+            if (result.errors.length === 0) {
+              await writeHtml();
+            }
+          });
+        },
+      },
+    ],
+  });
   try {
     await builder.rebuild();
     await builder.watch();

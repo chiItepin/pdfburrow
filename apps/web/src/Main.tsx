@@ -1,17 +1,24 @@
 import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
+import { hydrateRoot } from "react-dom/client";
 import { App } from "@/App";
 import { ThemeProvider } from "./workspace/ThemeProvider";
+import { pageRegistry } from "./workspace/pageRegistry";
 
 const root = document.getElementById("root");
 if (!root) {
   throw new Error("The application root is missing.");
 }
 
-createRoot(root).render(
+const page = pageRegistry.find((page) => page.route === root.dataset.pageRoute);
+if (!page || page.source !== "react") {
+  throw new Error("The prerendered application route is missing or invalid.");
+}
+
+hydrateRoot(
+  root,
   <StrictMode>
     <ThemeProvider>
-      <App />
+      <App initialRoute={page.route} />
     </ThemeProvider>
   </StrictMode>,
 );

@@ -27,7 +27,7 @@ for (const preference of [null, "light", "dark", "invalid"]) {
     }, preference);
     await page.route("**/assets/main.js", (route) => route.abort());
     await page.goto("./");
-    await expect(page.locator("#root")).toBeEmpty();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Home");
     if (preference === "light") {
       await expect(page.locator("html")).not.toHaveClass(/dark/);
     } else {

@@ -1,3 +1,6 @@
+import { siteBasePath } from "./site";
+import { getPage, pagePath } from "./pageRegistry";
+
 export const WorkspaceFooter = () => (
   <footer className="py-6 text-xs leading-relaxed text-muted-foreground">
     <p className="mb-3 text-sm text-foreground">
@@ -15,13 +18,13 @@ export const WorkspaceFooter = () => (
       <a href="https://github.com/chiItepin/pdfburrow" target="_blank" rel="noreferrer">
         Source code
       </a>
-      <a href="privacy.html" target="_blank" rel="noreferrer">
+      <a href={pagePath(getPage("privacy"), siteBasePath)} target="_blank" rel="noreferrer">
         Privacy
       </a>
-      <a href="notices.html" target="_blank" rel="noreferrer">
+      <a href={pagePath(getPage("notices"), siteBasePath)} target="_blank" rel="noreferrer">
         Licenses/notices
       </a>
-      <a href="limits.html" target="_blank" rel="noreferrer">
+      <a href={pagePath(getPage("limits"), siteBasePath)} target="_blank" rel="noreferrer">
         Workload limits
       </a>
     </div>

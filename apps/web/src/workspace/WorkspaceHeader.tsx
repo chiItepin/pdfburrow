@@ -15,8 +15,9 @@ import {
   DropdownMenuTrigger,
   SidebarTrigger,
 } from "@repo/core-ui";
-import { routeHash, routeTitles } from "./routes";
+import { routePath, routeTitles } from "./routes";
 import type { ToolRoute } from "./routes";
+import { siteBasePath } from "./site";
 import { ToolSettingsTrigger } from "./ToolSettingsSidebar";
 
 export const WorkspaceHeader = ({
@@ -40,10 +41,13 @@ export const WorkspaceHeader = ({
         <BreadcrumbList>
           <BreadcrumbItem className="hidden sm:inline-flex">
             <BreadcrumbLink
-              href={routeHash("home")}
+              href={routePath("home", siteBasePath)}
               aria-disabled={locked}
               className="aria-disabled:opacity-50"
               onClick={(event) => {
+                if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+                  return;
+                }
                 event.preventDefault();
                 onNavigate("home");
               }}

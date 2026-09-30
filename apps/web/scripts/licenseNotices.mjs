@@ -76,12 +76,31 @@ export const writeLicenseNotices = async (metafile, outputDirectory) => {
       .sort();
     /** @type {{ file: string, text: string }[]} */
     const notices = [];
+    let provenance = "installed package";
     for (const name of names) {
       const text = await readFile(resolve(item.directory, name), "utf8");
       if (!text.trim()) {
         throw new Error(`Empty upstream notice: ${item.name}@${item.version}/${name}`);
       }
       notices.push({ file: name, text });
+    }
+    // This published version omits LICENSE; retain the author's upstream text, pinned for review.
+    if (
+      !notices.length &&
+      item.name === "react-remove-scroll-bar" &&
+      item.version === "2.3.8" &&
+      item.license === "MIT"
+    ) {
+      provenance =
+        "https://github.com/theKashey/react-remove-scroll-bar/blob/7301c160fda44cb8cf2b9fdfde61efad35736196/LICENSE";
+      const text = await readFile(
+        new URL("../licenses/reactRemoveScrollBar.txt", import.meta.url),
+        "utf8",
+      );
+      if (!text.trim()) {
+        throw new Error("Empty vendored react-remove-scroll-bar license.");
+      }
+      notices.push({ file: "LICENSE", text });
     }
     if (!notices.length) {
       throw new Error(`No redistributable license text for ${item.name}@${item.version}`);
@@ -100,7 +119,7 @@ export const writeLicenseNotices = async (metafile, outputDirectory) => {
       name: item.name,
       version: item.version,
       license: item.license,
-      provenance: "installed package",
+      provenance,
       notices: notices.map(({ file, text }) => ({
         file,
         sha256: createHash("sha256").update(text).digest("hex"),

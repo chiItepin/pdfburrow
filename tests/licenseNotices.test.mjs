@@ -74,6 +74,25 @@ test("distributed notices retain full upstream text and fail closed for missing 
       JSON.stringify({ name: "fixture-package", version: "2.0.0", license: "UNLICENSED" }),
     );
     await assert.rejects(writeLicenseNotices(metadata, output), /Review the license/);
+    await rm(join(pkg, "LICENSE"));
+    await writeFile(
+      join(pkg, "package.json"),
+      JSON.stringify({ name: "react-remove-scroll-bar", version: "2.3.8", license: "MIT" }),
+    );
+    await writeLicenseNotices(metadata, output);
+    assert.match(
+      await readFile(join(output, "third-party-notices.txt"), "utf8"),
+      /Copyright \(c\) 2025 Anton Korzunov/,
+    );
+    const supplemented = JSON.parse(
+      await readFile(join(output, "license-inventory.json"), "utf8"),
+    ).find((item) => item.name === "react-remove-scroll-bar");
+    assert.match(supplemented.provenance, /7301c160fda44cb8cf2b9fdfde61efad35736196\/LICENSE$/);
+    await writeFile(
+      join(pkg, "package.json"),
+      JSON.stringify({ name: "react-remove-scroll-bar", version: "2.3.9", license: "MIT" }),
+    );
+    await assert.rejects(writeLicenseNotices(metadata, output), /No redistributable license text/);
   } finally {
     await rm(directory, { recursive: true, force: true });
   }

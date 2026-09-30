@@ -1,21 +1,31 @@
-export type ToolRoute = "home" | "merge" | "split" | "images" | "not-found";
+import { getPage, pageFilename, pagePath, pageRegistry } from "./pageRegistry.ts";
+import type { ReactPage } from "./pageRegistry.ts";
 
-export const routeHash = (route: ToolRoute) => (route === "home" ? "#/" : `#/${route}`);
+export type ToolRoute = ReactPage["route"];
 
-export const readRoute = (hash: string): ToolRoute => {
-  if (hash === "" || hash === "#" || hash === "#/") {
-    return "home";
+export const routePath = (route: ToolRoute, basePath: string) => pagePath(getPage(route), basePath);
+
+const toolPages = pageRegistry.filter((page) => page.source === "react");
+
+export const readRoute = (
+  { pathname, hash }: { readonly pathname: string; readonly hash: string },
+  basePath: string,
+): ToolRoute => {
+  // Old bookmarks and manually edited hashes still pass through the discard guard.
+  if (hash && hash !== "#") {
+    return toolPages.find((page) => page.legacyHash === hash)?.route ?? "not-found";
   }
-  switch (hash) {
-    case "#/merge":
-      return "merge";
-    case "#/split":
-      return "split";
-    case "#/images":
-      return "images";
-    default:
-      return "not-found";
+  for (const page of toolPages) {
+    const path = pagePath(page, basePath);
+    if (
+      pathname === path ||
+      pathname === `${basePath}${pageFilename(page)}` ||
+      (page.path.endsWith("/") && pathname === path.slice(0, -1))
+    ) {
+      return page.route;
+    }
   }
+  return "not-found";
 };
 
 export const routeTitles: Record<ToolRoute, string> = {

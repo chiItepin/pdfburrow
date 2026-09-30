@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#191d20" />
-    <title>PDFBurrow - Local PDF tools</title>
+    %PAGE_METADATA%
     <script>
       (() => {
         let theme = "dark";
@@ -28,7 +28,13 @@
     <link rel="stylesheet" href="%BASE_PATH%assets/styles.css" />
   </head>
   <body>
-    <div id="root"></div>
+    <noscript>
+      <p class="mx-auto max-w-6xl px-6 pt-6">
+        Enable JavaScript to use these local PDF tools. You can read about each tool and our privacy
+        practices without JavaScript. Documents are never uploaded.
+      </p>
+    </noscript>
+    <div id="root" data-page-route="%PAGE_ROUTE%">%PAGE_CONTENT%</div>
     <script type="module" src="%BASE_PATH%assets/main.js"></script>
   </body>
 </html>

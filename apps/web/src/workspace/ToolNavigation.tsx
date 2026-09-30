@@ -11,8 +11,9 @@ import {
   Switch,
   useSidebar,
 } from "@repo/core-ui";
-import { routeHash } from "./routes";
+import { routePath } from "./routes";
 import type { ToolRoute } from "./routes";
+import { siteBasePath } from "./site";
 import { tools } from "./tools";
 import { useTheme } from "./ThemeProvider";
 
@@ -55,10 +56,13 @@ export const ToolNavigation = ({
               <SidebarMenuItem key={value}>
                 <SidebarMenuButton asChild isActive={route === value}>
                   <a
-                    href={routeHash(value)}
+                    href={routePath(value, siteBasePath)}
                     aria-current={route === value ? "page" : undefined}
                     aria-disabled={locked}
                     onClick={(event) => {
+                      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+                        return;
+                      }
                       event.preventDefault();
                       if (isMobile) {
                         // Restore drawer focus before opening a discard confirmation.

@@ -2,6 +2,8 @@ import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
 import { reactCompiler } from "./reactCompiler.mjs";
+import { siteDefines } from "./siteConfig.mjs";
+export { basePath } from "./siteConfig.mjs";
 
 const requireEngine = createRequire(
   new URL("../../../packages/pdf-engine/package.json", import.meta.url),
@@ -14,11 +16,6 @@ export const isDevelopment =
 export const outputDirectory = fileURLToPath(
   new URL(isDevelopment ? "../.dev" : "../dist", import.meta.url),
 );
-export const basePath = process.env.PDFBURROW_BASE_PATH ?? "/pdfburrow/";
-
-if (!/^\/(?:[a-zA-Z0-9_-]+\/)*$/u.test(basePath)) {
-  throw new Error("PDFBURROW_BASE_PATH must be / or a slash-delimited path such as /pdfburrow/.");
-}
 
 /** @param {boolean} development @returns {import("esbuild").BuildOptions} */
 export const buildOptions = (development) => ({
@@ -51,6 +48,9 @@ export const buildOptions = (development) => ({
   sourcemap: development,
   chunkNames: "[name]-[hash]",
   assetNames: "[name]-[hash]",
-  define: { "process.env.NODE_ENV": JSON.stringify(development ? "development" : "production") },
+  define: {
+    ...siteDefines,
+    "process.env.NODE_ENV": JSON.stringify(development ? "development" : "production"),
+  },
   logLevel: "warning",
 });

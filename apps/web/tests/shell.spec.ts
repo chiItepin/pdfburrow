@@ -103,11 +103,11 @@ test("compact breadcrumbs preserve discard confirmation and restore focus", asyn
   await expect(page.getByRole("button", { name: "Keep working" })).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(more).toBeFocused();
-  await expect(page).toHaveURL(/#\/split$/);
+  await expect(page).toHaveURL(/\/split\/$/);
   await more.click();
   await page.getByRole("menuitem", { name: "PDFBurrow home" }).click();
   await page.getByRole("button", { name: "Discard", exact: true }).click();
-  await expect(page).toHaveURL(/#\/$/);
+  await expect(page).toHaveURL(new URL("./", test.info().project.use.baseURL).href);
   await expect(page.getByRole("heading", { level: 1 })).toBeFocused();
 });
 
@@ -132,7 +132,7 @@ test("mobile drawer traps focus, dismisses safely, and adapts when resized", asy
   await page.keyboard.press("Escape");
   await expect(trigger).toBeFocused();
   await expect(dialog).toHaveCount(0);
-  await expect(page).toHaveURL(/#\/merge$/);
+  await expect(page).toHaveURL(/\/merge\/$/);
   await trigger.click();
   await page.setViewportSize({ width: 1024, height: 768 });
   await expect(dialog).toHaveCount(0);

@@ -4,8 +4,10 @@ import type { DiscardAction, InputRow, MoveDirection } from "./types";
 import { useInputDraft } from "./useInputDraft";
 import { useDocumentJob } from "./useDocumentJob";
 import { useWorkspaceLifecycle } from "./useWorkspaceLifecycle";
+import { useHydrated } from "./useHydrated";
 
 export const useDocumentWorkspace = () => {
+  const hydrated = useHydrated();
   const [notice, announce] = useState("");
   const [confirmation, setConfirmation] = useState<DiscardAction | null>(null);
   const draft = useInputDraft(announce);
@@ -13,9 +15,10 @@ export const useDocumentWorkspace = () => {
   const focus = useWorkspaceLifecycle(draft.inputs.length, execution.job.phase);
   const focusAfterCommit = useFocusAfterCommit();
   const capable =
-    typeof Worker !== "undefined" &&
-    typeof Blob.prototype.arrayBuffer === "function" &&
-    typeof crypto.randomUUID === "function";
+    !hydrated ||
+    (typeof Worker !== "undefined" &&
+      typeof Blob.prototype.arrayBuffer === "function" &&
+      typeof crypto.randomUUID === "function");
 
   const addFiles = (files: FileList | readonly File[], kind: InputRow["kind"] = "pdf") => {
     if (!execution.editable || !capable) {

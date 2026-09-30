@@ -3,10 +3,12 @@ import type { ImageRotation, ImageSettings } from "@repo/pdf-engine";
 import { defaultImageSettings, imageOutputNames } from "@repo/pdf-engine/image-layout";
 import type { useDocumentWorkspace } from "../workspace/useDocumentWorkspace";
 import { imageLimits } from "../workspace/resourcePolicy";
+import { useHydrated } from "../workspace/useHydrated";
 
 const turns: readonly ImageRotation[] = [0, 90, 180, 270];
 
 export const useImageJob = (workspace: ReturnType<typeof useDocumentWorkspace>) => {
+  const hydrated = useHydrated();
   const { draft, execution } = workspace;
   const [settings, setSettings] = useState(defaultImageSettings);
   const [rotations, setRotations] = useState(new Map<string, ImageRotation>());
@@ -18,9 +20,10 @@ export const useImageJob = (workspace: ReturnType<typeof useDocumentWorkspace>) 
     : undefined;
   const capable =
     workspace.capable &&
-    typeof createImageBitmap === "function" &&
-    typeof OffscreenCanvas === "function" &&
-    typeof OffscreenCanvas.prototype.convertToBlob === "function";
+    (!hydrated ||
+      (typeof createImageBitmap === "function" &&
+        typeof OffscreenCanvas === "function" &&
+        typeof OffscreenCanvas.prototype.convertToBlob === "function"));
   const { job } = execution;
   const progress = job.phase === "processing" ? job.progress : undefined;
   const status =

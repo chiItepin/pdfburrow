@@ -20,6 +20,7 @@ export const configFor = (layer) => {
       ignores: [
         "dist/**",
         ".dev/**",
+        ".prerender-*/**",
         "node_modules/**",
         ".rush/**",
         "test-results/**",

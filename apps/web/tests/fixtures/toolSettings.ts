@@ -13,6 +13,7 @@ export const closeToolSettings = async (page: Page) => {
   if (await drawer.isVisible()) {
     await drawer.getByRole("button", { name: "Close settings", exact: true }).click();
     await expect(drawer).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Open settings", exact: true })).toBeFocused();
   }
 };
 

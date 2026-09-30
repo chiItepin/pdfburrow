@@ -3,6 +3,8 @@ import { PDFDocument, PDFName, PDFString } from "pdf-lib";
 import { createRequire } from "node:module";
 import { imageFixture, downloadImagePdf, generateImages, type ImageFixture } from "./imageFixtures";
 import { downloadSplit, generateSplit } from "./splitHelpers";
+import { navigateToTool } from "./workspaceNavigation";
+import { setToolOption } from "./toolSettings";
 
 export const privateMarker = "PRIVATE_DOCUMENT_4e91d";
 const { unzipSync }: { unzipSync: (bytes: Uint8Array) => Record<string, Uint8Array> } =
@@ -32,7 +34,7 @@ export const privacyPdf = async () => {
 export const resetPrivacyDraft = async (page: Page) => {
   await page.getByRole("button", { name: "Start over", exact: true }).click();
   await page.getByRole("button", { name: "Discard", exact: true }).click();
-  await expect(page.getByRole("listitem")).toHaveCount(0);
+  await expect(page.locator("[data-workspace-content]").getByRole("listitem")).toHaveCount(0);
 };
 
 export const privacyInputs = async (page: Page) => ({
@@ -45,7 +47,8 @@ export const exercisePrivateWorkflows = async (
   page: Page,
   inputs: { pdf: ImageFixture; image: ImageFixture; jpeg: ImageFixture },
 ) => {
-  await page.getByRole("link", { name: "Merge PDFs", exact: true }).click();
+  await navigateToTool(page, "Merge PDFs");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Merge PDFs");
   await page.locator('input[type="file"]').setInputFiles(inputs.pdf);
   await expect(page.getByRole("img", { name: `First page of ${inputs.pdf.name}` })).toBeVisible();
   await page.getByRole("checkbox").check();
@@ -57,9 +60,10 @@ export const exercisePrivateWorkflows = async (
   ]);
   await resetPrivacyDraft(page);
 
-  await page.getByRole("link", { name: "Split / Extract", exact: true }).click();
+  await navigateToTool(page, "Split / Extract");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Split / Extract");
   await page.locator('input[type="file"]').setInputFiles(inputs.pdf);
-  await page.getByRole("radio", { name: "Every page", exact: true }).check();
+  await setToolOption(page, "Every page");
   await generateSplit(page);
   await page.getByRole("button", { name: "Prepare ZIP for all PDFs" }).click();
   const split = unzipSync((await downloadSplit(page, "Download ZIP")).bytes);
@@ -72,11 +76,12 @@ export const exercisePrivateWorkflows = async (
   }
   await resetPrivacyDraft(page);
 
-  await page.getByRole("link", { name: "Images to PDF", exact: true }).click();
+  await navigateToTool(page, "Images to PDF");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Images to PDF");
   await page.locator('input[type="file"]').setInputFiles([inputs.image, inputs.jpeg]);
   await expect(page.getByRole("img", { name: `Preview of ${inputs.image.name}` })).toBeVisible();
-  await page.getByRole("radio", { name: "One PDF per image", exact: true }).check();
-  await page.getByRole("radio", { name: "Image size (96 pixels per inch)" }).check();
+  await setToolOption(page, "One PDF per image");
+  await setToolOption(page, "Image size (96 pixels per inch)");
   await generateImages(page);
   await page.getByRole("button", { name: "Prepare ZIP for all PDFs" }).click();
   const images = unzipSync((await downloadImagePdf(page, "Download ZIP")).bytes);

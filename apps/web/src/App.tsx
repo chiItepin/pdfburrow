@@ -7,18 +7,23 @@ import { ToolNavigation } from "./workspace/ToolNavigation";
 import { ToolIntroduction } from "./workspace/ToolIntroduction";
 import { WorkspaceFooter } from "./workspace/WorkspaceFooter";
 import { useToolNavigation } from "./workspace/useToolNavigation";
+import type { ToolRoute } from "./workspace/routes";
+import { ToolGuide } from "./workspace/ToolGuide";
 import { WorkspaceHeader } from "./workspace/WorkspaceHeader";
 import { ToolSettingsProvider } from "./workspace/ToolSettingsSidebar";
 import { useTheme } from "./workspace/ThemeProvider";
 
-export const App = () => {
+export const App = ({ initialRoute }: { initialRoute?: ToolRoute }) => {
   const workspace = useDocumentWorkspace();
   const { theme } = useTheme();
-  const { route, heading, confirmation, notice, request, keep, discard } = useToolNavigation({
-    hasWork: workspace.draft.inputs.length > 0,
-    locked: workspace.execution.locked,
-    discard: workspace.discardForNavigation,
-  });
+  const { route, heading, confirmation, notice, request, keep, discard } = useToolNavigation(
+    {
+      hasWork: workspace.draft.inputs.length > 0,
+      locked: workspace.execution.locked,
+      discard: workspace.discardForNavigation,
+    },
+    initialRoute,
+  );
   return (
     <SidebarProvider className="h-dvh min-h-0 overflow-hidden bg-background md:m-4 md:h-[calc(100dvh-2rem)] md:rounded-xl md:border md:border-y-0">
       <a
@@ -41,7 +46,7 @@ export const App = () => {
             onNavigate={request}
           />
           <div
-            className="min-h-0 flex-1 overflow-y-auto outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring has-[[data-settings-docked]]:mr-80"
+            className="min-h-0 flex-1 overflow-y-auto outline-none [overflow-anchor:none] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring has-[[data-settings-docked]]:mr-80"
             data-workspace-scroll
             role="region"
             aria-label="Document workspace"
@@ -66,6 +71,7 @@ export const App = () => {
                   <ToolIntroduction route={route} onNavigate={request} />
                 )}
               </div>
+              <ToolGuide route={route} />
               <WorkspaceFooter />
             </div>
           </div>

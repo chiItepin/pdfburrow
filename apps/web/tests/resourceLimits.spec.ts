@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import { PDFDocument, PDFName } from "pdf-lib";
 import { imageFixture, pngChunk } from "./fixtures/imageFixtures";
 import { addSplitSource } from "./fixtures/splitHelpers";
+import { withToolSettings } from "./fixtures/toolSettings";
 
 for (const tool of ["merge", "split"]) {
   test(`${tool} validation rejects oversized UserUnit-scaled pages and accepts the exact boundary`, async ({
@@ -60,14 +61,14 @@ test("draft admission rejects oversized batches without losing existing inputs",
       Array.from({ length: 20 }, (_, index) => ({ ...file, name: `extra-${index}.pdf` })),
     );
   await expect(page.getByRole("status")).toContainText("No files added. Keep at most 20 inputs");
-  await expect(page.getByRole("listitem")).toHaveCount(1);
+  await expect(page.locator("[data-workspace-content]").getByRole("listitem")).toHaveCount(1);
   await page.locator('input[type="file"]').setInputFiles({
     ...file,
     name: "too-large.pdf",
     buffer: Buffer.alloc(20 * 1024 * 1024 + 1),
   });
   await expect(page.getByRole("status")).toContainText("Each input must be at most 20 MiB");
-  await expect(page.getByRole("listitem")).toHaveCount(1);
+  await expect(page.locator("[data-workspace-content]").getByRole("listitem")).toHaveCount(1);
 });
 
 test("split prediction enforces the production output count before starting a job", async ({
@@ -75,8 +76,12 @@ test("split prediction enforces the production output count before starting a jo
 }) => {
   await page.goto("./#/split");
   await addSplitSource(page, 51);
-  await page.getByRole("radio", { name: "Every page", exact: true }).check();
-  await expect(page.getByText(/Output count: 51 exceeds the configured limit of 50/)).toBeVisible();
+  await withToolSettings(page, async () => {
+    await page.getByRole("radio", { name: "Every page", exact: true }).check();
+    await expect(
+      page.getByText(/Output count: 51 exceeds the configured limit of 50/),
+    ).toBeVisible();
+  });
   await expect(page.getByRole("button", { name: "Generate PDFs", exact: true })).toBeDisabled();
 });
 
