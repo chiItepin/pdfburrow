@@ -10,6 +10,7 @@ export const useSplitJob = (
   const { draft, execution, capable } = workspace;
   const { job, editable } = execution;
   const input = draft.inputs[0];
+  const removing = selection.mode === "remove";
   const generate = () => {
     if (!input || !editable || !draft.ready || !draft.acknowledged || !valid || !capable) {
       return;
@@ -38,9 +39,11 @@ export const useSplitJob = (
         ? "Generation cancelled. Your source and selection are unchanged."
         : job.phase === "processing"
           ? job.progress?.phase === "copying"
-            ? `Copied ${job.progress.completed} of ${job.progress.total} selected pages...`
+            ? `Copied ${job.progress.completed} of ${job.progress.total} ${removing ? "kept" : "selected"} pages...`
             : job.progress?.phase === "saving"
-              ? "Saving PDFs locally..."
+              ? removing
+                ? "Saving PDF locally..."
+                : "Saving PDFs locally..."
               : "Checking the source in the local split worker..."
           : workspace.notice;
   return { generate, status };
