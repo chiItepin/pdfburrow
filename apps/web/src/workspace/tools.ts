@@ -1,4 +1,4 @@
-import { Files, Images, Scissors } from "lucide-react";
+import { Files, Images, Scissors, FileMinus } from "lucide-react";
 
 export const tools = [
   {
@@ -12,6 +12,12 @@ export const tools = [
     label: "Split / Extract",
     description: "Keep the pages you need, or split one PDF into several.",
     icon: Scissors,
+  },
+  {
+    route: "remove",
+    label: "Remove pages",
+    description: "Remove unwanted pages and keep the rest in their original order.",
+    icon: FileMinus,
   },
   {
     route: "images",

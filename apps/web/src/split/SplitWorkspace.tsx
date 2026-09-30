@@ -13,14 +13,17 @@ import { ToolSettingsSidebar } from "../workspace/ToolSettingsSidebar";
 
 export const SplitWorkspace = ({
   workspace,
+  tool = "split",
 }: {
   workspace: ReturnType<typeof useDocumentWorkspace>;
+  tool?: "split" | "remove";
 }) => {
   const { draft, execution, focus, capable, confirmation } = workspace;
   const { draftHeading, resultHeading, jobError } = focus;
   const { job, locked, editable } = execution;
   const input = draft.inputs[0];
-  const settings = useSplitSettings(input?.name ?? "", draft.ready ? draft.pageCount : 0);
+  const removing = tool === "remove";
+  const settings = useSplitSettings(input?.name ?? "", draft.ready ? draft.pageCount : 0, tool);
   const { generate, status } = useSplitJob(workspace, settings.selection, Boolean(settings.plan));
   return (
     <>
@@ -40,7 +43,9 @@ export const SplitWorkspace = ({
           </Button>
         </div>
         <p className="mt-2 text-sm text-muted-foreground">
-          Choose pages or ranges from one PDF. Your original stays unchanged.
+          {removing
+            ? "Remove unwanted pages from one PDF. Your original stays unchanged."
+            : "Choose pages or ranges from one PDF. Your original stays unchanged."}
         </p>
         <div className="mt-6">
           <div className="min-w-0">
@@ -90,6 +95,7 @@ export const SplitWorkspace = ({
                 pageCount={draft.pageCount}
                 order={settings.order}
                 selected={settings.pages}
+                removing={removing}
                 editable={editable}
                 paused={locked}
                 onSelect={(pages) => {
@@ -104,7 +110,17 @@ export const SplitWorkspace = ({
               />
             )}
           </div>
-          <section className="tool-actions" aria-label="Split output">
+          <section
+            className="tool-actions"
+            aria-label={removing ? "Removal output" : "Split output"}
+          >
+            {removing && draft.ready && (
+              <p className="mb-3 text-sm" role="status" aria-live="polite">
+                {settings.plan
+                  ? `${settings.pages.length} page${settings.pages.length === 1 ? "" : "s"} will be removed. ${settings.plan.totalPages} will be kept in source order.`
+                  : settings.error}
+              </p>
+            )}
             {settings.plan && <OutputPrediction plan={settings.plan} />}
             {input && (
               <PreservationNotice
@@ -123,7 +139,11 @@ export const SplitWorkspace = ({
                   }
                   onClick={generate}
                 >
-                  {job.phase === "error" ? "Retry generation" : "Generate PDFs"}
+                  {job.phase === "error"
+                    ? "Retry generation"
+                    : removing
+                      ? "Remove pages"
+                      : "Generate PDFs"}
                 </Button>
                 {locked && (
                   <Button
@@ -146,25 +166,34 @@ export const SplitWorkspace = ({
               </p>
             )}
           </section>
-          <ToolSettingsSidebar title="Split / Extract settings">
+          <ToolSettingsSidebar
+            title={removing ? "Remove pages settings" : "Split / Extract settings"}
+          >
             {draft.ready ? (
-              <>
-                <ModePicker
-                  mode={settings.mode}
-                  disabled={!editable}
-                  onChange={(mode) => {
-                    execution.editDraft();
-                    settings.setMode(mode);
-                  }}
-                />
-                <SelectionSettings
-                  settings={settings}
-                  pageCount={draft.pageCount}
-                  disabled={!editable}
-                  onEdit={execution.editDraft}
-                  announce={workspace.announce}
-                />
-              </>
+              removing ? (
+                <p className="mt-6 text-sm leading-relaxed text-muted-foreground">
+                  Select pages in the source preview to remove them. Keep at least one page.
+                  Remaining pages are saved together as one PDF in their original order.
+                </p>
+              ) : (
+                <>
+                  <ModePicker
+                    mode={settings.mode}
+                    disabled={!editable}
+                    onChange={(mode) => {
+                      execution.editDraft();
+                      settings.setMode(mode);
+                    }}
+                  />
+                  <SelectionSettings
+                    settings={settings}
+                    pageCount={draft.pageCount}
+                    disabled={!editable}
+                    onEdit={execution.editDraft}
+                    announce={workspace.announce}
+                  />
+                </>
+              )
             ) : (
               <p className="mt-6 text-sm leading-relaxed text-muted-foreground">
                 {input
@@ -178,6 +207,7 @@ export const SplitWorkspace = ({
       {job.phase === "complete" && settings.plan && (
         <SplitResult
           plan={settings.plan}
+          removing={removing}
           headingRef={resultHeading}
           downloads={execution.downloads}
           onEdit={workspace.requestEdit}

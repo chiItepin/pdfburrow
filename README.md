@@ -1,12 +1,12 @@
 # PDFBurrow
 
 A React + TypeScript local document workspace with **Merge PDFs**,
-**Split / Extract**, and **Images to PDF**. Combine whole PDFs, choose pages from
-one source, or convert ordered static JPEG/PNG images, then explicitly download
+**Split / Extract**, **Remove pages**, and **Images to PDF**. Combine whole PDFs,
+choose or remove pages from one source, or convert ordered static JPEG/PNG images, then explicitly download
 PDFs or a ZIP of multiple outputs.
 
 The [PDFBurrow MVP map](https://github.com/chiItepin/pdfburrow/issues/1) is the
-decision index. This workspace implements the three MVP tools and the shared
+decision index. This workspace implements the three MVP tools, page removal, and the shared
 file-to-download workflow with provisional workload limits. It is an experimental
 build, not a verified release. The project is MIT-licensed; device calibration and
 complete compatibility evidence still require release review.
@@ -45,7 +45,7 @@ initialization for stable ownership, not a memoization cache.
 
 ## Shared workspace
 
-- The responsive shadcn sidebar contains Home and the three document tools; on
+- The responsive shadcn sidebar contains Home and the four document tools; on
   phones it opens as a keyboard-accessible drawer. The page header uses breadcrumbs,
   with a compact ellipsis menu on narrow screens. Every navigation entry preserves
   the same discard confirmation and processing lock.
@@ -56,8 +56,9 @@ initialization for stable ownership, not a memoization cache.
   Saved appearance is applied before the workspace loads and keeps supported
   browser chrome in sync with theme changes.
 - Choose a tool before adding files. Under the configured base, Home is `/`;
-  merge is `merge/`; split/extraction is `split/`; JPEG/PNG conversion is `images/`.
-  Legacy `#/`, `#/merge`, `#/split`, and `#/images` bookmarks still work and are
+  merge is `merge/`; split/extraction is `split/`; page removal is `remove/`;
+  JPEG/PNG conversion is `images/`.
+  Hash routes `#/`, `#/merge`, `#/split`, `#/remove`, and `#/images` work and are
   normalized to the corresponding path without adding a history entry.
   Unknown tool addresses show a recovery
   screen. URLs and history state identify tools only, never documents or settings.
@@ -74,7 +75,7 @@ initialization for stable ownership, not a memoization cache.
   removal, focus restoration, and status announcements remain available.
 - `apps/web/src/workspace` owns the file registry, required PDF/image validation queue,
   windowed inputs, preview cache, document job lifecycle, and output/download
-  ownership. All three tools share one draft/job owner and download lifecycle;
+  ownership. All four tools share one draft/job owner and download lifecycle;
   PDF tools additionally share preservation acknowledgement. Each feature supplies its operation and settings.
   `core-ui` owns the reusable file dropzone and dialog.
 - Shared downloads retain only metadata in React state and keep Blob references
@@ -229,6 +230,27 @@ The app supplies the shared provisional policy; a separate source-page cap remai
 in force even when extracting one page. These are not measured production limits. No size-target
 splitting, compression, repair, encrypted-PDF support, or remote fallback is added.
 
+## Remove pages behavior
+
+Open `remove/` under the configured base and add one PDF. This tool reuses the
+source picker, validation, optional page previews, selection planner, local split
+worker, preservation notice, and explicit download lifecycle.
+
+Checked pages are marked **Will remove**; unchecked pages are marked **Will keep**.
+Selections persist across the eight-page preview windows. **Select all** and
+**Clear** apply to the entire source, not just the visible window. At least one
+page must be selected for removal and at least one must remain; empty selections
+and removing every page show guidance and disable generation.
+
+The remaining pages are saved in their original source order as one
+`<source>-removed.pdf`, with the shared filename sanitizer and no ZIP step.
+Predictions count the kept pages. Page sizes, boxes, rotations, and content are
+copied without rasterization; the same PDF preservation limitations and
+unsupported-input rules apply as for split/extract. The original PDF is unchanged.
+Cancellation and errors retain the source and selection for retry. Editing, source
+replacement, tool changes, and reset use the existing confirmation and resource
+cleanup rules. Nothing is uploaded or downloaded automatically.
+
 ## Images to PDF behavior
 
 Open `images/` under the configured base and add static JPEG or PNG files. Content inspection and required
@@ -295,12 +317,12 @@ Components use PascalCase `.tsx` filenames; other project-owned JS/TS sources,
 tests, and build scripts use camelCase, enforced by lint. Conventional config
 names and dotted test/worker suffixes are retained.
 
-| Package               | Responsibility                                                                    |
-| --------------------- | --------------------------------------------------------------------------------- |
-| `apps/web`            | React app, shared workspace, merge/split/image views and hooks, and build scripts |
-| `packages/core-ui`    | Shared shadcn primitives, reusable compositions, utilities, and theme             |
-| `packages/pdf-engine` | React-free PDF/image validation/generation, previews, ZIP packaging, and workers  |
-| `packages/tooling`    | Shared TypeScript, ESLint, and formatter tooling                                  |
+| Package               | Responsibility                                                                            |
+| --------------------- | ----------------------------------------------------------------------------------------- |
+| `apps/web`            | React app, shared workspace, merge/split/removal/image views and hooks, and build scripts |
+| `packages/core-ui`    | Shared shadcn primitives, reusable compositions, utilities, and theme                     |
+| `packages/pdf-engine` | React-free PDF/image validation/generation, previews, ZIP packaging, and workers          |
+| `packages/tooling`    | Shared TypeScript, ESLint, and formatter tooling                                          |
 
 Rush owns installation and `common/config/rush/pnpm-lock.yaml`. Do not run
 `npm install` or `pnpm install` at the root or inside packages.
@@ -345,7 +367,7 @@ physical-device memory budgets, or release-level privacy evidence.
 
 `test:privacy` runs the production artifact through allowlisted request tracing and
 real cached-worker processing with the browser network disabled. It covers merge,
-split, JPEG/PNG conversion, PDF/ZIP downloads, corrupt input, injected cancellation,
+split, page removal, JPEG/PNG conversion, PDF/ZIP downloads, corrupt input, injected cancellation,
 reset, and repeated jobs. macOS WebKit offline emulation currently blocks local Blob
 reads; that case is explicitly skipped and remains an evidence gap, not a passing
 offline result. Physical Safari must be checked separately. This does not promise
@@ -403,6 +425,9 @@ cases do not replace the release fixture/device matrix or measured memory limits
 Page ordering checks exercise pointer and keyboard drag/drop, Escape cancellation,
 touch handles, cross-window moves, selection persistence, and reset, including the
 page order inside downloaded PDFs.
+Removal checks cover exact kept-page order, empty/all-page guards, single-page and
+unsupported sources, preview failures, cancellation/retry, safe navigation, repeated
+worker/URL cleanup, and independent PDF.js text/pixel/geometry comparisons.
 
 ## Production build and base paths
 
@@ -450,7 +475,7 @@ remain lazy and no document data is rendered or persisted.
 Each page has a unique title, description, canonical URL, and Open Graph/Twitter
 metadata. Home and tool pages also expose factual WebSite/SoftwareApplication
 structured data, without invented ratings or reviews. Unknown tools are marked
-`noindex`. The sitemap includes only the home, three tools, and three disclosures,
+`noindex`. The sitemap includes only the home, four tools, and three disclosures,
 never hash fragments or error pages. Client navigation keeps metadata aligned with
 the accepted route, including when a discard confirmation is cancelled.
 

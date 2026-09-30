@@ -5,9 +5,9 @@ export const ModePicker = ({
   disabled,
   onChange,
 }: {
-  mode: SplitSelection["mode"];
+  mode: Exclude<SplitSelection["mode"], "remove">;
   disabled: boolean;
-  onChange: (mode: SplitSelection["mode"]) => void;
+  onChange: (mode: Exclude<SplitSelection["mode"], "remove">) => void;
 }) => (
   <fieldset disabled={disabled} className="mt-6">
     <legend className="font-medium">Choose an operation</legend>

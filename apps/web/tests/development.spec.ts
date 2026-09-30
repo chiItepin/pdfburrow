@@ -4,6 +4,21 @@ import { readFile } from "node:fs/promises";
 import { addSplitSource, downloadSplit, generateSplit } from "./fixtures/splitHelpers";
 import { imageFixture, generateImages, downloadImagePdf } from "./fixtures/imageFixtures";
 import { setToolOption } from "./fixtures/toolSettings";
+import { generateRemoval } from "./fixtures/removalHelpers";
+
+test("development page removal reuses the local worker and keeps source order", async ({
+  page,
+}) => {
+  await page.goto("./remove/");
+  await addSplitSource(page, 3);
+  await page.getByRole("checkbox", { name: "Page 2", exact: true }).check();
+  await generateRemoval(page);
+  const output = await downloadSplit(page);
+  expect(output.name).toBe("report-removed.pdf");
+  expect((await PDFDocument.load(output.bytes)).getPages().map((item) => item.getWidth())).toEqual([
+    300, 302,
+  ]);
+});
 
 test("development image workers load locally and produce a real image-sized PDF", async ({
   page,
