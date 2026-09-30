@@ -5,6 +5,7 @@ import { imageFixture, downloadImagePdf, generateImages, type ImageFixture } fro
 import { downloadSplit, generateSplit } from "./splitHelpers";
 import { navigateToTool } from "./workspaceNavigation";
 import { setToolOption } from "./toolSettings";
+import { generateRemoval } from "./removalHelpers";
 
 export const privateMarker = "PRIVATE_DOCUMENT_4e91d";
 const { unzipSync }: { unzipSync: (bytes: Uint8Array) => Record<string, Uint8Array> } =
@@ -74,6 +75,18 @@ export const exercisePrivateWorkflows = async (
   for (const [index, bytes] of Object.values(split).entries()) {
     expect((await PDFDocument.load(bytes)).getPage(0).getWidth()).toBe(index === 0 ? 300 : 400);
   }
+  await resetPrivacyDraft(page);
+
+  await navigateToTool(page, "Remove pages");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Remove pages");
+  await page.locator('input[type="file"]').setInputFiles(inputs.pdf);
+  await page.getByRole("checkbox", { name: "Page 1", exact: true }).check();
+  await generateRemoval(page);
+  const removed = await downloadSplit(page);
+  expect(removed.name).toBe(`${privateMarker}-removed.pdf`);
+  expect((await PDFDocument.load(removed.bytes)).getPages().map((item) => item.getWidth())).toEqual(
+    [400],
+  );
   await resetPrivacyDraft(page);
 
   await navigateToTool(page, "Images to PDF");

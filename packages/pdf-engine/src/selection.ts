@@ -53,15 +53,34 @@ export const planSplit = (
   let combined = false;
   let size = 0;
   switch (selection.mode) {
-    case "selected": {
+    case "selected":
+    case "remove": {
       if (!Array.isArray(selection.pages) || selection.pages.length === 0) {
-        return invalid("Select at least one page.");
+        return invalid(
+          selection.mode === "remove"
+            ? "Select at least one page to remove."
+            : "Select at least one page.",
+        );
       }
       const pages = Array.from(selection.pages, (page) => pageNumber(page, pageCount));
       if (new Set(pages).size !== pages.length) {
-        return invalid("Selected pages must be unique. Use custom ranges to repeat pages.");
+        return invalid(
+          selection.mode === "remove"
+            ? "Pages to remove must be unique."
+            : "Selected pages must be unique. Use custom ranges to repeat pages.",
+        );
       }
-      ranges = pages.map((page) => ({ start: page, end: page }));
+      const removed = new Set(pages);
+      const retained =
+        selection.mode === "remove"
+          ? Array.from({ length: pageCount }, (_, index) => index + 1).filter(
+              (page) => !removed.has(page),
+            )
+          : pages;
+      if (retained.length === 0) {
+        return invalid("Keep at least one page. Clear a page's selection to keep it.");
+      }
+      ranges = retained.map((page) => ({ start: page, end: page }));
       combined = true;
       break;
     }
@@ -98,7 +117,7 @@ export const planSplit = (
     outputCount,
     totalPages,
     repeatsPages: hasOverlap(ranges),
-    bundleName: `${stem}-split.zip`,
+    bundleName: `${stem}-${selection.mode === "remove" ? "removed" : "split"}.zip`,
     outputAt: (index) => {
       if (!Number.isSafeInteger(index) || index < 0 || index >= outputCount) {
         return invalid("The requested output is outside this selection.");
@@ -112,9 +131,12 @@ export const planSplit = (
             ? [range]
             : invalid("The requested range is missing.");
       return {
-        filename: combined
-          ? `${stem}-extracted.pdf`
-          : `${stem}-split-${String(index + 1).padStart(3, "0")}.pdf`,
+        filename:
+          selection.mode === "remove"
+            ? `${stem}-removed.pdf`
+            : combined
+              ? `${stem}-extracted.pdf`
+              : `${stem}-split-${String(index + 1).padStart(3, "0")}.pdf`,
         pageCount: outputRanges.reduce((total, item) => total + item.end - item.start + 1, 0),
         ranges: outputRanges,
       };

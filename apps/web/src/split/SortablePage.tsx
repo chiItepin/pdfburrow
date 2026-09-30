@@ -15,6 +15,7 @@ export const SortablePage = ({
   onRetryPreview,
   onToggle,
   onMove,
+  removing = false,
 }: {
   number: number;
   index: number;
@@ -28,17 +29,18 @@ export const SortablePage = ({
   onRetryPreview: () => void;
   onToggle: () => void;
   onMove: (page: number, target: number, control: string) => void;
+  removing?: boolean;
 }) => {
   const { ref, handleRef, isDragSource } = useSortable({
     id: number,
     index,
-    disabled: !editable,
+    disabled: !editable || removing,
     type: "pdf-page",
     accept: "pdf-page",
   });
   return (
     <li
-      ref={ref}
+      ref={removing ? undefined : ref}
       id={`page-${number}`}
       tabIndex={-1}
       aria-label={`Page ${number}, position ${position} of ${total}`}
@@ -54,12 +56,16 @@ export const SortablePage = ({
             type="checkbox"
             className="size-4 accent-primary"
             aria-label={`Page ${number}`}
+            aria-describedby="page-selection-help"
             disabled={!editable || dragging}
             checked={selected}
             onChange={onToggle}
           />
           Page {number}
         </span>
+        {removing && (
+          <span className="text-xs font-medium">{selected ? "Will remove" : "Will keep"}</span>
+        )}
         <span className="flex h-32 flex-col items-center justify-center gap-2">
           {preview?.state === "ready" ? (
             <img
@@ -96,46 +102,50 @@ export const SortablePage = ({
           Retry preview
         </Button>
       )}
-      <Button
-        ref={handleRef}
-        id={`drag-page-${number}`}
-        variant="ghost"
-        size="sm"
-        className="min-h-11 touch-none cursor-grab select-none px-2 active:cursor-grabbing"
-        disabled={!editable}
-        aria-label={`Drag page ${number}`}
-        aria-describedby="page-order-help"
-      >
-        <svg aria-hidden="true" viewBox="0 0 16 16" className="size-4" fill="currentColor">
-          <circle cx="5" cy="3" r="1.5" />
-          <circle cx="11" cy="3" r="1.5" />
-          <circle cx="5" cy="8" r="1.5" />
-          <circle cx="11" cy="8" r="1.5" />
-          <circle cx="5" cy="13" r="1.5" />
-          <circle cx="11" cy="13" r="1.5" />
-        </svg>
-        Drag
-      </Button>
-      <div className="flex flex-wrap gap-1">
-        {([-1, 1] as const).map((direction) => {
-          const control = direction === -1 ? "earlier" : "later";
-          return (
-            <Button
-              key={control}
-              id={`${control}-page-${number}`}
-              variant="outline"
-              size="sm"
-              className="min-h-11 flex-1 px-2 text-xs"
-              disabled={!editable || dragging}
-              aria-disabled={direction === -1 ? position === 1 : position === total}
-              aria-label={`Move page ${number} ${control}`}
-              onClick={() => onMove(number, position - 1 + direction, control)}
-            >
-              {direction === -1 ? "Earlier" : "Later"}
-            </Button>
-          );
-        })}
-      </div>
+      {!removing && (
+        <>
+          <Button
+            ref={handleRef}
+            id={`drag-page-${number}`}
+            variant="ghost"
+            size="sm"
+            className="min-h-11 touch-none cursor-grab select-none px-2 active:cursor-grabbing"
+            disabled={!editable}
+            aria-label={`Drag page ${number}`}
+            aria-describedby="page-order-help"
+          >
+            <svg aria-hidden="true" viewBox="0 0 16 16" className="size-4" fill="currentColor">
+              <circle cx="5" cy="3" r="1.5" />
+              <circle cx="11" cy="3" r="1.5" />
+              <circle cx="5" cy="8" r="1.5" />
+              <circle cx="11" cy="8" r="1.5" />
+              <circle cx="5" cy="13" r="1.5" />
+              <circle cx="11" cy="13" r="1.5" />
+            </svg>
+            Drag
+          </Button>
+          <div className="flex flex-wrap gap-1">
+            {([-1, 1] as const).map((direction) => {
+              const control = direction === -1 ? "earlier" : "later";
+              return (
+                <Button
+                  key={control}
+                  id={`${control}-page-${number}`}
+                  variant="outline"
+                  size="sm"
+                  className="min-h-11 flex-1 px-2 text-xs"
+                  disabled={!editable || dragging}
+                  aria-disabled={direction === -1 ? position === 1 : position === total}
+                  aria-label={`Move page ${number} ${control}`}
+                  onClick={() => onMove(number, position - 1 + direction, control)}
+                >
+                  {direction === -1 ? "Earlier" : "Later"}
+                </Button>
+              );
+            })}
+          </div>
+        </>
+      )}
     </li>
   );
 };

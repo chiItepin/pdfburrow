@@ -33,6 +33,7 @@ export const routeTitles: Record<ToolRoute, string> = {
   markup: "Sign & annotate PDF",
   merge: "Merge PDFs",
   split: "Split / Extract",
+  remove: "Remove pages",
   images: "Images to PDF",
   "not-found": "Tool not found",
 };

@@ -18,6 +18,7 @@ export const PagePicker = ({
   onSelect,
   onReorder,
   announce,
+  removing = false,
 }: {
   sourceId: string;
   getFile: (id: string) => File | undefined;
@@ -29,6 +30,7 @@ export const PagePicker = ({
   onSelect: (pages: readonly number[]) => void;
   onReorder: (pages: readonly number[]) => void;
   announce: (message: string) => void;
+  removing?: boolean;
 }) => {
   const [windowIndex, setWindowIndex] = useState(0);
   const [dragging, setDragging] = useState(false);
@@ -45,7 +47,14 @@ export const PagePicker = ({
   );
   const movePage = (page: number, target: number, control = "drag") => {
     const index = order.indexOf(page);
-    if (!editable || index < 0 || target < 0 || target >= pageCount || index === target) {
+    if (
+      !editable ||
+      removing ||
+      index < 0 ||
+      target < 0 ||
+      target >= pageCount ||
+      index === target
+    ) {
       return;
     }
     const reordered = [...order];
@@ -61,19 +70,24 @@ export const PagePicker = ({
   return (
     <section className="mt-6" aria-label="Source pages">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3 className="text-lg font-semibold">Choose pages</h3>
+        <h3 className="text-lg font-semibold">
+          {removing ? "Choose pages to remove" : "Choose pages"}
+        </h3>
         <span className="text-sm">
-          {selected.length} of {pageCount} selected
+          {selected.length} of {pageCount} {removing ? "marked for removal" : "selected"}
         </span>
       </div>
-      <p className="mt-2 text-sm text-muted-foreground">
-        Selected pages export in the order shown, not the order you select them. Previews are
-        optional.
+      <p id="page-selection-help" className="mt-2 text-sm text-muted-foreground">
+        {removing
+          ? "Checked pages will be removed. Unchecked pages stay in their original order. Previews are optional."
+          : "Selected pages export in the order shown, not the order you select them. Previews are optional."}
       </p>
-      <p id="page-order-help" className="mt-2 text-sm text-muted-foreground">
-        Drag a handle to reorder (press and hold on touch screens), or use Earlier and Later. With a
-        handle focused, press Space, use arrow keys, then Space to drop or Escape to cancel.
-      </p>
+      {!removing && (
+        <p id="page-order-help" className="mt-2 text-sm text-muted-foreground">
+          Drag a handle to reorder (press and hold on touch screens), or use Earlier and Later. With
+          a handle focused, press Space, use arrow keys, then Space to drop or Escape to cancel.
+        </p>
+      )}
       <div className="mt-3 flex flex-wrap gap-2">
         <Button variant="outline" disabled={!editable || dragging} onClick={() => onSelect(order)}>
           Select all
@@ -81,21 +95,23 @@ export const PagePicker = ({
         <Button variant="ghost" disabled={!editable || dragging} onClick={() => onSelect([])}>
           Clear
         </Button>
-        <Button
-          variant="ghost"
-          disabled={!editable || dragging || !changedOrder}
-          onClick={() => {
-            onReorder(Array.from({ length: pageCount }, (_, index) => index + 1));
-            setWindowIndex(0);
-            announce("Source page order restored. Your selection is unchanged.");
-          }}
-        >
-          Reset page order
-        </Button>
+        {!removing && (
+          <Button
+            variant="ghost"
+            disabled={!editable || dragging || !changedOrder}
+            onClick={() => {
+              onReorder(Array.from({ length: pageCount }, (_, index) => index + 1));
+              setWindowIndex(0);
+              announce("Source page order restored. Your selection is unchanged.");
+            }}
+          >
+            Reset page order
+          </Button>
+        )}
       </div>
       <DragDropProvider
         onBeforeDragStart={(event) => {
-          if (!editable) {
+          if (!editable || removing) {
             event.preventDefault();
           }
         }}
@@ -130,6 +146,7 @@ export const PagePicker = ({
               total={pageCount}
               selected={selected.includes(number)}
               editable={editable}
+              removing={removing}
               dragging={dragging}
               preview={previews.thumbnails.get(String(number))}
               previewsPaused={paused || dragging}
@@ -150,10 +167,12 @@ export const PagePicker = ({
         </ol>
         {pageCount > 8 && (
           <>
-            <p className="mt-4 text-sm text-muted-foreground">
-              Drop on Previous pages or Next pages to move to that view's nearest position. Earlier
-              and Later also work across views.
-            </p>
+            {!removing && (
+              <p className="mt-4 text-sm text-muted-foreground">
+                Drop on Previous pages or Next pages to move to that view's nearest position.
+                Earlier and Later also work across views.
+              </p>
+            )}
             <nav
               aria-label="Source page windows"
               className="mt-4 flex flex-wrap items-center gap-3"

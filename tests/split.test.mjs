@@ -44,6 +44,8 @@ const contents = (doc, page) => {
 };
 const examples = [
   [selected([7, 2, 5]), [[7, 2, 5]]],
+  [{ mode: "remove", pages: [10, 1] }, [[2, 3, 4, 5, 6, 7, 8, 9]]],
+  [{ mode: "remove", pages: [8, 2] }, [[1, 3, 4, 5, 6, 7, 9, 10]]],
   [
     ranges([
       [5, 7],
@@ -179,8 +181,14 @@ test("invalid, incomplete, reversed and duplicate selected requests reject inste
     { mode: "ranges", ranges: [{ start: 1, end: 2 }] },
     ranges([[7, 5]]),
     { mode: "fixed" },
+    { mode: "remove", pages: [] },
+    { mode: "remove", pages: [1, 1] },
+    { mode: "remove", pages: null },
+    { mode: "remove", pages: Array(1) },
+    { mode: "remove", pages: Array.from({ length: 10 }, (_, index) => index + 1) },
   ];
   for (const value of [0, -1, 1.5, 11, NaN, Infinity, "2", undefined, null]) {
+    bad.push({ mode: "remove", pages: [value] });
     bad.push(selected([value]), ranges([[1, value]]), ranges([[value, 10]]), {
       mode: "fixed",
       size: value,
@@ -283,6 +291,7 @@ test("predicted filenames survive retention and ZIP packaging for sanitized sour
       ),
       { mode: "fixed", size: 1 },
       { mode: "every" },
+      { mode: "remove", pages: [1] },
     ]) {
       const plan = planSplit(name, 2, selection);
       const predicted = Array.from(
@@ -302,9 +311,12 @@ test("predicted filenames survive retention and ZIP packaging for sanitized sour
       );
       assert.equal(
         predicted[0],
-        `${stem}-${plan.outputCount === 1 ? "extracted" : "split-001"}.pdf`,
+        `${stem}-${selection.mode === "remove" ? "removed" : plan.outputCount === 1 ? "extracted" : "split-001"}.pdf`,
       );
-      assert.equal(plan.bundleName, `${stem}-split.zip`);
+      assert.equal(
+        plan.bundleName,
+        `${stem}-${selection.mode === "remove" ? "removed" : "split"}.zip`,
+      );
       assert.equal(bundleFilename(plan.bundleName), plan.bundleName);
       if (outputs.length > 1) {
         const bundle = await packageOutputs(
@@ -320,6 +332,46 @@ test("predicted filenames survive retention and ZIP packaging for sanitized sour
       store.clear();
     }
   }
+});
+
+test("removal requires a kept page and enforces limits on the retained output", async () => {
+  const input = await fixture(2);
+  const original = new Uint8Array(await input.blob.arrayBuffer());
+  const selection = { mode: "remove", pages: [1] };
+  const request = { input, selection, acknowledged: true };
+  const plan = planSplit(input.name, 2, selection, { totalPages: 1, outputCount: 1 });
+  assert.equal(plan.outputCount, 1);
+  assert.equal(plan.totalPages, 1);
+  assert.equal(plan.repeatsPages, false);
+  assert.equal(plan.outputAt(0).filename, "report-removed.pdf");
+  const [output] = await splitDocuments(
+    { ...request, limits: { totalPages: 1, outputCount: 1 } },
+    () => {},
+  );
+  assert.equal(
+    (await PDFDocument.load(await output.blob.arrayBuffer())).getPage(0).getWidth(),
+    301,
+  );
+  assert.deepEqual(new Uint8Array(await input.blob.arrayBuffer()), original);
+  for (const limits of [
+    { totalPages: 0 },
+    { outputCount: 0 },
+    { outputBytes: 1 },
+    { perInputBytes: 1 },
+  ]) {
+    await assert.rejects(
+      splitDocuments({ ...request, limits }, () => {}),
+      { code: "limit" },
+    );
+  }
+  await assert.rejects(
+    splitDocuments({ ...request, acknowledged: false }, () => {}),
+    /Acknowledge/,
+  );
+  assert.throws(
+    () => planSplit(input.name, 1, { mode: "remove", pages: [1] }),
+    /Keep at least one page/,
+  );
 });
 
 test("actual numbered PDFs and ZIP entries expand beyond 999 without collisions", async () => {

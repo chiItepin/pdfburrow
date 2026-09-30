@@ -7,6 +7,7 @@ export interface PageRange {
 
 export type SplitSelection =
   | { readonly mode: "selected"; readonly pages: readonly number[] }
+  | { readonly mode: "remove"; readonly pages: readonly number[] }
   | {
       readonly mode: "ranges";
       readonly ranges: readonly PageRange[];

@@ -24,7 +24,7 @@ export const pageRegistry = [
     legacyHash: "#/",
     title: "PDFBurrow - Free PDF tools, no uploads",
     description:
-      "Sign and annotate PDFs, merge files, split pages, or convert images to PDF in your browser. Free local PDF tools with no uploads and no signup.",
+      "Sign and annotate PDFs, merge files, split or remove pages, or convert images to PDF in your browser. Free local tools with no uploads and no signup.",
     indexable: true,
     schema: { type: "WebSite", name: "PDFBurrow" },
   },
@@ -60,6 +60,17 @@ export const pageRegistry = [
       "Split a PDF, extract selected pages, or create PDFs from custom ranges in your browser. Download individual PDFs or a ZIP without uploading your document.",
     indexable: true,
     schema: { type: "SoftwareApplication", name: "PDFBurrow - Split / Extract" },
+  },
+  {
+    route: "remove",
+    path: "remove/",
+    source: "react",
+    legacyHash: "#/remove",
+    title: "Remove pages from PDF without uploads - PDFBurrow",
+    description:
+      "Remove unwanted pages from a PDF in your browser. Select pages to delete, keep the remaining pages in source order, and download a new PDF without uploads.",
+    indexable: true,
+    schema: { type: "SoftwareApplication", name: "PDFBurrow - Remove pages" },
   },
   {
     route: "images",

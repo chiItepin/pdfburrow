@@ -16,6 +16,7 @@ test("sidebar and page breadcrumbs identify every tool without a top navigation 
     "Sign & annotate PDF",
     "Merge PDFs",
     "Split / Extract",
+    "Remove pages",
     "Images to PDF",
     "Home",
   ]) {
@@ -29,7 +30,7 @@ test("sidebar and page breadcrumbs identify every tool without a top navigation 
       "aria-current",
       "page",
     );
-    await expect(nav.getByRole("link")).toHaveCount(5);
+    await expect(nav.getByRole("link")).toHaveCount(6);
     await closeToolSidebar(page);
   }
 });
