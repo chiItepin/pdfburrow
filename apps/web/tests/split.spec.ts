@@ -10,6 +10,48 @@ import {
   withToolSettings,
 } from "./fixtures/toolSettings";
 
+for (const tool of ["split", "remove"] as const) {
+  for (const phase of ["copying", "saving"] as const) {
+    test(`${tool} job status uses operation-specific ${phase} wording`, async ({ page }) => {
+      const removing = tool === "remove";
+      const total = removing ? 9 : 1;
+      await page.goto(`./${tool}/`);
+      await addSplitSource(page);
+      await page.getByRole("checkbox", { name: "Page 1", exact: true }).check();
+      await closeToolSettings(page);
+      await page.route("**/split.worker.js", (route) =>
+        route.fulfill({
+          contentType: "text/javascript",
+          body: `self.onmessage = () => self.postMessage(${JSON.stringify({
+            type: "progress",
+            progress: { phase, completed: total, total },
+          })});`,
+        }),
+      );
+      await page.getByRole("checkbox", { name: /I understand these limitations/ }).check();
+      await page
+        .getByRole("button", { name: removing ? "Remove pages" : "Generate PDFs", exact: true })
+        .click();
+      const status = page
+        .getByRole("region", { name: removing ? "Removal output" : "Split output" })
+        .getByRole("status")
+        .last();
+      await expect(status).toHaveText(
+        phase === "copying"
+          ? `Copied ${total} of ${total} ${removing ? "kept" : "selected"} pages...`
+          : removing
+            ? "Saving PDF locally..."
+            : "Saving PDFs locally...",
+      );
+      await page.getByRole("button", { name: "Cancel generation" }).click();
+      await expect(status).toHaveText(
+        "Generation cancelled. Your source and selection are unchanged.",
+      );
+      await expect(page.getByRole("checkbox", { name: "Page 1", exact: true })).toBeChecked();
+    });
+  }
+}
+
 test("bounded page windows, source-order toggles, Clear and single-source guards", async ({
   page,
 }) => {
