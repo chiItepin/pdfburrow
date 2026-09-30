@@ -105,7 +105,7 @@ export const inspectDocument = (document: PDFDocument, limits: PdfLimits = {}): 
   if (hasSignatures) {
     throw new PdfError(
       "unsupported",
-      "Digital signatures detected. Use an unsigned source copy; merging would invalidate signatures.",
+      "Digital signatures detected. Use an unsigned source copy; rewriting would invalidate signatures.",
     );
   }
   if (hasForms) {

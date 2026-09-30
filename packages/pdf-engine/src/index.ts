@@ -9,6 +9,13 @@ export type {
   MergeRequest,
   PdfProgress,
 } from "./types";
+export type {
+  MarkupPoint,
+  MarkupObject,
+  MarkupGeometry,
+  MarkupInfo,
+  MarkupRequest,
+} from "./markupTypes";
 export type { BundleLimits, BundleRequest, BundleProgress } from "./bundleTypes";
 export type { ImagePreviewLimits } from "./imagePreview";
 export type {

@@ -38,7 +38,9 @@ export const useValidation = (
         const engine =
           kind === "image"
             ? await import("@repo/pdf-engine/images")
-            : await import("@repo/pdf-engine/merge");
+            : kind === "markup"
+              ? await import("@repo/pdf-engine/markup")
+              : await import("@repo/pdf-engine/merge");
         if (controller.signal.aborted) {
           return;
         }
@@ -46,7 +48,12 @@ export const useValidation = (
         const outcome =
           "validateImage" in engine
             ? await engine.validateImage(input, { signal: controller.signal }, imageLimits)
-            : await engine.validatePdf(input, { signal: controller.signal, limits: pdfLimits });
+            : "validateMarkupPdf" in engine
+              ? await engine.validateMarkupPdf(input, {
+                  signal: controller.signal,
+                  limits: pdfLimits,
+                })
+              : await engine.validatePdf(input, { signal: controller.signal, limits: pdfLimits });
         if (controller.signal.aborted || outcome.kind === "cancelled") {
           return;
         }

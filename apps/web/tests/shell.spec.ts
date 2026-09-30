@@ -12,7 +12,13 @@ test("sidebar and page breadcrumbs identify every tool without a top navigation 
   page,
 }) => {
   await page.goto("./");
-  for (const name of ["Merge PDFs", "Split / Extract", "Images to PDF", "Home"]) {
+  for (const name of [
+    "Sign & annotate PDF",
+    "Merge PDFs",
+    "Split / Extract",
+    "Images to PDF",
+    "Home",
+  ]) {
     await navigateToTool(page, name);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(name);
     await expect(page.getByRole("heading", { level: 1 })).toBeFocused();
@@ -23,7 +29,7 @@ test("sidebar and page breadcrumbs identify every tool without a top navigation 
       "aria-current",
       "page",
     );
-    await expect(nav.getByRole("link")).toHaveCount(4);
+    await expect(nav.getByRole("link")).toHaveCount(5);
     await closeToolSidebar(page);
   }
 });

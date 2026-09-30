@@ -14,7 +14,9 @@
     "./image-layout": "./src/imageLayout.ts",
     "./preview": "./src/preview/index.ts",
     "./bundle": "./src/bundle/index.ts",
-    "./image-preview": "./src/image-preview/index.ts"
+    "./image-preview": "./src/image-preview/index.ts",
+    "./markup": "./src/markup/index.ts",
+    "./markup-layout": "./src/markupLayout.ts"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json && tsc -p tsconfig.worker.json",
@@ -22,6 +24,7 @@
     "lint": "eslint . --max-warnings 0"
   },
   "dependencies": {
+    "@pdf-lib/fontkit": "1.1.1",
     "fflate": "0.8.2",
     "pdf-lib": "1.17.1",
     "pdfjs-dist": "5.7.284"

@@ -50,6 +50,8 @@ use React, TypeScript, shadcn/ui, and a small esbuild build; do not add Vite.
 - Use `@repo/pdf-engine` for types and capability barrels
   `@repo/pdf-engine/merge`, `@repo/pdf-engine/split`, `@repo/pdf-engine/images`, `@repo/pdf-engine/preview`,
   `@repo/pdf-engine/image-preview`, and `@repo/pdf-engine/bundle` for lazy runtime APIs.
+  `@repo/pdf-engine/markup` owns local markup validation/generation workers;
+  `@repo/pdf-engine/markup-layout` owns shared note measurement and physical-point object geometry.
   Do not combine preview libraries and PDF generation in an eager root barrel.
   `@repo/pdf-engine/selection` is a lightweight, React-free planner shared by the
   split settings preview and worker; it does not load PDF libraries on the main thread.

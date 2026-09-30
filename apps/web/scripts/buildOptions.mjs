@@ -23,6 +23,8 @@ export const buildOptions = (development) => ({
   entryPoints: {
     main: "src/Main.tsx",
     merge: "../../packages/pdf-engine/src/merge/index.ts",
+    markup: "../../packages/pdf-engine/src/markup/index.ts",
+    "markup.worker": "../../packages/pdf-engine/src/markup.worker.ts",
     split: "../../packages/pdf-engine/src/split/index.ts",
     "split.worker": "../../packages/pdf-engine/src/split.worker.ts",
     images: "../../packages/pdf-engine/src/images/index.ts",

@@ -1,4 +1,16 @@
 export { Button } from "./primitives/Button";
+export { NativeSelect, NativeSelectOption } from "./primitives/NativeSelect";
+export {
+  Menubar,
+  MenubarMenu,
+  MenubarTrigger,
+  MenubarContent,
+  MenubarItem,
+  MenubarSeparator,
+  MenubarShortcut,
+  MenubarRadioGroup,
+  MenubarRadioItem,
+} from "./primitives/Menubar";
 export {
   Attachment,
   AttachmentMedia,

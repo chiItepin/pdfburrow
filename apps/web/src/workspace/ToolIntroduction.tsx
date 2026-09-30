@@ -9,7 +9,7 @@ export const ToolIntroduction = ({
   route,
   onNavigate,
 }: {
-  route: Exclude<ToolRoute, "merge" | "split" | "images">;
+  route: Exclude<ToolRoute, "merge" | "split" | "images" | "markup">;
   onNavigate: (route: ToolRoute) => void;
 }) => (
   <section className="max-w-3xl py-10 sm:py-12" aria-label="Tool availability">
@@ -18,7 +18,7 @@ export const ToolIntroduction = ({
     </h2>
     <p className="mt-3 max-w-prose leading-relaxed text-muted-foreground">
       {route === "home"
-        ? "Combine local PDFs, split and extract pages, or turn JPEG and PNG images into PDFs. Free to use, with no signup."
+        ? "Sign and annotate a PDF, combine files, extract pages, or turn images into PDFs. Free to use, with no signup."
         : "This address does not identify a PDFBurrow tool. No documents or settings can be restored from a link."}
     </p>
     <div className="mt-8 divide-y border-y">

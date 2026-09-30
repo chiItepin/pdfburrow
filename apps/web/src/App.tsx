@@ -1,5 +1,6 @@
 import { ConfirmDiscard, SidebarInset, SidebarProvider, Toaster } from "@repo/core-ui";
 import { MergeWorkspace } from "./merge";
+import { MarkupWorkspace } from "./markup/MarkupWorkspace";
 import { useDocumentWorkspace } from "./workspace/useDocumentWorkspace";
 import { ImageWorkspace } from "./images";
 import { SplitWorkspace } from "./split";
@@ -19,7 +20,7 @@ export const App = ({ initialRoute }: { initialRoute?: ToolRoute }) => {
   const { route, heading, confirmation, notice, request, keep, discard } = useToolNavigation(
     {
       hasWork: workspace.draft.inputs.length > 0,
-      locked: workspace.execution.locked,
+      locked: workspace.execution.locked || workspace.interactionLocked,
       discard: workspace.discardForNavigation,
     },
     initialRoute,
@@ -36,12 +37,16 @@ export const App = ({ initialRoute }: { initialRoute?: ToolRoute }) => {
       >
         Skip to content
       </a>
-      <ToolNavigation route={route} locked={workspace.execution.locked} onNavigate={request} />
+      <ToolNavigation
+        route={route}
+        locked={workspace.execution.locked || workspace.interactionLocked}
+        onNavigate={request}
+      />
       <ToolSettingsProvider key={route}>
         <SidebarInset aria-labelledby="page-heading" className="min-h-0">
           <WorkspaceHeader
             route={route}
-            locked={workspace.execution.locked}
+            locked={workspace.execution.locked || workspace.interactionLocked}
             heading={heading}
             onNavigate={request}
           />
@@ -58,7 +63,9 @@ export const App = ({ initialRoute }: { initialRoute?: ToolRoute }) => {
                     {notice}
                   </p>
                 )}
-                {route === "merge" ? (
+                {route === "markup" ? (
+                  <MarkupWorkspace workspace={workspace} />
+                ) : route === "merge" ? (
                   <MergeWorkspace workspace={workspace} />
                 ) : route === "split" ? (
                   <SplitWorkspace
