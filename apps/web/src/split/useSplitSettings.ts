@@ -9,8 +9,12 @@ export interface RangeRow {
   readonly end: string;
 }
 
-export const useSplitSettings = (name: string, pageCount: number) => {
-  const [mode, setMode] = useState<SplitSelection["mode"]>("selected");
+export const useSplitSettings = (
+  name: string,
+  pageCount: number,
+  tool: "split" | "remove" = "split",
+) => {
+  const [mode, setMode] = useState<Exclude<SplitSelection["mode"], "remove">>("selected");
   const [pages, setPages] = useState<readonly number[]>([]);
   const [pageOrder, setPageOrder] = useState<readonly number[] | null>(null);
   const order = pageOrder ?? Array.from({ length: pageCount }, (_, index) => index + 1);
@@ -19,17 +23,19 @@ export const useSplitSettings = (name: string, pageCount: number) => {
   const [combined, setCombined] = useState(true);
   const [size, setSize] = useState("1");
   const selection: SplitSelection =
-    mode === "selected"
-      ? { mode, pages: order.filter((page) => selected.has(page)) }
-      : mode === "ranges"
-        ? {
-            mode,
-            ranges: ranges.map(({ start, end }) => ({ start: Number(start), end: Number(end) })),
-            combined,
-          }
-        : mode === "fixed"
-          ? { mode, size: Number(size) }
-          : { mode };
+    tool === "remove"
+      ? { mode: "remove", pages }
+      : mode === "selected"
+        ? { mode, pages: order.filter((page) => selected.has(page)) }
+        : mode === "ranges"
+          ? {
+              mode,
+              ranges: ranges.map(({ start, end }) => ({ start: Number(start), end: Number(end) })),
+              combined,
+            }
+          : mode === "fixed"
+            ? { mode, size: Number(size) }
+            : { mode };
   let plan: SplitPlan | undefined;
   let error = "";
   if (pageCount > 0) {

@@ -31,6 +31,16 @@ const guides = {
     detail:
       "Conversion uses the original local images, not the optional thumbnails. Animated PNGs and unsupported image formats are rejected rather than silently converted. Large images can exhaust browser memory; workload limits are not yet calibrated.",
   },
+  remove: {
+    title: "How to remove pages from a PDF",
+    steps: [
+      "Add one PDF and wait for local validation.",
+      "Select the pages to remove. Keep at least one page; the remaining pages stay in source order.",
+      "Review the output prediction and preservation notice, select Remove pages, then download your new PDF.",
+    ],
+    detail:
+      "Your original stays unchanged. Removal rewrites the remaining pages without rasterizing them, but annotations, bookmarks, and other document features may not be preserved. Encrypted PDFs, forms, and detected digital signatures are not supported.",
+  },
 };
 
 export const ToolGuide = ({ route }: { route: ToolRoute }) => {

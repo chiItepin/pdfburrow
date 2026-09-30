@@ -60,9 +60,10 @@ export const App = ({ initialRoute }: { initialRoute?: ToolRoute }) => {
                 )}
                 {route === "merge" ? (
                   <MergeWorkspace workspace={workspace} />
-                ) : route === "split" ? (
+                ) : route === "split" || route === "remove" ? (
                   <SplitWorkspace
-                    key={workspace.draft.inputs[0]?.id ?? "empty"}
+                    key={`${route}-${workspace.draft.inputs[0]?.id ?? "empty"}`}
+                    tool={route}
                     workspace={workspace}
                   />
                 ) : route === "images" ? (

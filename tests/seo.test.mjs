@@ -67,7 +67,7 @@ for (const basePath of ["/", "/pdfburrow/", "/nested/tools/"]) {
   });
 
   test(`tool routes and legacy bookmarks stay within ${basePath}`, () => {
-    for (const route of ["home", "merge", "split", "images"]) {
+    for (const route of ["home", "merge", "split", "remove", "images"]) {
       const path = routePath(route, basePath);
       assert.equal(readRoute({ pathname: path, hash: "" }, basePath), route);
       assert.equal(readRoute({ pathname: `${path}index.html`, hash: "" }, basePath), route);
