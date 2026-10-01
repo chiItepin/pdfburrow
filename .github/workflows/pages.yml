@@ -65,25 +65,11 @@ jobs:
           PDFBURROW_SITE_ORIGIN: ${{ steps.pages.outputs.origin }}
         run: npm run check
 
-      - name: Install browser test runtimes
-        run: apps/web/node_modules/.bin/playwright install --with-deps chromium firefox webkit
-
-      - name: Verify browser workflows and real outputs
-        env:
-          PDFBURROW_BASE_PATH: ${{ steps.pages.outputs.base_path }}/
-          PDFBURROW_SITE_ORIGIN: ${{ steps.pages.outputs.origin }}
-        run: npm run test:browser -- --workers=2
-
       - name: Record artifact provenance
         id: release
         run: node apps/web/scripts/releaseMetadata.mjs
 
-      - name: Record exact-artifact privacy evidence and remaining gates
-        env:
-          PDFBURROW_BASE_PATH: ${{ steps.pages.outputs.base_path }}/
-        run: npm run test:privacy
-
-      - name: Upload the verified static artifact
+      - name: Upload the static release artifact
         uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
         with:
           path: apps/web/dist

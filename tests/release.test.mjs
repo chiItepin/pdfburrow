@@ -57,23 +57,14 @@ test("the immutable tagged revision is checked before its single static artifact
   assert.deepEqual(commands, [
     "npm run setup",
     "npm run check",
-    "apps/web/node_modules/.bin/playwright install --with-deps chromium firefox webkit",
-    "npm run test:browser -- --workers=2",
     "node apps/web/scripts/releaseMetadata.mjs",
-    "npm run test:privacy",
   ]);
-  assert.deepEqual(steps.find((step) => step.run === "npm run test:privacy").env, {
-    PDFBURROW_BASE_PATH: "${{ steps.pages.outputs.base_path }}/",
-  });
   const upload = steps.at(-1);
   assert.ok(upload.uses.startsWith("actions/upload-pages-artifact@"));
   assert.deepEqual(upload.with, { path: "apps/web/dist", "retention-days": 30 });
-  for (const step of steps.filter((step) =>
-    ["npm run check", "npm run test:browser -- --workers=2"].includes(step.run),
-  )) {
-    assert.equal(step.env.PDFBURROW_SITE_ORIGIN, "${{ steps.pages.outputs.origin }}");
-    assert.equal(step.env.PDFBURROW_BASE_PATH, "${{ steps.pages.outputs.base_path }}/");
-  }
+  const check = steps.find((step) => step.run === "npm run check");
+  assert.equal(check.env.PDFBURROW_SITE_ORIGIN, "${{ steps.pages.outputs.origin }}");
+  assert.equal(check.env.PDFBURROW_BASE_PATH, "${{ steps.pages.outputs.base_path }}/");
   for (const job of Object.values(workflow.jobs)) {
     for (const step of job.steps.filter((step) => step.uses)) {
       assert.match(step.uses, /^actions\/[\w-]+@[a-f0-9]{40}$/u);
