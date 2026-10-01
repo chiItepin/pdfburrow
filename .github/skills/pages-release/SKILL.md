@@ -12,7 +12,8 @@ invoking this skill is not authorization to push or publish.
 1. **Load the release contract.** Read [RELEASING.md](../../../RELEASING.md),
    including the current release ticket and its linked decisions, before acting.
    It owns readiness, authorization, recovery, and publication criteria; this
-   skill is only a guide through that procedure. Missing evidence blocks release.
+   skill is only a guide through that procedure. Apply its current experimental
+   policy; disclose waived checks and known failures separately from required evidence.
 2. **Identify the release.** Resolve the intended revision to its full commit
    SHA. For a previously published release, follow **Completed release lookup**
    in the guide and return without entering steps 3-6. This read-only path uses
@@ -34,14 +35,16 @@ invoking this skill is not authorization to push or publish.
    **Recovery** in the guide.
    Conflicting provenance blocks release. A missing trigger or another unfinished
    candidate blocks a new release except for the guide's explicitly authorized
-   **Missing tag-push run** recovery. Follow that branch's absence checks and
+   recovery paths. Follow **Failed candidate requiring a changed revision** for
+   a source or delivery-policy change, or **Missing tag-push run** for a confirmed
+   missing event on the identical commit. Complete the chosen branch's checks and
    owner authorization before treating a new tag as a replacement.
    Never move, delete, or force-push release tags.
 4. **Start or resume the candidate.** Only after the preceding gates pass, use
    the guide's annotated-tag commands for one unused tag on the approved SHA,
    pushing only that tag's ref. Quote all supplied values as literal arguments.
    For an existing candidate, follow the documented recovery path; create a
-   replacement tag only under its missing-trigger exception. Identify its run with:
+   replacement tag only under an owner-authorized recovery path. Identify its run with:
 
    ```sh
    gh run list --repo chiItepin/pdfburrow --workflow pages.yml --event push \
@@ -59,7 +62,7 @@ invoking this skill is not authorization to push or publish.
    the remaining artifact evidence from the guide, then give the owner the run
    URL and direct them to **Review deployments** for `github-pages`. Only the
    owner approves; never approve on their behalf or treat the build as approval.
-   For missing-trigger recovery, first apply the guide's late-run checks and
+   For recovery replacements, first apply the guide's late-run checks and
    owner rejection/cancellation gate for every superseded tag.
    While waiting, report **incomplete: awaiting owner approval**.
 6. **Verify and record current publication.** For a new or resumed deployment,

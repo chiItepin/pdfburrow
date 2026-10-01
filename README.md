@@ -436,6 +436,9 @@ stale evidence before running. A rebuild removes old evidence. The report always
 states that owner approval remains required and device calibration and contributor-rights
 review remain unverified under the experimental policy;
 passing these synthetic scenarios is not a universal non-egress proof.
+Browser/output and privacy suites are development diagnostics, not tagged Pages
+publication gates. Delivery retains format/type/lint/unit checks, the static build,
+distributed notices, exact provenance, and protected owner approval.
 
 Every build generates `LICENSE.txt`, `third-party-notices.txt`, and
 `license-inventory.json` from actual emitted JavaScript inputs, retained legal
