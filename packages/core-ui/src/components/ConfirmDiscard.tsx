@@ -5,11 +5,15 @@ export const ConfirmDiscard = ({
   description,
   onKeep,
   onDiscard,
+  keepLabel = "Keep working",
+  discardLabel = "Discard",
 }: {
   open: boolean;
   description: string;
   onKeep: () => void;
   onDiscard: () => void;
+  keepLabel?: string;
+  discardLabel?: string;
 }) => {
   const dialog = useRef<HTMLDialogElement>(null);
   const keepButton = useRef<HTMLButtonElement>(null);
@@ -42,10 +46,10 @@ export const ConfirmDiscard = ({
       </p>
       <div className="flex flex-wrap gap-3">
         <Button ref={keepButton} onClick={onKeep}>
-          Keep working
+          {keepLabel}
         </Button>
         <Button variant="destructive" onClick={onDiscard}>
-          Discard
+          {discardLabel}
         </Button>
       </div>
     </dialog>

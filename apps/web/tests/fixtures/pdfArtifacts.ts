@@ -48,6 +48,9 @@ export const inspectArtifact = async (bytes: Uint8Array, password?: string) => {
           target.canvas.height,
         ).data;
         pages.push({
+          textItems: text.items.flatMap((item) =>
+            "str" in item ? [{ text: item.str, width: item.width }] : [],
+          ),
           text: text.items
             .filter((item) => "str" in item)
             .map((item) => item.str)

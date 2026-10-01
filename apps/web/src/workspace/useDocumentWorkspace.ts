@@ -10,6 +10,7 @@ export const useDocumentWorkspace = () => {
   const hydrated = useHydrated();
   const [notice, announce] = useState("");
   const [confirmation, setConfirmation] = useState<DiscardAction | null>(null);
+  const [interactionLocked, setInteractionLocked] = useState(false);
   const draft = useInputDraft(announce);
   const execution = useDocumentJob(announce);
   const focus = useWorkspaceLifecycle(draft.inputs.length, execution.job.phase);
@@ -69,12 +70,15 @@ export const useDocumentWorkspace = () => {
     focus,
     capable,
     confirmation,
+    interactionLocked,
+    setInteractionLocked,
     notice: draft.resourceError || notice,
     announce,
     addFiles,
     removeFile,
     moveFile,
     discardForNavigation: () => {
+      setInteractionLocked(false);
       execution.editDraft();
       draft.resetDraft();
       setConfirmation(null);

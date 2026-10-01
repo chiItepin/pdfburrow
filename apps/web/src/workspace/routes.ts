@@ -30,6 +30,7 @@ export const readRoute = (
 
 export const routeTitles: Record<ToolRoute, string> = {
   home: "Home",
+  markup: "Sign & annotate PDF",
   merge: "Merge PDFs",
   split: "Split / Extract",
   remove: "Remove pages",

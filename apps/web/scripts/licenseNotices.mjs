@@ -102,10 +102,34 @@ export const writeLicenseNotices = async (metafile, outputDirectory) => {
       }
       notices.push({ file: "LICENSE", text });
     }
+    if (
+      !notices.length &&
+      item.name === "@pdf-lib/fontkit" &&
+      item.version === "1.1.1" &&
+      item.license === "MIT"
+    ) {
+      const readme = await readFile(resolve(item.directory, "README.md"), "utf8");
+      if (!readme.includes("[MIT](https://choosealicense.com/licenses/mit/)")) {
+        throw new Error("Fontkit no longer declares the expected MIT license.");
+      }
+      provenance =
+        "installed @pdf-lib/fontkit@1.1.1 manifest and README; declared MIT terms with package author/contributor attribution";
+      notices.push(
+        { file: "README.md", text: readme },
+        {
+          file: "MIT-terms-and-attribution",
+          text: await readFile(new URL("../licenses/fontkit.txt", import.meta.url), "utf8"),
+        },
+      );
+    }
     if (!notices.length) {
       throw new Error(`No redistributable license text for ${item.name}@${item.version}`);
     }
     if (item.name === "pdfjs-dist") {
+      notices.push({
+        file: "standard_fonts/LICENSE_LIBERATION",
+        text: await readFile(resolve(item.directory, "standard_fonts/LICENSE_LIBERATION"), "utf8"),
+      });
       for (const name of (await readdir(resolve(item.directory, "wasm")))
         .filter((name) => name.startsWith("LICENSE"))
         .sort()) {

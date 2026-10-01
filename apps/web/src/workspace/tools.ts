@@ -1,6 +1,13 @@
-import { Files, Images, Scissors, FileMinus } from "lucide-react";
+import { Files, Images, Scissors, FileMinus, Signature } from "lucide-react";
 
 export const tools = [
+  {
+    route: "markup",
+    label: "Sign & annotate PDF",
+    description:
+      "Draw your signature, highlight passages, and add notes without uploading your PDF.",
+    icon: Signature,
+  },
   {
     route: "merge",
     label: "Merge PDFs",

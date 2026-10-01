@@ -1,8 +1,20 @@
-import type { ImageInfo, Outcome, PdfInfo, PdfOutput, PdfProgress } from "@repo/pdf-engine";
+import type {
+  ImageInfo,
+  MarkupInfo,
+  Outcome,
+  PdfInfo,
+  PdfOutput,
+  PdfProgress,
+} from "@repo/pdf-engine";
 
-export type InputRow = { id: string; name: string; size: number; kind: "pdf" | "image" } & (
+export type InputRow = {
+  id: string;
+  name: string;
+  size: number;
+  kind: "pdf" | "image" | "markup";
+} & (
   | { status: "pending" }
-  | { status: "ready"; info: PdfInfo | ImageInfo }
+  | { status: "ready"; info: PdfInfo | ImageInfo | MarkupInfo }
   | { status: "error"; message: string }
 );
 

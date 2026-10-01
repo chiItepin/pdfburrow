@@ -17,6 +17,14 @@ import { writeStaticPages } from "./staticPages.mjs";
 const copyPreviewAssets = async () => {
   const destination = `${outputDirectory}/assets/pdfjs`;
   await mkdir(destination, { recursive: true });
+  await copyFile(
+    `${pdfJsDirectory}/standard_fonts/LiberationSans-Regular.ttf`,
+    `${outputDirectory}/assets/markupFont.ttf`,
+  );
+  await copyFile(
+    `${pdfJsDirectory}/standard_fonts/LICENSE_LIBERATION`,
+    `${destination}/LICENSE_LIBERATION`,
+  );
   await Promise.all(
     [
       "wasm/jbig2_nowasm_fallback.js",

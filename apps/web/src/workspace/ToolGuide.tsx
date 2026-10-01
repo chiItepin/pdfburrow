@@ -1,6 +1,16 @@
 import type { ToolRoute } from "./routes";
 
 const guides = {
+  markup: {
+    title: "How to sign and annotate a PDF",
+    steps: [
+      "Add one supported PDF and wait for local validation.",
+      "Draw a visual signature, add ink, highlights or text notes, and edit their placement.",
+      "Review the limitations, generate a flattened PDF, then choose Download PDF.",
+    ],
+    detail:
+      "Your edits live only in this tab. Signatures are visual marks, not digital signatures or identity guarantees. Existing page annotations (including links), encrypted files, forms and digital signatures are not supported. Reopening a downloaded copy does not restore editable markup.",
+  },
   merge: {
     title: "How to merge PDF files",
     steps: [

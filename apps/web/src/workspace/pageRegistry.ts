@@ -24,9 +24,20 @@ export const pageRegistry = [
     legacyHash: "#/",
     title: "PDFBurrow - Free PDF tools, no uploads",
     description:
-      "Merge PDFs, split and extract pages, remove unwanted pages, or convert JPEG and PNG images to PDF in your browser. Free local tools with no uploads and no signup.",
+      "Sign and annotate PDFs, merge files, split or remove pages, or convert images to PDF in your browser. Free local tools with no uploads and no signup.",
     indexable: true,
     schema: { type: "WebSite", name: "PDFBurrow" },
+  },
+  {
+    route: "markup",
+    path: "sign/",
+    source: "react",
+    legacyHash: "#/markup",
+    title: "Sign and annotate a PDF locally, without uploads - PDFBurrow",
+    description:
+      "Draw a visual signature, highlight text, and add notes to a local PDF. Download a flattened copy without uploading your document or changing the original.",
+    indexable: true,
+    schema: { type: "SoftwareApplication", name: "PDFBurrow - Sign & annotate PDF" },
   },
   {
     route: "merge",

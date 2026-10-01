@@ -25,6 +25,7 @@ export default defineConfig({
     {
       name: "desktop-chromium",
       testMatch: [
+        "markup.spec.ts",
         "hydration.spec.ts",
         "seo.spec.ts",
         "workspace.spec.ts",
@@ -51,6 +52,7 @@ export default defineConfig({
     {
       name: "mobile-chromium",
       testMatch: [
+        "markup.spec.ts",
         "hydration.spec.ts",
         "seo.spec.ts",
         "workspace.spec.ts",
@@ -77,6 +79,7 @@ export default defineConfig({
     {
       name: "desktop-firefox",
       testMatch: [
+        "markup.spec.ts",
         "hydration.spec.ts",
         "shell.spec.ts",
         "theme.spec.ts",
@@ -100,6 +103,7 @@ export default defineConfig({
     {
       name: "desktop-webkit",
       testMatch: [
+        "markup.spec.ts",
         "hydration.spec.ts",
         "shell.spec.ts",
         "theme.spec.ts",
@@ -123,6 +127,7 @@ export default defineConfig({
     {
       name: "development-chromium",
       testMatch: [
+        "markup.spec.ts",
         "development.spec.ts",
         "compressedPreviews.spec.ts",
         "seo.spec.ts",

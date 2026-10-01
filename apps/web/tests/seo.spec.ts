@@ -5,6 +5,7 @@ const basePath = process.env.PDFBURROW_BASE_PATH ?? "/pdfburrow/";
 const siteOrigin = process.env.PDFBURROW_SITE_ORIGIN ?? "https://chiitepin.github.io";
 const pages = [
   ["", "Home"],
+  ["sign/", "Sign & annotate PDF"],
   ["merge/", "Merge PDFs"],
   ["split/", "Split / Extract"],
   ["remove/", "Remove pages"],
@@ -112,7 +113,7 @@ test("direct tool URLs survive refresh, stay local and keep metadata synchronize
   const failures: string[] = [];
   page.on("pageerror", (error) => failures.push(error.message));
   page.on("requestfailed", (request) => failures.push(request.url()));
-  for (const [path, heading] of pages.slice(1, 5)) {
+  for (const [path, heading] of pages.filter(([path]) => path !== "" && !path.endsWith(".html"))) {
     await page.goto(`./${path}`);
     await page.reload();
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(heading);

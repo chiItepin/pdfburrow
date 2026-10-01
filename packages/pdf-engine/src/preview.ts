@@ -1,16 +1,18 @@
 import { getDocument, PDFWorker } from "pdfjs-dist";
 import { enforceLimit } from "./resourceLimits";
+import type { MarkupGeometry } from "./markupTypes";
 
 export interface PdfPreviewLimits {
   readonly inputBytes?: number;
 }
 /** The caller serializes previews and releases returned object URLs. */
-export const previewPdf = async (
+export const previewPdfPage = async (
   blob: Blob,
   signal: AbortSignal,
   pageNumber = 1,
   limits: PdfPreviewLimits = {},
-): Promise<Blob> => {
+  maximumDimension = 144,
+): Promise<{ blob: Blob; geometry: MarkupGeometry }> => {
   signal.throwIfAborted();
   enforceLimit(blob.size, limits.inputBytes, "Preview input bytes", "Use a smaller source PDF.");
   const port = new Worker(new URL("./pdf.worker.min.js", import.meta.url), { type: "module" });
@@ -45,18 +47,39 @@ export const previewPdf = async (
     signal.throwIfAborted();
     const page = await pdf.getPage(pageNumber);
     const original = page.getViewport({ scale: 1 });
-    const viewport = page.getViewport({ scale: 144 / Math.max(original.width, original.height) });
+    const viewport = page.getViewport({
+      scale: maximumDimension / Math.max(original.width, original.height),
+    });
     canvas.width = Math.ceil(viewport.width);
     canvas.height = Math.ceil(viewport.height);
     await page.render({ canvas, viewport, background: "white" }).promise;
     signal.throwIfAborted();
-    return await new Promise<Blob>((resolve, reject) => {
+    const image = await new Promise<Blob>((resolve, reject) => {
       canvas.toBlob(
         (image) =>
           image ? resolve(image) : reject(new Error("Preview image could not be created.")),
         "image/png",
       );
     });
+    const [a, b, c, d, e, f] = original.transform;
+    if (
+      a === undefined ||
+      b === undefined ||
+      c === undefined ||
+      d === undefined ||
+      e === undefined ||
+      f === undefined
+    ) {
+      throw new Error("The page preview has no coordinate transform.");
+    }
+    return {
+      blob: image,
+      geometry: {
+        width: original.width,
+        height: original.height,
+        transform: [a, b, c, d, e, f] as const,
+      },
+    };
   };
   try {
     return await Promise.race([render(), failure]);
@@ -71,3 +94,9 @@ export const previewPdf = async (
     }
   }
 };
+export const previewPdf = async (
+  blob: Blob,
+  signal: AbortSignal,
+  pageNumber = 1,
+  limits: PdfPreviewLimits = {},
+): Promise<Blob> => (await previewPdfPage(blob, signal, pageNumber, limits)).blob;

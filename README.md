@@ -1,12 +1,14 @@
 # PDFBurrow
 
-A React + TypeScript local document workspace with **Merge PDFs**,
-**Split / Extract**, **Remove pages**, and **Images to PDF**. Combine whole PDFs,
-choose or remove pages from one source, or convert ordered static JPEG/PNG images, then explicitly download
+A React + TypeScript local document workspace with **Sign & annotate PDF**, **Merge PDFs**,
+**Split / Extract**, **Remove pages**, and **Images to PDF**. Add visual signatures
+and markup, combine whole PDFs, choose or remove pages from one source, or convert
+ordered static JPEG/PNG images, then explicitly download
 PDFs or a ZIP of multiple outputs.
 
 The [PDFBurrow MVP map](https://github.com/chiItepin/pdfburrow/issues/1) is the
-decision index. This workspace implements the three MVP tools, page removal, and the shared
+decision index. This workspace implements the three MVP tools, the markup editor,
+page removal, and the shared
 file-to-download workflow with provisional workload limits. It is an experimental
 build, not a verified release. The project is MIT-licensed; device calibration and
 complete compatibility evidence still require release review.
@@ -43,9 +45,58 @@ async cleanup patterns keep their ordinary behavior and are reported in build
 diagnostics. The engine remains React-free. File/output stores use lazy state
 initialization for stable ownership, not a memoization cache.
 
+## Sign and annotate a PDF
+
+Choose **Sign & annotate PDF** on Home or in the sidebar, or open `sign/`.
+The compact Menubar groups generation, downloads, and reset under **File**;
+history and selected-object edits under **Edit**; drawing, notes, and **Draw signature**
+under **Tools**; and page navigation, fit modes, and 25–400% zoom under **View**.
+Use **View → Go to page** to jump directly to a page and **View → Zoom level**
+to enter a percentage in 25% increments. Active tool, page, and zoom
+remain visible beside the menus. The below-page object picker reaches overlapping marks.
+Add one supported local PDF. The editor shows one page at a time with page navigation,
+Fit page/Fit width, and 25–400% zoom. Original page text is not editable.
+
+Add black ink, 30%-opacity yellow rectangular highlights, visible multiline text notes,
+or a drawn visual signature. Select one object to drag, nudge with arrows (Shift: 10 points),
+delete, or use **Move / size** for exact PDF-point placement. Ink and signatures scale
+proportionally; notes expose text and width. The object picker reaches overlapping marks.
+Keyboard alternatives include centered highlights/notes and Space/arrows for drawing ink.
+**Undo/Redo** use completed document edits; text fields retain native editing shortcuts.
+
+The signature pad defaults to **Click to start / click to end**: move without holding
+a button, then click again to finish each stroke. Drag and keyboard drawing are also
+available. Leaving the pad, losing focus, or Escape cancels only the unfinished stroke;
+local stroke history remains separate until **Use signature** inserts one object.
+A visual signature is not cryptographic signing, identity verification, or a legal-validity guarantee.
+
+Notes use locally shipped, subset-embedded Liberation Sans Regular at 12 points and
+14.4-point line spacing. Preview, wrapping, and export disable kerning and optional
+ligatures so glyph spacing stays consistent. NFC-normalized printable ASCII, Latin-1/Extended-A, supported
+Western European accents, newlines and common punctuation are checked against font glyphs.
+Unsupported characters and visible-page overflow are rejected before saving, not substituted
+or clipped. All mark sizes are physical points from the rotated, visible page's top-left,
+independent of UI zoom, crop origins, and page-local UserUnit.
+
+Markup additionally rejects **any nonempty page annotation array**, including links,
+hidden and nonprinting annotations. Obtain a flattened, noninteractive source externally;
+Merge's annotation warning policy is unchanged. Encryption, forms, digital signatures,
+structural/geometry checks and the existing provisional PDF resource limits still apply.
+One page preview is rendered at a time with a bounded 1600-pixel maximum dimension;
+this is not a calibrated memory guarantee.
+
+After acknowledging the limitations, choose **Generate PDF**, then explicitly **Download PDF**.
+Generation adds marks to page content without rasterizing whole pages or overwriting the
+original. The output is named `<source>-marked.pdf`. Reopening it does not restore editable
+objects. Edits and history live only in this tab; refresh closes the draft.
+Editing an undownloaded result and **Start over** require confirmation. Start over clears
+the PDF, all marks, history and outputs and cannot be undone. Cancellation terminates the local
+writer worker and retains the draft. No release, deployment, lossless-preservation or
+device-safety guarantee is implied.
+
 ## Shared workspace
 
-- The responsive shadcn sidebar contains Home and the four document tools; on
+- The responsive shadcn sidebar contains Home and the five document tools; on
   phones it opens as a keyboard-accessible drawer. The page header uses breadcrumbs,
   with a compact ellipsis menu on narrow screens. Every navigation entry preserves
   the same discard confirmation and processing lock.
@@ -56,9 +107,11 @@ initialization for stable ownership, not a memoization cache.
   Saved appearance is applied before the workspace loads and keeps supported
   browser chrome in sync with theme changes.
 - Choose a tool before adding files. Under the configured base, Home is `/`;
-  merge is `merge/`; split/extraction is `split/`; page removal is `remove/`;
+  signing/markup is `sign/`; merge is `merge/`; split/extraction is `split/`;
+  page removal is `remove/`;
   JPEG/PNG conversion is `images/`.
-  Hash routes `#/`, `#/merge`, `#/split`, `#/remove`, and `#/images` work and are
+  Hash routes `#/`, `#/markup`, `#/merge`, `#/split`, `#/remove`, and `#/images`
+  work and are
   normalized to the corresponding path without adding a history entry.
   Unknown tool addresses show a recovery
   screen. URLs and history state identify tools only, never documents or settings.
@@ -75,7 +128,7 @@ initialization for stable ownership, not a memoization cache.
   removal, focus restoration, and status announcements remain available.
 - `apps/web/src/workspace` owns the file registry, required PDF/image validation queue,
   windowed inputs, preview cache, document job lifecycle, and output/download
-  ownership. All four tools share one draft/job owner and download lifecycle;
+  ownership. All five tools share one draft/job owner and download lifecycle;
   PDF tools additionally share preservation acknowledgement. Each feature supplies its operation and settings.
   `core-ui` owns the reusable file dropzone and dialog.
 - Shared downloads retain only metadata in React state and keep Blob references

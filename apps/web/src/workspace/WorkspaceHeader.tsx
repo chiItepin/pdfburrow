@@ -104,7 +104,7 @@ export const WorkspaceHeader = ({
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
-      {route !== "home" && route !== "not-found" && <ToolSettingsTrigger />}
+      {route !== "home" && route !== "not-found" && route !== "markup" && <ToolSettingsTrigger />}
     </header>
   );
 };

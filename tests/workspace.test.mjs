@@ -40,7 +40,12 @@ test("Rush owns exactly the four approved packages and their dependency directio
       assert.equal(pkg.devDependencies["@repo/tooling"], "workspace:*");
     }
     if (pkg.name === "@repo/pdf-engine") {
-      assert.deepEqual(Object.keys(pkg.dependencies).sort(), ["fflate", "pdf-lib", "pdfjs-dist"]);
+      assert.deepEqual(Object.keys(pkg.dependencies).sort(), [
+        "@pdf-lib/fontkit",
+        "fflate",
+        "pdf-lib",
+        "pdfjs-dist",
+      ]);
       assert.equal(pkg.peerDependencies, undefined);
     }
   }
@@ -69,6 +74,8 @@ test("UI exports, shadcn ownership, and Tailwind sources are explicit", async ()
   assert.equal(engine.exports["./merge"], "./src/merge/index.ts");
   assert.equal(engine.exports["./preview"], "./src/preview/index.ts");
   assert.equal(engine.exports["./bundle"], "./src/bundle/index.ts");
+  assert.equal(engine.exports["./markup"], "./src/markup/index.ts");
+  assert.equal(engine.exports["./markup-layout"], "./src/markupLayout.ts");
 });
 
 test("browser, worker and build-tool environments do not leak into each other", async () => {

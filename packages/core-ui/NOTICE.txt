@@ -1,4 +1,5 @@
-The generated button in src/primitives/button.tsx is derived from shadcn/ui:
+The shared primitives, including Button.tsx, Menubar.tsx, and NativeSelect.tsx,
+are derived from shadcn/ui:
 https://github.com/shadcn-ui/ui
 
 Its cn import is adapted to the shared @repo/core-ui/lib/utils alias.
