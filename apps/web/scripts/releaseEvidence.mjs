@@ -128,16 +128,17 @@ export const recordReleaseEvidence = async () => {
     },
     stats: report.stats,
     checks: summarize(report.suites),
+    releasePolicy: "experimental",
     releaseReady: false,
-    pending: [
+    evidenceGaps: [
       "Physical iPhone/iPad/Android and current/previous stable browser-major coverage.",
       "Measured cross-device memory/performance calibration; limits are provisional estimates.",
       ...(offlineGaps
-        ? ["macOS WebKit offline-mode Blob limitation; physical Safari evidence still required."]
+        ? ["macOS WebKit offline-mode Blob limitation; physical Safari behavior is unverified."]
         : []),
-      "Owner confirmation of contributor licensing rights.",
-      "Exact release commit/tag selection and protected-environment owner approval.",
+      "Contributor licensing-rights review is unverified.",
     ],
+    pending: ["Exact release commit/tag selection and protected-environment owner approval."],
     licenses,
   };
   await writeFile(evidencePath, `${JSON.stringify(evidence, null, 2)}\n`);

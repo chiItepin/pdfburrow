@@ -10,8 +10,9 @@ The [PDFBurrow MVP map](https://github.com/chiItepin/pdfburrow/issues/1) is the
 decision index. This workspace implements the three MVP tools, the markup editor,
 page removal, and the shared
 file-to-download workflow with provisional workload limits. It is an experimental
-build, not a verified release. The project is MIT-licensed; device calibration and
-complete compatibility evidence still require release review.
+build, not a broadly verified release. The project is MIT-licensed. The owner-authorized
+[experimental release policy](RELEASING.md#experimental-release-policy) permits publication
+with disclosed device-coverage, calibration, and contributor-rights review gaps.
 
 ## Run locally
 
@@ -170,7 +171,7 @@ decoding; decoded dimensions are checked again. These checks do not guarantee
 against decoder allocation failure. Originals, parsed/decoded data, outputs, and
 ZIP intermediates can coexist. Output-byte checks occur during or after allocation.
 Physical-device calibration, measured safety margins, and performance thresholds
-remain release work. The eight-item preview window remains a bounded UI choice,
+remain unverified, but do not block experimental publication. The eight-item preview window remains a bounded UI choice,
 not a measured virtualization crossover.
 
 ## Merge behavior and limitations
@@ -225,10 +226,10 @@ not a measured virtualization crossover.
   Static hosting receives application-asset requests. Offline/PWA operation is
   not promised.
 
-**Not release-ready:** provisional limits are enforced but have not been calibrated
+**Experimental:** provisional limits are enforced but have not been calibrated
 across the complete browser/device matrix. Complex inputs may still exhaust browser
 memory below those limits. The full PDF fixture matrix, physical devices,
-aggregate parsed-memory accounting, and scheduling calibration remain gates in
+aggregate parsed-memory accounting, and scheduling calibration remain evidence gaps tracked by
 [Validate the MVP and prepare GitHub Pages release](https://github.com/chiItepin/pdfburrow/issues/10).
 
 ## Split / Extract behavior
@@ -357,7 +358,7 @@ variants and every manual quarter-turn, mirrored content, transparency, embedded
 browser-decoded pixels. It also covers combined/separate PDF and ZIP naming,
 failures, cancellation, explicit downloads, and 20 reset cycles with worker/URL
 cleanup. Chromium, Firefox, WebKit, and mobile emulation are evidence for those
-test builds, not the required physical-device or current/previous-major matrix.
+test builds, not a verified physical-device or current/previous-major matrix.
 No HEIC, WebP, TIFF, animated PNG, collage, free-angle rotation, custom margin,
 or background-color support is added.
 
@@ -428,10 +429,12 @@ offline startup, persistence, or a PWA.
 
 On success it writes `apps/web/dist/release-evidence.json` with per-file SHA-256
 hashes, a combined artifact digest, commit/dirty-worktree status, host and browser
-versions, fixture hashes, request traces, test outcomes, and explicit pending gates.
+versions, fixture hashes, request traces, test outcomes, disclosed evidence gaps,
+and pending approval gates.
 It rejects a base-path mismatch or artifact mutation during collection and removes
 stale evidence before running. A rebuild removes old evidence. The report always
-states that release approval, device calibration, and licensing review are separate;
+states that owner approval remains required and device calibration and contributor-rights
+review remain unverified under the experimental policy;
 passing these synthetic scenarios is not a universal non-egress proof.
 
 Every build generates `LICENSE.txt`, `third-party-notices.txt`, and
@@ -439,7 +442,8 @@ Every build generates `LICENSE.txt`, `third-party-notices.txt`, and
 comments, Tailwind CSS, copied shadcn components, and PDF.js decoder notices.
 Unknown package licenses and missing license texts fail the build; there are no
 inferred-license fallbacks. Packages removed by tree shaking are excluded from the
-distributed inventory. Contributor rights still require owner confirmation.
+distributed inventory. Contributor-rights review remains unverified; the owner
+removed separate confirmation as an experimental-publication prerequisite.
 The `react-remove-scroll-bar@2.3.8` archive omits its license file; the build
 supplements only that exact MIT-licensed version with the upstream text retained
 in `apps/web/licenses/reactRemoveScrollBar.txt`. Its pinned upstream source and

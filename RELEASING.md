@@ -16,16 +16,40 @@ all tag names, including names containing `/`, rather than a version-prefix
 subset. Branch pushes and GitHub Release publication are not deployment triggers.
 Each run builds the triggering revision once and deploys that same artifact.
 
+## Experimental release policy
+
+On 2026-09-30, the owner explicitly removed the outstanding manual readiness
+blockers and authorized an experimental release, recorded in
+[the release ticket](https://github.com/chiItepin/pdfburrow/issues/10#issuecomment-5922030105).
+This supersedes the physical
+device/current-and-previous browser matrix, measured resource calibration, and
+separate contributor-rights confirmation prerequisites in ticket #10 and its
+linked decisions. Those gaps are disclosed, not counted as passing evidence.
+They do not block an experimental release.
+
+Keep the experimental label and provisional-limit disclosures. Do not claim
+verified device support, measured memory/performance margins, or a completed
+contributor-rights audit. The MIT license and distributed third-party notices
+remain required; this policy does not waive third-party license obligations.
+
+Automated build, output/browser, and privacy checks remain required, along with
+exact tag/commit/artifact provenance, an owner-authenticated tag push, protected
+environment approval by the owner, and publication verification. This policy
+does not authorize an unspecified tag or commit, remove environment protection,
+or permit an agent to approve a deployment on the owner's behalf.
+
 ## Release procedure
 
 1. **Qualify the candidate.** Read the open gates in
    [Validate the MVP and prepare GitHub Pages release](https://github.com/chiItepin/pdfburrow/issues/10)
-   and the linked canonical decisions. Record evidence against the exact commit
+   and the linked canonical decisions, applying the experimental policy above.
+   Record evidence against the exact commit
    and artifact: output correctness, document non-egress and network-blocked
-   processing, interaction/lifecycle behavior, browser/device coverage, measured
-   resource limits, distributed licensing, and hosting. Missing evidence keeps the
-   candidate blocked. A green workflow does not replace physical-device or
-   licensing evidence.
+   processing, interaction/lifecycle behavior, tested browser configurations,
+   distributed licensing, and hosting. Record unverified device coverage,
+   provisional resource limits, and contributor-rights review as evidence gaps,
+   not publication blockers. Failed automated checks or missing artifact
+   provenance still block the candidate.
 2. **Check delivery readiness.** The tagged commit must contain the reviewed
    Pages workflow. Repository Pages settings must use **GitHub Actions**, and
    `github-pages` must require `chiItepin` as its reviewer. Naming an environment
@@ -139,23 +163,21 @@ original tag.
 
 ## Current readiness
 
-Pages infrastructure and automated checks are not evidence that the MVP is
-release-ready. The release ticket remains the source of truth for pending
-licensing, device/resource calibration, privacy evidence, and publication gates.
-Keep development/support disclosures until the corresponding evidence supports
-changing them.
+Pages infrastructure and automated checks do not establish broad device support
+or measured resource safety. The owner-authorized experimental policy above
+permits publication without those manual readiness checks. Keep experimental,
+support, and workload disclosures until evidence supports changing them.
 
 The owner closed the validation ticket administratively, not as evidence that
-its gates passed. Subsequent authorization to address the gaps using best guesses
-permits the shared **provisional** workload policy; it does not turn estimates into
-calibration or waive physical-device coverage. The project now carries its MIT
-license and build-generated distributed notices from the shipped packages. Confirm
-contributor licensing rights before publication.
+its gates passed. The later experimental-release authorization removes its manual
+publication blockers but does not turn estimates into calibration. The project
+carries its MIT license and build-generated distributed notices from the shipped
+packages; contributor-rights review remains unverified.
 
 After building the candidate, run `npm run test:privacy` with the same
 `PDFBURROW_BASE_PATH`. The generated `apps/web/dist/release-evidence.json` identifies
 the tested files by SHA-256, commit and dirty-worktree status, environment, fixtures,
-network observations, and remaining gates. The Pages workflow generates it after
+network observations, evidence gaps, and remaining approval gates. The Pages workflow generates it after
 `release.json` so provenance is included in the hash manifest. A local dirty-worktree
 report is development evidence, not evidence for the unchanged `main` commit.
 Repeat applicable qualification on the final clean release commit.
@@ -163,6 +185,5 @@ Repeat applicable qualification on the final clean release commit.
 Current automated evidence cannot establish physical iPhone/iPad/Android behavior,
 the current/previous stable-major matrix, or measured memory/performance margins.
 On macOS, Playwright WebKit's offline emulation blocks local Blob reads; that scenario is an
-explicit gap, not silently counted as passing. An owner-approved narrower release
-policy would need to be recorded explicitly; the experimental UI label alone
-does not change publication requirements.
+explicit gap, not silently counted as passing. These remain disclosed limitations
+under the experimental policy, not reasons to claim complete validation.
