@@ -431,6 +431,8 @@ On success it writes `apps/web/dist/release-evidence.json` with per-file SHA-256
 hashes, a combined artifact digest, commit/dirty-worktree status, host and browser
 versions, fixture hashes, request traces, test outcomes, disclosed evidence gaps,
 and pending approval gates.
+Report schema version 2 separates nonblocking `evidenceGaps` from approval-related
+`pending` entries and identifies the `experimental` release policy.
 It rejects a base-path mismatch or artifact mutation during collection and removes
 stale evidence before running. A rebuild removes old evidence. The report always
 states that owner approval remains required and device calibration and contributor-rights

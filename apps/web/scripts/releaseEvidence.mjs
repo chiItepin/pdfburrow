@@ -111,7 +111,7 @@ export const recordReleaseEvidence = async () => {
     await readFile(resolve(outputDirectory, "license-inventory.json"), "utf8"),
   );
   const evidence = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     recordedAt: new Date().toISOString(),
     sourceCommit: await git("rev-parse", "HEAD"),
     sourceDirty: Boolean(await git("status", "--porcelain")),
