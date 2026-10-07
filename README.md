@@ -52,15 +52,37 @@ The compact Menubar groups generation, downloads, and reset under **File**;
 history and selected-object edits under **Edit**; drawing, notes, and **Draw signature**
 under **Tools**; and page navigation, fit modes, and 25–400% zoom under **View**.
 Use **View → Go to page** to jump directly to a page and **View → Zoom level**
-to enter a percentage in 25% increments. Active tool, page, and zoom
+to enter a percentage in 1% increments. Active tool, page, and zoom
 remain visible beside the menus. The below-page object picker reaches overlapping marks.
 Add one supported local PDF. The editor shows one page at a time with page navigation,
 Fit page/Fit width, and 25–400% zoom. Original page text is not editable.
+Scroll up over the canvas to zoom in at the pointer; scroll down to zoom out.
+Mouse wheels, trackpad scrolling, and trackpad pinch gestures zoom only this canvas,
+not the browser or surrounding page. Drag empty space in **Select** mode to pan the
+zoomed page. **Tools → Hand** pans from anywhere, including over existing marks, without
+moving or resizing them. Middle-button dragging pans in any tool; in Hand mode, arrow
+keys pan 40 pixels and Shift + arrows pan 160. Click empty space in Select mode to
+deselect a mark; panning itself retains the selection and does not create an undo entry.
+Read-only result previews remain pannable and zoomable without unlocking markup edits.
+Scrollbars and Shift + scroll also pan the zoomed page;
+scrolling outside the canvas still moves the workspace normally. Zoom and drag-to-pan pause during
+an unfinished drawing or move. Fit modes and the View menu remain keyboard-accessible.
 
 Add black ink, 30%-opacity yellow rectangular highlights, visible multiline text notes,
 or a drawn visual signature. Select one object to drag, nudge with arrows (Shift: 10 points),
 delete, or use **Move / size** for exact PDF-point placement. Ink and signatures scale
 proportionally; notes expose text and width. The object picker reaches overlapping marks.
+Selected shapes have four corner handles for direct resizing and visible **Smaller**,
+**Bigger**, and **Move / size** buttons below the canvas. Ink and signatures keep their
+proportions and stroke width scales with the shape; highlights resize freely.
+Resizing stays inside the page and is one undoable edit. Escape cancels an unfinished
+move or resize. Releasing a drag keeps its last visible position instead of recalculating
+it from potentially stale release coordinates. Selecting or dragging a mark does not
+reset the canvas scroll position. Notes retain fixed-size text and use
+**Move / size** to change their width.
+If pointer capture or focus ends before release, an existing mark keeps its last visible
+move or resize. Escape still discards that unfinished change; interrupted new ink and
+highlights are discarded rather than saved as partial marks.
 Keyboard alternatives include centered highlights/notes and Space/arrows for drawing ink.
 **Undo/Redo** use completed document edits; text fields retain native editing shortcuts.
 

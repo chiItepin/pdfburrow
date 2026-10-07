@@ -18,6 +18,7 @@ import { MarkupProperties } from "./MarkupProperties";
 import { MarkupOutput } from "./MarkupOutput";
 import { pdfLimits } from "../workspace/resourcePolicy";
 import { ObjectControls } from "./ObjectControls";
+import { getMarkupResizeOptions } from "./markupResize";
 
 type Dialog =
   | { kind: "signature" }
@@ -51,6 +52,7 @@ export const MarkupEditor = ({
   if (!geometry) {
     return <p role="alert">This page is unavailable. Start over with a valid PDF.</p>;
   }
+  const sizeOptions = getMarkupResizeOptions(selected, geometry);
   const onBusy = (value: boolean) => {
     setGesture(value);
     workspace.setInteractionLocked(value);
@@ -171,11 +173,13 @@ export const MarkupEditor = ({
         page={page}
         geometry={geometry}
         zoom={zoom}
+        onZoom={setZoom}
         tool={tool}
         objects={history.objects.filter((object) => object.page === page)}
         selectedId={history.selectedId}
         fontBytes={fontBytes}
         disabled={!execution.editable || Boolean(dialog)}
+        viewDisabled={execution.locked || Boolean(dialog)}
         paused={execution.locked}
         onSelect={history.select}
         onAdd={onAdd}
@@ -195,6 +199,14 @@ export const MarkupEditor = ({
         selected={selected}
         disabled={!execution.editable || busy}
         onSelect={history.select}
+        smaller={sizeOptions.smaller}
+        bigger={sizeOptions.bigger}
+        onUpdate={history.update}
+        onProperties={() => {
+          if (selected) {
+            open({ kind: "properties", object: selected });
+          }
+        }}
       />
       {font.state === "error" && (
         <div className="mt-4">

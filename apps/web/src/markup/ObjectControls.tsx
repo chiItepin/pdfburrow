@@ -1,5 +1,5 @@
 import { useId } from "react";
-import { NativeSelect, NativeSelectOption } from "@repo/core-ui";
+import { Button, NativeSelect, NativeSelectOption } from "@repo/core-ui";
 import type { MarkupObject } from "@repo/pdf-engine";
 
 export const ObjectControls = ({
@@ -8,12 +8,20 @@ export const ObjectControls = ({
   selected,
   disabled,
   onSelect,
+  smaller,
+  bigger,
+  onUpdate,
+  onProperties,
 }: {
   page: number;
   objects: readonly MarkupObject[];
   selected: MarkupObject | undefined;
   disabled: boolean;
   onSelect: (id: string | null) => void;
+  smaller: MarkupObject | undefined;
+  bigger: MarkupObject | undefined;
+  onUpdate: (object: MarkupObject) => void;
+  onProperties: () => void;
 }) => {
   const id = useId();
   return (
@@ -39,6 +47,39 @@ export const ObjectControls = ({
             </NativeSelectOption>
           ))}
       </NativeSelect>
+      {selected && (
+        <div className="flex flex-wrap items-center gap-2">
+          {selected.kind !== "note" && (
+            <>
+              <Button
+                variant="outline"
+                disabled={disabled || !smaller}
+                onClick={() => {
+                  if (smaller) {
+                    onUpdate(smaller);
+                  }
+                }}
+              >
+                Smaller
+              </Button>
+              <Button
+                variant="outline"
+                disabled={disabled || !bigger}
+                onClick={() => {
+                  if (bigger) {
+                    onUpdate(bigger);
+                  }
+                }}
+              >
+                Bigger
+              </Button>
+            </>
+          )}
+          <Button variant="outline" disabled={disabled} onClick={onProperties}>
+            Move / size
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

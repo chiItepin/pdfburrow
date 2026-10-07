@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from "react";
-import { Button } from "@repo/core-ui";
+import { Button, cn } from "@repo/core-ui";
 import type { MarkupGeometry, MarkupObject, MarkupPoint } from "@repo/pdf-engine";
 import { useMarkupPage } from "./useMarkupPage";
 import { usePageGestures } from "./usePageGestures";
 import type { MarkupTool } from "./usePageGestures";
 import { MarkupObjects } from "./MarkupObjects";
+import { useMarkupViewport } from "./useMarkupViewport";
+import { MarkupSelection } from "./MarkupSelection";
 
 export type MarkupZoom = "page" | "width" | number;
 export const MarkupPage = ({
@@ -17,6 +18,7 @@ export const MarkupPage = ({
   selectedId,
   fontBytes,
   disabled,
+  viewDisabled,
   paused,
   onSelect,
   onAdd,
@@ -25,6 +27,7 @@ export const MarkupPage = ({
   onBusy,
   onAdded,
   onError,
+  onZoom,
 }: {
   file: File;
   page: number;
@@ -35,6 +38,7 @@ export const MarkupPage = ({
   selectedId: string | null;
   fontBytes?: Uint8Array;
   disabled: boolean;
+  viewDisabled: boolean;
   paused: boolean;
   onSelect: (id: string | null) => void;
   onAdd: (object: MarkupObject) => void;
@@ -43,29 +47,8 @@ export const MarkupPage = ({
   onBusy: (busy: boolean) => void;
   onAdded: () => void;
   onError: (message: string) => void;
+  onZoom: (zoom: number) => void;
 }) => {
-  const container = useRef<HTMLDivElement>(null);
-  const [size, setSize] = useState({ width: 600, height: 600 });
-  useEffect(() => {
-    const element = container.current;
-    if (!element) {
-      return;
-    }
-    const observer = new ResizeObserver(() =>
-      setSize({
-        width: Math.max(1, element.clientWidth - 32),
-        height: Math.max(1, element.clientHeight - 32),
-      }),
-    );
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
-  const scale =
-    typeof zoom === "number"
-      ? zoom / 100
-      : zoom === "width"
-        ? size.width / geometry.width
-        : Math.min(size.width / geometry.width, size.height / geometry.height);
   const { preview, retry } = useMarkupPage(file, page, geometry, paused);
   const draw = usePageGestures({
     page,
@@ -82,11 +65,27 @@ export const MarkupPage = ({
     onAdded,
     onError,
   });
+  const enabled = preview.state === "ready" && !viewDisabled && !paused;
+  const panMode =
+    disabled || tool === "hand" ? "hand" : tool === "select" ? "select" : "background";
+  const { container, canvas, scale, panning } = useMarkupViewport({
+    geometry,
+    zoom,
+    enabled,
+    busy: Boolean(draw.gesture),
+    onZoom,
+    panMode,
+    onBusy,
+    onDeselect: () => onSelect(null),
+  });
   return (
     <>
       <div
         ref={container}
-        className="mt-4 h-[min(65dvh,700px)] min-h-80 overflow-auto rounded-md border bg-muted p-4"
+        className={cn(
+          "mt-4 h-[min(65dvh,700px)] min-h-80 touch-none overflow-auto overscroll-contain rounded-md border bg-muted p-4 [overflow-anchor:none]",
+          enabled && !draw.gesture && (panning ? "cursor-grabbing" : "cursor-grab"),
+        )}
       >
         {preview.state === "error" ? (
           <div className="p-4">
@@ -103,12 +102,25 @@ export const MarkupPage = ({
           </p>
         ) : (
           <div
+            ref={canvas}
             role="button"
             aria-roledescription="markup canvas"
             aria-label={`PDF markup canvas, page ${page}`}
             tabIndex={0}
             aria-describedby="markup-canvas-help"
-            className="relative mx-auto touch-none bg-white shadow-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className={cn(
+              "relative mx-auto touch-none bg-white shadow-md outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              !enabled
+                ? "cursor-default"
+                : panning
+                  ? "cursor-grabbing"
+                  : panMode === "hand" || tool === "select"
+                    ? "cursor-grab"
+                    : tool === "note"
+                      ? "cursor-text"
+                      : "cursor-crosshair",
+              tool === "select" && !disabled && !panning && "[&_[data-markup-id]]:cursor-move",
+            )}
             style={{ width: geometry.width * scale, height: geometry.height * scale }}
             {...draw.handlers}
           >
@@ -120,10 +132,16 @@ export const MarkupPage = ({
             />
             <svg
               viewBox={`0 0 ${geometry.width} ${geometry.height}`}
-              className="absolute inset-0 h-full w-full"
+              className="absolute inset-0 h-full w-full overflow-visible"
               aria-hidden="true"
             >
               <MarkupObjects objects={draw.overlay} selectedId={selectedId} fontBytes={fontBytes} />
+              {tool === "select" && !disabled && !panning && (
+                <MarkupSelection
+                  object={draw.overlay.find((object) => object.id === selectedId)}
+                  scale={scale}
+                />
+              )}
               {draw.gesture?.kind === "ink" && (
                 <polyline
                   points={draw.gesture.points.map((p) => `${p.x},${p.y}`).join(" ")}
@@ -152,13 +170,19 @@ export const MarkupPage = ({
         )}
       </div>
       <p id="markup-canvas-help" className="mt-3 text-sm text-muted-foreground">
-        {tool === "ink"
-          ? "Drag to draw. Keyboard: focus the page, arrows move the cursor, Space starts/ends a stroke."
-          : tool === "highlight"
-            ? "Drag a rectangle or add a centered highlight."
-            : tool === "note"
-              ? "Click the page or place a centered note."
-              : "Select a mark to move it. Arrow keys nudge 1 point; Shift + arrows nudge 10. Use Move / size for exact placement."}{" "}
+        Scroll to zoom at your pointer. In Select, drag empty space to pan; Tools / Hand drags
+        anywhere.{" "}
+        {disabled && enabled
+          ? "Read-only preview: drag to pan. Choose Edit markup to make changes."
+          : tool === "ink"
+            ? "Drag to draw. Keyboard: focus the page, arrows move the cursor, Space starts/ends a stroke."
+            : tool === "hand"
+              ? "Arrow keys pan; Shift + arrows pan farther. Dragging never moves your marks."
+              : tool === "highlight"
+                ? "Drag a rectangle or add a centered highlight."
+                : tool === "note"
+                  ? "Click the page or place a centered note."
+                  : "Drag a mark to move it, or drag a corner to resize. Smaller / Bigger also resize selected shapes. Arrow keys nudge 1 point; Shift + arrows nudge 10. Move / size gives exact placement."}{" "}
         Escape cancels an unfinished edit.
       </p>
     </>

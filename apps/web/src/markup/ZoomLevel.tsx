@@ -15,8 +15,8 @@ export const ZoomLevel = ({
   const [error, setError] = useState("");
   const apply = () => {
     const number = Number(value);
-    if (!Number.isInteger(number) || number < 25 || number > 400 || number % 25 !== 0) {
-      setError("Enter a zoom from 25% to 400%, in steps of 25%.");
+    if (!Number.isInteger(number) || number < 25 || number > 400) {
+      setError("Enter a whole-number zoom from 25% to 400%.");
       return;
     }
     onZoom(number);
@@ -37,14 +37,14 @@ export const ZoomLevel = ({
             type="number"
             min={25}
             max={400}
-            step={25}
+            step={1}
             value={value}
             onChange={(event) => setValue(event.target.value)}
             className="min-h-11 w-24 rounded-md border bg-background px-3"
           />
           <span className="text-muted-foreground">%</span>
         </label>
-        <p className="mt-2 text-sm text-muted-foreground">25-400%, in steps of 25%.</p>
+        <p className="mt-2 text-sm text-muted-foreground">25-400%, in steps of 1%.</p>
         {error && (
           <p role="alert" className="mt-3 text-sm text-destructive">
             {error}

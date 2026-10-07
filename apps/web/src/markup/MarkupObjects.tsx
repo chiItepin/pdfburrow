@@ -64,6 +64,7 @@ export const MarkupObjects = ({
           stroke={selectedId === object.id ? "#205b49" : "none"}
           strokeWidth={1}
           strokeDasharray="4 3"
+          vectorEffect="non-scaling-stroke"
         />
       </g>
     ))}
