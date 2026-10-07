@@ -7,12 +7,13 @@ import {
   MenubarRadioItem,
   MenubarSeparator,
 } from "@repo/core-ui";
-import { MousePointer2, Pencil, Highlighter, Type, Signature } from "lucide-react";
+import { MousePointer2, Hand, Pencil, Highlighter, Type, Signature } from "lucide-react";
 import type { MarkupTool } from "./usePageGestures";
 import { useMenubarAction } from "./useMenubarAction";
 
 export const markupTools = [
   { value: "select", label: "Select", icon: MousePointer2 },
+  { value: "hand", label: "Hand", icon: Hand },
   { value: "ink", label: "Ink", icon: Pencil },
   { value: "highlight", label: "Highlight", icon: Highlighter },
   { value: "note", label: "Note", icon: Type },

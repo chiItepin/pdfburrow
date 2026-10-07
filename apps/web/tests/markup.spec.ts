@@ -1,79 +1,16 @@
 import { expect, test } from "@playwright/test";
-import type { Page } from "@playwright/test";
-import { PDFDocument, PDFName, StandardFonts, degrees } from "pdf-lib";
+import { PDFDocument } from "pdf-lib";
 import { readFile } from "node:fs/promises";
 import { inspectArtifact } from "./fixtures/pdfArtifacts";
 import { navigateToTool } from "./fixtures/workspaceNavigation";
-
-const source = async (annotations = false) => {
-  const document = await PDFDocument.create();
-  const font = await document.embedFont(StandardFonts.Helvetica);
-  for (const angle of [0, 90]) {
-    const page = document.addPage([400, 500]);
-    page.setCropBox(10, 20, 360, 440);
-    page.setRotation(degrees(angle));
-    page.drawText("Original contract", { x: 60, y: 250, font, size: 12 });
-  }
-  if (annotations) {
-    document
-      .getPage(0)
-      .node.set(
-        PDFName.of("Annots"),
-        document.context.obj([{ Type: "Annot", Subtype: "Link", Rect: [10, 10, 20, 20] }]),
-      );
-  }
-  return Buffer.from(await document.save());
-};
-const open = async (page: Page, annotations = false) => {
-  await page.goto("./sign/");
-  await page.locator('input[type="file"]').setInputFiles({
-    name: "contract.pdf",
-    mimeType: "application/pdf",
-    buffer: await source(annotations),
-  });
-  if (!annotations) {
-    await expect(
-      page.getByRole("button", { name: "PDF markup canvas, page 1", exact: true }),
-    ).toBeVisible();
-  }
-};
-const menuCommand = async (page: Page, menu: string, command: string) => {
-  await page.getByRole("menubar").getByRole("menuitem", { name: menu, exact: true }).click();
-  await page.getByRole("menuitem", { name: command, exact: true }).click();
-};
-const selectTool = async (page: Page, tool: string) => {
-  await page.getByRole("menubar").getByRole("menuitem", { name: "Tools", exact: true }).click();
-  await page.getByRole("menuitemradio", { name: tool, exact: true }).click();
-  await expect(
-    page.getByRole("menubar").getByRole("menuitem", { name: "Tools", exact: true }),
-  ).toBeFocused();
-};
-const selectZoom = async (page: Page, zoom: string) => {
-  await menuCommand(page, "View", "Zoom level...");
-  await page
-    .getByRole("spinbutton", { name: "Zoom percentage", exact: true })
-    .fill(zoom.replace("%", ""));
-  await page.getByRole("button", { name: "Apply zoom", exact: true }).click();
-};
-const signature = async (page: Page) => {
-  await menuCommand(page, "Tools", "Draw signature...");
-  const pad = page.getByRole("button", { name: "Signature drawing pad", exact: true });
-  await expect(pad).toBeVisible();
-  const box = await pad.boundingBox();
-  if (!box) {
-    throw new Error("No signature pad bounds.");
-  }
-  await page.mouse.click(box.x + 40, box.y + 40);
-  await page.mouse.move(box.x + 90, box.y + 70, { steps: 6 });
-  await page.mouse.move(box.x + 130, box.y + 45, { steps: 6 });
-  await page.mouse.click(box.x + 160, box.y + 60);
-  await expect(page.getByText("1 completed stroke", { exact: true })).toBeVisible();
-  await page.mouse.click(box.x + 100, box.y + 80);
-  await page.mouse.move(box.x + 150, box.y + 95, { steps: 4 });
-  await page.mouse.click(box.x + 180, box.y + 80);
-  await expect(page.getByText("2 completed strokes", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Use signature", exact: true }).click();
-};
+import {
+  createMarkupSource as source,
+  openMarkupEditor as open,
+  runMarkupCommand as menuCommand,
+  selectMarkupTool as selectTool,
+  setMarkupZoom as selectZoom,
+  addTestSignature as signature,
+} from "./fixtures/markupEditor";
 
 test("Home CTA leads to a complete no-hold signing, note, ink, highlight and flattened download workflow", async ({
   page,
@@ -185,6 +122,92 @@ test("signature interruption, local history, keyboard capture and document reset
   await expect(mark).toHaveCount(0);
 });
 
+test("dragged shapes keep their released position through repeated drags, undo and redo", async ({
+  page,
+}) => {
+  await open(page);
+  await menuCommand(page, "Tools", "Add centered highlight");
+  await selectZoom(page, "100%");
+  const mark = page.locator("[data-markup-id]");
+  for (const [dx, dy] of [
+    [40, 30],
+    [-20, 10],
+    [10, -20],
+  ] as const) {
+    await mark.scrollIntoViewIfNeeded();
+    const before = await mark.getAttribute("transform");
+    const bounds = await mark.boundingBox();
+    if (!bounds) {
+      throw new Error("No shape bounds for dragging.");
+    }
+    await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(bounds.x + bounds.width / 2 + dx, bounds.y + bounds.height / 2 + dy, {
+      steps: 4,
+    });
+    const released = await mark.getAttribute("transform");
+    expect(released).not.toBe(before);
+    await page.mouse.up();
+    await page.mouse.move(bounds.x + bounds.width / 2 + dx + 5, bounds.y + bounds.height / 2 + dy);
+    await expect(mark).toHaveAttribute("transform", released!);
+    await menuCommand(page, "Edit", "Undo");
+    await expect(mark).toHaveAttribute("transform", before!);
+    await menuCommand(page, "Edit", "Redo");
+    await expect(mark).toHaveAttribute("transform", released!);
+  }
+});
+
+test("dragged shapes keep the last visible position when release coordinates lag behind the pointer", async ({
+  page,
+}) => {
+  await open(page);
+  await menuCommand(page, "Tools", "Add centered highlight");
+  const canvas = page.getByRole("button", { name: "PDF markup canvas, page 1", exact: true });
+  const mark = page.locator("[data-markup-id]");
+  await mark.scrollIntoViewIfNeeded();
+  const bounds = await mark.boundingBox();
+  if (!bounds) {
+    throw new Error("No shape bounds for release regression.");
+  }
+  const start = { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 };
+  await canvas.evaluate((element) =>
+    element.addEventListener(
+      "pointerdown",
+      (event) => {
+        if (event instanceof PointerEvent) {
+          element.setAttribute("data-test-pointer-id", String(event.pointerId));
+        }
+      },
+      { once: true },
+    ),
+  );
+  await page.mouse.move(start.x, start.y);
+  await page.mouse.down();
+  await expect(canvas).toHaveAttribute("data-test-pointer-id", /^\d+$/);
+  const pointerId = Number(await canvas.getAttribute("data-test-pointer-id"));
+  await canvas.evaluate((element) => element.removeAttribute("data-test-pointer-id"));
+  await page.mouse.move(start.x + 40, start.y + 30, { steps: 4 });
+  const released = await mark.getAttribute("transform");
+  for (const type of ["pointermove", "pointerup", "pointercancel", "lostpointercapture"]) {
+    await canvas.dispatchEvent(type, {
+      pointerId: pointerId + 1000,
+      pointerType: "touch",
+      clientX: start.x,
+      clientY: start.y,
+    });
+  }
+  await expect(mark).toHaveAttribute("transform", released!);
+  await canvas.dispatchEvent("pointerup", {
+    pointerId,
+    pointerType: "mouse",
+    button: 0,
+    clientX: start.x,
+    clientY: start.y,
+  });
+  await page.mouse.up();
+  await expect(mark).toHaveAttribute("transform", released!);
+});
+
 test("unsupported notes and annotated inputs are rejected while merge keeps its existing policy", async ({
   page,
 }) => {
@@ -223,6 +246,234 @@ test("markup editor stays usable at narrow widths and only adds same-origin reso
         .every((entry) => new URL(entry.name).origin === location.origin),
     ),
   ).toBe(true);
+});
+
+test("scrolling over the page or canvas background zooms from the fitted scale without scrolling the workspace", async ({
+  page,
+}) => {
+  await open(page);
+  const canvas = page.getByRole("button", { name: "PDF markup canvas, page 1", exact: true });
+  const viewport = canvas.locator("..");
+  const workspace = page.getByRole("region", { name: "Document workspace", exact: true });
+  const wheelScale = test.info().project.use.isMobile
+    ? (test.info().project.use.deviceScaleFactor ?? 1)
+    : 1;
+  await viewport.scrollIntoViewIfNeeded();
+  const bounds = await canvas.boundingBox();
+  if (!bounds) {
+    throw new Error("No markup canvas bounds.");
+  }
+  const workspaceScroll = await workspace.evaluate((element) => element.scrollTop);
+  await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+  await page.mouse.wheel(0, -100);
+  const expected = Math.round((bounds.width / 360) * 100 * Math.exp(0.2 / wheelScale));
+  await expect(page.getByLabel("Editor view")).toContainText(`${expected}%`);
+  expect(await workspace.evaluate((element) => element.scrollTop)).toBe(workspaceScroll);
+
+  const background = await viewport.boundingBox();
+  if (!background) {
+    throw new Error("No markup viewport bounds.");
+  }
+  await page.mouse.move(background.x + 8, background.y + 8);
+  await page.mouse.wheel(0, -100);
+  await expect(page.getByLabel("Editor view")).toContainText(
+    `${Math.min(400, Math.round(expected * Math.exp(0.2 / wheelScale)))}%`,
+  );
+  expect(await workspace.evaluate((element) => element.scrollTop)).toBe(workspaceScroll);
+
+  for (const [zoom, delta] of [
+    [400, -100],
+    [25, 100],
+  ] as const) {
+    await selectZoom(page, `${zoom}%`);
+    await viewport.scrollIntoViewIfNeeded();
+    const corner = await viewport.boundingBox();
+    if (!corner) {
+      throw new Error("No markup viewport bounds at zoom limit.");
+    }
+    const before = await viewport.evaluate((element) => ({
+      left: element.scrollLeft,
+      top: element.scrollTop,
+    }));
+    const outside = await workspace.evaluate((element) => element.scrollTop);
+    await page.mouse.move(corner.x + 8, corner.y + 8);
+    await page.mouse.wheel(0, delta);
+    await expect(page.getByLabel("Editor view")).toContainText(`${zoom}%`);
+    expect(
+      await viewport.evaluate((element) => ({
+        left: element.scrollLeft,
+        top: element.scrollTop,
+      })),
+    ).toEqual(before);
+    expect(await workspace.evaluate((element) => element.scrollTop)).toBe(outside);
+  }
+  await selectZoom(page, "126%");
+  await expect(page.getByLabel("Editor view")).toContainText("126%");
+  await page.getByRole("menubar").getByRole("menuitem", { name: "View", exact: true }).click();
+  await page.getByRole("menuitemradio", { name: "Fit page", exact: true }).click();
+  await expect(page.getByLabel("Editor view")).toContainText("Fit page");
+  await expect
+    .poll(async () => Math.abs((await canvas.boundingBox())!.width - bounds.width))
+    .toBeLessThan(1);
+
+  const help = page.locator("#markup-canvas-help");
+  await help.scrollIntoViewIfNeeded();
+  const helpBounds = await help.boundingBox();
+  if (!helpBounds) {
+    throw new Error("No canvas instructions bounds.");
+  }
+  const outside = await workspace.evaluate((element) => element.scrollTop);
+  await page.mouse.move(helpBounds.x + 8, helpBounds.y + 8);
+  await page.mouse.wheel(0, 100);
+  await expect
+    .poll(() => workspace.evaluate((element) => element.scrollTop))
+    .toBeGreaterThan(outside);
+  await expect(page.getByLabel("Editor view")).toContainText("Fit page");
+});
+
+test("wheel zoom keeps the same PDF point under the pointer and leaves markup geometry unchanged", async ({
+  page,
+}) => {
+  await open(page);
+  await menuCommand(page, "Tools", "Add centered highlight");
+  const mark = page.locator("[data-markup-id]");
+  const geometry = await mark.getAttribute("transform");
+  await selectZoom(page, "320%");
+  const canvas = page.getByRole("button", { name: "PDF markup canvas, page 1", exact: true });
+  const viewport = canvas.locator("..");
+  const wheelScale = test.info().project.use.isMobile
+    ? (test.info().project.use.deviceScaleFactor ?? 1)
+    : 1;
+  await viewport.scrollIntoViewIfNeeded();
+  await viewport.evaluate((element) => {
+    element.scrollLeft = 150;
+    element.scrollTop = 350;
+  });
+  const box = await viewport.boundingBox();
+  if (!box) {
+    throw new Error("No markup viewport bounds.");
+  }
+  const pointer = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+  const pointAtPointer = () =>
+    canvas.evaluate((element, position) => {
+      const bounds = element.getBoundingClientRect();
+      return {
+        x: ((position.x - bounds.left) * 360) / bounds.width,
+        y: ((position.y - bounds.top) * 440) / bounds.height,
+      };
+    }, pointer);
+  const before = await pointAtPointer();
+  await page.mouse.move(pointer.x, pointer.y);
+  let zoom = 320;
+  for (const delta of [-60, 60]) {
+    zoom = Math.round(zoom * Math.exp((-delta * 0.002) / wheelScale));
+    await page.mouse.wheel(0, delta);
+    await expect(page.getByLabel("Editor view")).toContainText(`${zoom}%`);
+    const after = await pointAtPointer();
+    expect(Math.abs(after.x - before.x)).toBeLessThan(1);
+    expect(Math.abs(after.y - before.y)).toBeLessThan(1);
+    await expect(mark).toHaveAttribute("transform", geometry!);
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await viewport.screenshot({ path: test.info().outputPath("canvasZoom.png") });
+
+  await selectTool(page, "Highlight");
+  await viewport.scrollIntoViewIfNeeded();
+  const visible = await viewport.boundingBox();
+  const enlarged = await canvas.boundingBox();
+  if (!visible || !enlarged) {
+    throw new Error("No zoomed canvas bounds for drawing.");
+  }
+  const start = { x: visible.x + visible.width / 2, y: visible.y + visible.height / 2 };
+  await page.mouse.move(start.x, start.y);
+  await page.mouse.down();
+  await page.mouse.move(start.x + 40, start.y + 24, { steps: 4 });
+  await page.mouse.up();
+  await expect(mark).toHaveCount(2);
+  const placed = await mark.last().evaluate((element) => {
+    if (!(element instanceof SVGGraphicsElement)) {
+      throw new Error("No SVG markup object.");
+    }
+    const transform = element.transform.baseVal.consolidate()?.matrix;
+    const rectangle = element.querySelector("rect");
+    if (!transform || !rectangle) {
+      throw new Error("No highlight geometry.");
+    }
+    return {
+      x: transform.e,
+      y: transform.f,
+      width: Number(rectangle.getAttribute("width")),
+      height: Number(rectangle.getAttribute("height")),
+    };
+  });
+  const scale = enlarged.width / 360;
+  expect(Math.abs(placed.x - (start.x - enlarged.x) / scale)).toBeLessThan(0.5);
+  expect(Math.abs(placed.y - (start.y - enlarged.y) / scale)).toBeLessThan(0.5);
+  expect(placed.width).toBeCloseTo(40 / scale, 1);
+  expect(placed.height).toBeCloseTo(24 / scale, 1);
+});
+
+test("trackpad and line/page wheel input respect zoom bounds, panning and unfinished edits", async ({
+  page,
+}) => {
+  await open(page);
+  await selectZoom(page, "200%");
+  const canvas = page.getByRole("button", { name: "PDF markup canvas, page 1", exact: true });
+  const viewport = canvas.locator("..");
+  const height = await viewport.evaluate((element) => element.clientHeight);
+  let zoom = 200;
+  for (const event of [
+    { deltaY: -3, deltaMode: 1 },
+    { deltaY: 1, deltaMode: 2 },
+    { deltaY: -5, deltaMode: 0, ctrlKey: true },
+    { deltaY: -10000, deltaMode: 0 },
+    { deltaY: 10000, deltaMode: 0 },
+  ]) {
+    const pixels = event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? height : 1);
+    zoom = Math.round(Math.max(25, Math.min(400, zoom * Math.exp(-pixels * 0.002))));
+    const cancelled = await viewport.evaluate(
+      (element, options) =>
+        !element.dispatchEvent(new WheelEvent("wheel", { ...options, cancelable: true })),
+      event,
+    );
+    expect(cancelled).toBe(true);
+    await expect(page.getByLabel("Editor view")).toContainText(`${zoom}%`);
+  }
+  for (const event of [
+    { deltaY: 0, deltaX: 50 },
+    { deltaY: -50, shiftKey: true },
+  ]) {
+    expect(
+      await viewport.evaluate(
+        (element, options) =>
+          element.dispatchEvent(new WheelEvent("wheel", { ...options, cancelable: true })),
+        event,
+      ),
+    ).toBe(true);
+    await expect(page.getByLabel("Editor view")).toContainText("25%");
+  }
+  await selectZoom(page, "100%");
+  await selectTool(page, "Ink");
+  await canvas.focus();
+  await page.keyboard.press("Space");
+  await viewport.dispatchEvent("wheel", { deltaY: -100, cancelable: true });
+  await expect(page.getByLabel("Editor view")).toContainText("100%");
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("Space");
+  await expect(page.locator("[data-markup-id]")).toHaveCount(1);
+  await viewport.dispatchEvent("wheel", { deltaY: -100, cancelable: true });
+  await expect(page.getByLabel("Editor view")).toContainText("122%");
+  await viewport.evaluate((element) => {
+    for (let index = 0; index < 50; index++) {
+      element.dispatchEvent(new WheelEvent("wheel", { deltaY: -0.1, cancelable: true }));
+    }
+  });
+  await expect(page.getByLabel("Editor view")).toContainText("123%");
+  await menuCommand(page, "View", "Zoom level...");
+  await expect(page.getByRole("spinbutton", { name: "Zoom percentage" })).toHaveValue("123");
+  await viewport.dispatchEvent("wheel", { deltaY: -100, cancelable: true });
+  await expect(page.getByLabel("Editor view")).toContainText("123%");
+  await page.keyboard.press("Escape");
 });
 
 test("move, resize, note overflow, undownloaded-output guards and new-edit redo clearing work", async ({
@@ -349,6 +600,8 @@ test("compact menubar supports keyboard tools, page jumping, zoom bounds and saf
   await page.keyboard.press("ArrowDown");
   await expect(page.getByRole("menuitemradio", { name: "Select", exact: true })).toBeFocused();
   await page.keyboard.press("ArrowDown");
+  await expect(page.getByRole("menuitemradio", { name: "Hand", exact: true })).toBeFocused();
+  await page.keyboard.press("ArrowDown");
   await expect(page.getByRole("menuitemradio", { name: "Ink", exact: true })).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(page.getByLabel("Editor view")).toContainText("Ink");
@@ -387,11 +640,9 @@ test("compact menubar supports keyboard tools, page jumping, zoom bounds and saf
   await expect(page.getByRole("menuitem", { name: "Zoom in", exact: true })).toBeDisabled();
   await page.keyboard.press("Escape");
   await menuCommand(page, "View", "Zoom level...");
-  await page.getByRole("spinbutton", { name: "Zoom percentage", exact: true }).fill("26");
+  await page.getByRole("spinbutton", { name: "Zoom percentage", exact: true }).fill("24");
   await page.getByRole("button", { name: "Apply zoom", exact: true }).click();
-  await expect(page.getByRole("alert")).toHaveText(
-    "Enter a zoom from 25% to 400%, in steps of 25%.",
-  );
+  await expect(page.getByRole("alert")).toHaveText("Enter a whole-number zoom from 25% to 400%.");
   await page.keyboard.press("Escape");
   await expect(bar.getByRole("menuitem", { name: "View", exact: true })).toBeFocused();
   await expect(page.getByLabel("Editor view")).toContainText("400%");

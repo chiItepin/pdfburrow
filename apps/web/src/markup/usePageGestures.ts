@@ -2,18 +2,11 @@ import { useRef, useState } from "react";
 import type { KeyboardEvent, PointerEvent } from "react";
 import type { MarkupGeometry, MarkupObject, MarkupPoint } from "@repo/pdf-engine";
 import { markupBoundsError, strokeObject } from "@repo/pdf-engine/markup-layout";
+import { getMarkupPoint, moveMarkupGesture } from "./markupGesture";
+import type { MarkupGesture } from "./markupGesture";
+import { markupResizeCorners, nearestMarkupResizeCorner } from "./markupResize";
 
-export type MarkupTool = "select" | "ink" | "highlight" | "note";
-type Gesture =
-  | { kind: "ink"; points: readonly MarkupPoint[]; keyboard: boolean }
-  | { kind: "highlight"; start: MarkupPoint; end: MarkupPoint }
-  | {
-      kind: "move";
-      start: MarkupPoint;
-      original: MarkupObject;
-      candidate: MarkupObject;
-      keyboard: boolean;
-    };
+export type MarkupTool = "select" | "hand" | "ink" | "highlight" | "note";
 interface Options {
   readonly page: number;
   readonly geometry: MarkupGeometry;
@@ -31,45 +24,44 @@ interface Options {
 }
 export const usePageGestures = (options: Options) => {
   const { geometry, tool, disabled, page } = options;
-  const [gesture, setGesture] = useState<Gesture | null>(null);
-  const current = useRef<Gesture | null>(null);
+  const [gesture, setGesture] = useState<MarkupGesture | null>(null);
+  const current = useRef<MarkupGesture | null>(null);
+  const capture = useRef<{ element: HTMLDivElement; pointerId: number } | null>(null);
   const [cursor, setCursor] = useState<MarkupPoint>({
     x: geometry.width / 2,
     y: geometry.height / 2,
   });
-  const set = (next: Gesture | null) => {
+  const set = (next: MarkupGesture | null) => {
     current.current = next;
     setGesture(next);
+    if (!next && capture.current) {
+      const { element, pointerId } = capture.current;
+      capture.current = null;
+      if (element.hasPointerCapture(pointerId)) {
+        element.releasePointerCapture(pointerId);
+      }
+    }
     options.onBusy(Boolean(next));
   };
   const cancel = () => set(null);
-  const point = (event: PointerEvent) => {
-    const bounds = event.currentTarget.getBoundingClientRect();
-    return {
-      x: Math.max(
-        1,
-        Math.min(
-          geometry.width - 1,
-          ((event.clientX - bounds.left) * geometry.width) / bounds.width,
-        ),
-      ),
-      y: Math.max(
-        1,
-        Math.min(
-          geometry.height - 1,
-          ((event.clientY - bounds.top) * geometry.height) / bounds.height,
-        ),
-      ),
-    };
-  };
+  const point = (event: PointerEvent) =>
+    getMarkupPoint(geometry, event.currentTarget.getBoundingClientRect(), {
+      x: event.clientX,
+      y: event.clientY,
+    });
   const finish = () => {
     const value = current.current;
     set(null);
     if (!value) {
       return;
     }
-    if (value.kind === "move") {
-      if (value.candidate.x !== value.original.x || value.candidate.y !== value.original.y) {
+    if (value.kind === "move" || value.kind === "resize") {
+      if (
+        value.candidate.x !== value.original.x ||
+        value.candidate.y !== value.original.y ||
+        value.candidate.width !== value.original.width ||
+        value.candidate.height !== value.original.height
+      ) {
         options.onUpdate(value.candidate);
       }
       return;
@@ -95,46 +87,26 @@ export const usePageGestures = (options: Options) => {
       options.onError(error);
     }
   };
+  const interrupt = () => {
+    if (current.current?.kind === "move" || current.current?.kind === "resize") {
+      finish();
+    } else if (current.current) {
+      cancel();
+    }
+  };
   const move = (position: MarkupPoint) => {
     const value = current.current;
     if (!value) {
       return;
     }
-    if (value.kind === "ink") {
-      set({ ...value, points: [...value.points, position] });
-    }
-    if (value.kind === "highlight") {
-      set({ ...value, end: position });
-    }
-    if (value.kind === "move") {
-      set({
-        ...value,
-        candidate: {
-          ...value.original,
-          x: Math.max(
-            0,
-            Math.min(
-              geometry.width - value.original.width,
-              value.original.x + position.x - value.start.x,
-            ),
-          ),
-          y: Math.max(
-            0,
-            Math.min(
-              geometry.height - value.original.height,
-              value.original.y + position.y - value.start.y,
-            ),
-          ),
-        },
-      });
-    }
+    set(moveMarkupGesture(value, position, geometry));
   };
   const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
-    if (disabled || event.button !== 0 || current.current) {
+    if (disabled || tool === "hand" || event.button !== 0 || current.current) {
       return;
     }
     event.preventDefault();
-    event.currentTarget.focus();
+    event.currentTarget.focus({ preventScroll: true });
     const position = point(event);
     setCursor(position);
     if (tool === "note") {
@@ -142,36 +114,63 @@ export const usePageGestures = (options: Options) => {
       return;
     }
     if (tool === "ink") {
-      set({ kind: "ink", points: [position], keyboard: false });
+      set({ kind: "ink", points: [position], pointerId: event.pointerId });
     } else if (tool === "highlight") {
-      set({ kind: "highlight", start: position, end: position });
+      set({ kind: "highlight", start: position, end: position, pointerId: event.pointerId });
     } else {
       const target =
-        event.target instanceof Element ? event.target.closest("[data-markup-id]") : null;
-      const id = target?.getAttribute("data-markup-id") ?? null;
+        event.target instanceof Element
+          ? event.target.closest("[data-markup-id],[data-markup-selection]")
+          : null;
+      const id =
+        target?.getAttribute("data-markup-id") ??
+        target?.getAttribute("data-markup-selection") ??
+        null;
       options.onSelect(id);
       const object = options.objects.find((object) => object.id === id);
       if (object) {
-        set({
-          kind: "move",
-          start: position,
-          original: object,
-          candidate: object,
-          keyboard: false,
-        });
+        const handle =
+          event.target instanceof Element
+            ? event.target.closest("[data-markup-resize]")?.getAttribute("data-markup-resize")
+            : null;
+        const corner = markupResizeCorners.some((corner) => corner === handle)
+          ? nearestMarkupResizeCorner(object, position)
+          : undefined;
+        set(
+          corner && object.kind !== "note"
+            ? {
+                kind: "resize",
+                corner,
+                start: position,
+                original: object,
+                candidate: object,
+                pointerId: event.pointerId,
+              }
+            : {
+                kind: "move",
+                start: position,
+                original: object,
+                candidate: object,
+                pointerId: event.pointerId,
+              },
+        );
       }
     }
     if (current.current) {
       event.currentTarget.setPointerCapture(event.pointerId);
+      capture.current = { element: event.currentTarget, pointerId: event.pointerId };
     }
   };
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (disabled) {
+    if (disabled || tool === "hand") {
       return;
     }
     if (event.key === "Escape" && current.current) {
       event.preventDefault();
       cancel();
+      return;
+    }
+    if (current.current && current.current.pointerId !== null) {
       return;
     }
     if (event.key === " " && tool === "ink") {
@@ -182,7 +181,7 @@ export const usePageGestures = (options: Options) => {
       if (current.current) {
         finish();
       } else {
-        set({ kind: "ink", points: [cursor], keyboard: true });
+        set({ kind: "ink", points: [cursor], pointerId: null });
       }
       return;
     }
@@ -204,7 +203,7 @@ export const usePageGestures = (options: Options) => {
         y: Math.max(1, Math.min(geometry.height - 1, cursor.y + direction.y * step)),
       };
       setCursor(next);
-      if (current.current?.kind === "ink" && current.current.keyboard) {
+      if (current.current?.kind === "ink" && current.current.pointerId === null) {
         move(next);
       }
       return;
@@ -223,10 +222,16 @@ export const usePageGestures = (options: Options) => {
       y: Math.max(0, Math.min(geometry.height - object.height, object.y + direction.y * step)),
     };
     const original = current.current?.kind === "move" ? current.current.original : object;
-    set({ kind: "move", start: { x: object.x, y: object.y }, original, candidate, keyboard: true });
+    set({
+      kind: "move",
+      start: { x: object.x, y: object.y },
+      original,
+      candidate,
+      pointerId: null,
+    });
   };
   const overlay =
-    gesture?.kind === "move"
+    gesture?.kind === "move" || gesture?.kind === "resize"
       ? options.objects.map((object) =>
           object.id === gesture.candidate.id ? gesture.candidate : object,
         )
@@ -238,25 +243,35 @@ export const usePageGestures = (options: Options) => {
     handlers: {
       onPointerDown,
       onPointerMove: (event: PointerEvent<HTMLDivElement>) => {
-        if (current.current && !("keyboard" in current.current && current.current.keyboard)) {
+        if (current.current?.pointerId === event.pointerId) {
           move(point(event));
         }
       },
       onPointerUp: (event: PointerEvent<HTMLDivElement>) => {
-        if (current.current && !("keyboard" in current.current && current.current.keyboard)) {
-          move(point(event));
+        if (current.current?.pointerId === event.pointerId) {
+          if (current.current.kind === "ink" || current.current.kind === "highlight") {
+            move(point(event));
+          }
           finish();
         }
       },
-      onPointerCancel: cancel,
-      onLostPointerCapture: cancel,
-      onBlur: cancel,
+      onPointerCancel: (event: PointerEvent<HTMLDivElement>) => {
+        if (current.current?.pointerId === event.pointerId) {
+          interrupt();
+        }
+      },
+      onLostPointerCapture: (event: PointerEvent<HTMLDivElement>) => {
+        if (current.current?.pointerId === event.pointerId) {
+          interrupt();
+        }
+      },
+      onBlur: interrupt,
       onKeyDown,
       onKeyUp: (event: KeyboardEvent<HTMLDivElement>) => {
         if (
           event.key.startsWith("Arrow") &&
           current.current?.kind === "move" &&
-          current.current.keyboard
+          current.current.pointerId === null
         ) {
           finish();
         }
