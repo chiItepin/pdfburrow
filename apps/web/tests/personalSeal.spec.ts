@@ -150,6 +150,15 @@ test("import a reusable encrypted key, reject wrong passwords, verify tampering 
   await verifyFiles(page, changed, proof);
   await expect(page.getByRole("alert")).toContainText("Document mismatch");
   await reset(page);
+  const record = parseProof(JSON.parse(proof.toString()));
+  for (const document of [
+    { ...record.document, sha256: "0".repeat(64) },
+    { ...record.document, bytes: record.document.bytes + 1 },
+  ]) {
+    await verifyFiles(page, pdf, Buffer.from(JSON.stringify({ ...record, document })));
+    await expect(page.getByRole("alert")).toContainText("Invalid signature");
+    await reset(page);
+  }
   await verifyFiles(page, pdf, proof);
   await expect(
     page.getByRole("heading", { name: "Document unchanged. Signer identity unconfirmed." }),

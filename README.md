@@ -136,7 +136,9 @@ together; the PDF is already your original file and does not need another downlo
 Share the full `SHA256:` public-key fingerprint through a separate trusted channel.
 Verification accepts the PDF, proof and optional trusted fingerprint. It distinguishes
 document mismatch, invalid signature, unconfirmed signer, matching trusted key, and
-valid proof from an unexpected key. A valid proof without an independently trusted
+valid proof from an unexpected key. Verification authenticates the proof before
+comparing its signed digest and byte count with the selected PDF.
+A valid proof without an independently trusted
 fingerprint cannot establish who signed: both PDF and proof could be replaced.
 Matching a fingerprint establishes key continuity, not verified personal identity.
 

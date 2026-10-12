@@ -70,19 +70,24 @@ test("trusted fingerprints distinguish matching keys, unconfirmed signers and re
 test("changes to document bytes, signatures and signed record fields cannot validate", async () => {
   const changed = new Uint8Array(pdfBytes);
   changed[changed.length - 5] ^= 1;
-  assert.equal((await verifyPersonalSeal(new Blob([changed]), proof)).state, "invalid");
-  assert.equal((await verifyPersonalSeal(new Blob([pdfBytes, "\n"]), proof)).state, "invalid");
+  for (const changedPdf of [new Blob([changed]), new Blob([pdfBytes, "\n"])]) {
+    assert.deepEqual(await verifyPersonalSeal(changedPdf, proof), {
+      state: "invalid",
+      message: "Document mismatch. This PDF is not the exact file covered by the proof.",
+    });
+  }
   const signatureBytes = Buffer.from(originalProof.signature, "base64");
   signatureBytes[0] ^= 1;
   for (const mutation of [
     { signature: signatureBytes.toString("base64") },
     { nonce: "0".repeat(32) },
     { document: { ...originalProof.document, sha256: "0".repeat(64) } },
+    { document: { ...originalProof.document, bytes: originalProof.document.bytes + 1 } },
   ]) {
-    assert.equal(
-      (await verifyPersonalSeal(pdf, json({ ...originalProof, ...mutation }))).state,
-      "invalid",
-    );
+    assert.deepEqual(await verifyPersonalSeal(pdf, json({ ...originalProof, ...mutation })), {
+      state: "invalid",
+      message: "Invalid signature. The proof may have been changed.",
+    });
   }
   const repeated = JSON.parse(await (await createPersonalSeal(pdf, key.signer)).text());
   assert.notEqual(repeated.nonce, originalProof.nonce);

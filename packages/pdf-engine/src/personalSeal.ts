@@ -78,13 +78,6 @@ export const verifyPersonalSeal = async (
     );
   }
   const proof = parseProof(await readSealJson(proofFile, "Seal proof"));
-  const document = await pdfDigest(pdf);
-  if (document.bytes !== proof.document.bytes || document.sha256 !== proof.document.sha256) {
-    return {
-      state: "invalid",
-      message: "Document mismatch. This PDF is not the exact file covered by the proof.",
-    };
-  }
   const key = await importSealPublicKey(proof.publicKey);
   const valid = await crypto.subtle.verify(
     { name: "ECDSA", hash: "SHA-256" },
@@ -94,6 +87,13 @@ export const verifyPersonalSeal = async (
   );
   if (!valid) {
     return { state: "invalid", message: "Invalid signature. The proof may have been changed." };
+  }
+  const document = await pdfDigest(pdf);
+  if (document.bytes !== proof.document.bytes || document.sha256 !== proof.document.sha256) {
+    return {
+      state: "invalid",
+      message: "Document mismatch. This PDF is not the exact file covered by the proof.",
+    };
   }
   const fingerprint = await keyFingerprint(proof.publicKey);
   return {
