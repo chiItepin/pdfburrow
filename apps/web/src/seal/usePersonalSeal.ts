@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useFocusAfterCommit } from "@repo/core-ui";
 import { createSealSession } from "./sealSession";
 import { useHydrated } from "../workspace/useHydrated";
+import { useBeforeUnload } from "../workspace/useBeforeUnload";
 
 export const usePersonalSeal = () => {
   const [session] = useState(createSealSession);
@@ -22,6 +23,9 @@ export const usePersonalSeal = () => {
   const focusAfterCommit = useFocusAfterCommit();
   const hydrated = useHydrated();
   const capable = !hydrated || Boolean(globalThis.crypto?.subtle);
+  const hasWork =
+    busy || state.hasWork || Boolean(password || repeatPassword || trustedFingerprint);
+  useBeforeUnload(hasWork);
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -88,7 +92,7 @@ export const usePersonalSeal = () => {
     pdfInput,
     result,
     failure,
-    hasWork: state.hasWork || Boolean(password || repeatPassword || trustedFingerprint),
+    hasWork,
     discard,
     setPassword,
     setRepeatPassword,

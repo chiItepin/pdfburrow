@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { DocumentJob } from "./types";
+import { useBeforeUnload } from "./useBeforeUnload";
 
 export const useWorkspaceLifecycle = (
   inputCount: number,
@@ -9,17 +10,7 @@ export const useWorkspaceLifecycle = (
   const draftHeading = useRef<HTMLHeadingElement>(null);
   const resultHeading = useRef<HTMLHeadingElement>(null);
   const jobError = useRef<HTMLParagraphElement>(null);
-  useEffect(() => {
-    if (!inputCount) {
-      return;
-    }
-    const warnBeforeLeave = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-      event.returnValue = "";
-    };
-    window.addEventListener("beforeunload", warnBeforeLeave);
-    return () => window.removeEventListener("beforeunload", warnBeforeLeave);
-  }, [inputCount]);
+  useBeforeUnload(inputCount > 0);
   useEffect(() => {
     if (phase === "complete" && !onDemand) {
       resultHeading.current?.focus();

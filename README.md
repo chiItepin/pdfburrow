@@ -123,6 +123,9 @@ Choose **Personal seal** or open `seal/` (`#/seal` also works). This is separate
 drawn markup: it signs exact final PDF bytes without rewriting the file. Finish any
 edits first, then choose the final PDF (at most 20 MiB).
 
+You can replace the selected PDF without discarding an unlocked signing key.
+Replacement clears any generated proof and previous verification result.
+
 Create a reusable signing key with a 12-1024-character password, confirmed twice.
 Use a long, unique passphrase. Explicitly **Download encrypted key** and confirm
 it was saved before **Create proof**. Alternatively, import an existing encrypted
@@ -130,6 +133,8 @@ key and unlock it. There is no password or key recovery, account, upload, automa
 download, or browser persistence. The unlocked private key is nonextractable and
 retained only in tab memory. Reset, confirmed tool navigation, refresh, or closing
 the tab loses it. Clearing references is not forensic memory erasure.
+The app requests a best-effort browser leave warning while seal work remains;
+browser restrictions may suppress it, so save your encrypted key and proof first.
 
 **Download proof** saves `<source>.proof.json`. Share the unchanged PDF and proof
 together; the PDF is already your original file and does not need another download.

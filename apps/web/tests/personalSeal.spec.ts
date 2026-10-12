@@ -3,11 +3,23 @@ import type { Download, Page } from "@playwright/test";
 import { PDFDocument } from "pdf-lib";
 import { readFile } from "node:fs/promises";
 import { createPublicKey, verify } from "node:crypto";
-import { createSealKey, createPersonalSeal } from "../../../packages/pdf-engine/src/personalSeal";
-import { parseProof, recordBytes } from "../../../packages/pdf-engine/src/sealFormat";
+import { createSealKey, createPersonalSeal } from "@repo/pdf-engine/personal-seal";
 import { navigateToTool } from "./fixtures/workspaceNavigation";
 
+interface DownloadedSealProof {
+  format: string;
+  version: number;
+  algorithm: string;
+  publicKey: string;
+  document: { sha256: string; bytes: number };
+  intent: string;
+  nonce: string;
+  signature: string;
+}
+
 const password = "a unique private browser passphrase";
+const unloadGuardActive = (page: Page) =>
+  page.evaluate(() => !window.dispatchEvent(new Event("beforeunload", { cancelable: true })));
 const source = async () => {
   const pdf = await PDFDocument.create();
   pdf.addPage([300, 400]);
@@ -84,11 +96,22 @@ test("create an encrypted key and independently verifiable proof with explicit d
   const output = await proofDownload;
   expect(output.suggestedFilename()).toBe("private-contract.proof.json");
   const proof = await downloadedBytes(output);
-  const parsed = parseProof(JSON.parse(proof.toString()));
+  const parsed: DownloadedSealProof = JSON.parse(proof.toString());
+  const signedRecord = Buffer.from(
+    JSON.stringify({
+      format: parsed.format,
+      version: parsed.version,
+      algorithm: parsed.algorithm,
+      publicKey: parsed.publicKey,
+      document: { sha256: parsed.document.sha256, bytes: parsed.document.bytes },
+      intent: parsed.intent,
+      nonce: parsed.nonce,
+    }),
+  );
   expect(
     verify(
       "sha256",
-      recordBytes(parsed),
+      signedRecord,
       {
         key: createPublicKey({
           key: Buffer.from(parsed.publicKey, "base64"),
@@ -142,6 +165,16 @@ test("import a reusable encrypted key, reject wrong passwords, verify tampering 
   await page.getByRole("button", { name: "Unlock signing key", exact: true }).click();
   await expect(page.getByRole("button", { name: "Create proof", exact: true })).toBeEnabled();
   await expect(page.getByText(key.signer.fingerprint, { exact: true })).toBeVisible();
+  await choosePdf(page, Buffer.from("not actually a PDF"));
+  await page.getByRole("button", { name: "Create proof", exact: true }).click();
+  await expect(page.getByRole("alert")).toContainText("no supported PDF header");
+  await choosePdf(page, pdf);
+  await expect(page.getByText(key.signer.fingerprint, { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Create proof", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Download proof", exact: true })).toBeEnabled();
+  await choosePdf(page, Buffer.concat([pdf, Buffer.from("\n")]));
+  await expect(page.getByRole("button", { name: "Download proof", exact: true })).toHaveCount(0);
+  await expect(page.getByText(key.signer.fingerprint, { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Create proof", exact: true }).click();
   await expect(page.getByRole("button", { name: "Download proof", exact: true })).toBeEnabled();
   await reset(page);
@@ -150,7 +183,7 @@ test("import a reusable encrypted key, reject wrong passwords, verify tampering 
   await verifyFiles(page, changed, proof);
   await expect(page.getByRole("alert")).toContainText("Document mismatch");
   await reset(page);
-  const record = parseProof(JSON.parse(proof.toString()));
+  const record: DownloadedSealProof = JSON.parse(proof.toString());
   for (const document of [
     { ...record.document, sha256: "0".repeat(64) },
     { ...record.document, bytes: record.document.bytes + 1 },
@@ -178,7 +211,9 @@ test("navigation and reset protect key drafts, and confirmed discard or reload c
   page,
 }) => {
   await page.goto("./seal/");
+  await expect.poll(() => unloadGuardActive(page)).toBe(false);
   await page.getByLabel("Key password", { exact: true }).fill(password);
+  await expect.poll(() => unloadGuardActive(page)).toBe(true);
   await navigateToTool(page, "Merge PDFs");
   await expect(page.getByRole("button", { name: "Keep working", exact: true })).toBeFocused();
   await page.getByRole("button", { name: "Keep working", exact: true }).click();
@@ -187,13 +222,17 @@ test("navigation and reset protect key drafts, and confirmed discard or reload c
   await page.getByRole("button", { name: "Discard", exact: true }).click();
   await navigateToTool(page, "Personal seal");
   await expect(page.getByLabel("Key password", { exact: true })).toHaveValue("");
+  await expect.poll(() => unloadGuardActive(page)).toBe(false);
   await page.getByLabel("Key password", { exact: true }).fill(password);
+  page.once("dialog", (dialog) => void dialog.accept());
   await page.reload();
   await expect(page.getByLabel("Key password", { exact: true })).toHaveValue("");
+  await expect.poll(() => unloadGuardActive(page)).toBe(false);
   await choosePdf(page, await source());
   await reset(page);
   await expect(page.getByLabel("PDF to seal or verify")).toBeFocused();
   await expect(page.getByLabel("PDF to seal or verify")).toBeEnabled();
+  await expect.poll(() => unloadGuardActive(page)).toBe(false);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
@@ -217,6 +256,7 @@ test("malformed proofs, oversized inputs, unsupported Web Crypto and mismatched 
   await page.addInitScript(() => {
     Object.defineProperty(globalThis.crypto, "subtle", { configurable: true, value: undefined });
   });
+  page.once("dialog", (dialog) => void dialog.accept());
   await page.reload();
   await expect(page.getByRole("alert")).toContainText("local Web Crypto");
   await expect(page.getByLabel("PDF to seal or verify")).toBeDisabled();
@@ -285,6 +325,7 @@ test("signing key generation locks controls and navigation with wait-only guidan
   await page.getByLabel("Repeat password", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Create signing key", exact: true }).click();
   await expect(page.getByRole("status")).toContainText("Working locally");
+  await expect.poll(() => unloadGuardActive(page)).toBe(true);
   for (const mode of ["Create seal", "Verify seal"]) {
     await expect(page.getByRole("radio", { name: mode, exact: true })).toBeDisabled();
   }
@@ -300,6 +341,9 @@ test("signing key generation locks controls and navigation with wait-only guidan
   await page.evaluate(() => document.dispatchEvent(new Event("release-key-generation")));
   await expect(page.getByRole("button", { name: "Download encrypted key" })).toBeEnabled();
   await expect(page.getByRole("radio", { name: "Verify seal", exact: true })).toBeEnabled();
+  await expect.poll(() => unloadGuardActive(page)).toBe(true);
+  await reset(page);
+  await expect.poll(() => unloadGuardActive(page)).toBe(false);
 });
 
 test("password hints appear below inputs, are accessible, and explain the 12-character threshold", async ({

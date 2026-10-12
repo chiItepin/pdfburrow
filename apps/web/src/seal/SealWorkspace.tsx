@@ -58,7 +58,6 @@ export const SealWorkspace = ({ seal }: { seal: ReturnType<typeof usePersonalSea
               ref={pdfInput}
               type="file"
               accept=".pdf,application/pdf"
-              disabled={Boolean(seal.pdfName)}
               onChange={(event) => {
                 const file = event.target.files?.[0];
                 if (file) {
