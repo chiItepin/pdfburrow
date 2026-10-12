@@ -267,7 +267,9 @@ test("seal form uses shadcn primitives with labelled inputs and keyboard radio n
   await expect(page.getByLabel("Key password", { exact: true })).toBeFocused();
 });
 
-test("shadcn controls remain locked while a signing key is generated", async ({ page }) => {
+test("signing key generation locks controls and navigation with wait-only guidance", async ({
+  page,
+}) => {
   await page.addInitScript(() => {
     const deriveKey = crypto.subtle.deriveKey.bind(crypto.subtle);
     crypto.subtle.deriveKey = async (...args) => {
@@ -277,7 +279,8 @@ test("shadcn controls remain locked while a signing key is generated", async ({ 
       return deriveKey(...args);
     };
   });
-  await page.goto("./seal/");
+  await page.goto("./");
+  await page.getByRole("link", { name: "Open Personal seal", exact: true }).click();
   await page.getByLabel("Key password", { exact: true }).fill(password);
   await page.getByLabel("Repeat password", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Create signing key", exact: true }).click();
@@ -288,6 +291,12 @@ test("shadcn controls remain locked while a signing key is generated", async ({ 
   for (const label of ["PDF to seal or verify", "Key password", "Repeat password"]) {
     await expect(page.getByLabel(label, { exact: true })).toBeDisabled();
   }
+  await page.goBack();
+  await expect(page).toHaveURL(/\/seal\/$/);
+  await expect(page.getByRole("alert")).toHaveText(
+    "Navigation is locked while work is running. Wait for it to finish before changing tools.",
+  );
+  await expect(page.getByRole("dialog")).toHaveCount(0);
   await page.evaluate(() => document.dispatchEvent(new Event("release-key-generation")));
   await expect(page.getByRole("button", { name: "Download encrypted key" })).toBeEnabled();
   await expect(page.getByRole("radio", { name: "Verify seal", exact: true })).toBeEnabled();
