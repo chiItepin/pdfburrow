@@ -43,6 +43,40 @@ test("web tooling uses React and esbuild without Vite and exposes formatter comm
   assert.ok(root.scripts.check.includes("format:check"));
 });
 
+test("new feature controls must use shared shadcn primitives, including in personal seal", async () => {
+  const cwd = fileURLToPath(new URL("../", import.meta.url));
+  const eslint = new ESLint({
+    cwd,
+    overrideConfigFile: true,
+    overrideConfig: configFor("web"),
+  });
+  for (const filePath of ["src/NewFeature.tsx", "src/seal/SealWorkspace.tsx"]) {
+    for (const tag of ["input", "textarea", "select", "button", "label"]) {
+      const [result] = await eslint.lintText(`export const Control = () => <${tag} />;`, {
+        filePath,
+      });
+      assert.ok(
+        result.messages.some((message) => message.ruleId === "no-restricted-syntax"),
+        `${filePath}: ${tag}`,
+      );
+    }
+  }
+  const [shared] = await eslint.lintText(
+    'import { Input, Label, RadioGroup, RadioGroupItem } from "@repo/core-ui"; export const Controls = () => <><Label htmlFor="name">Name</Label><Input id="name" /><RadioGroup><RadioGroupItem value="seal" /></RadioGroup></>;',
+    { filePath: "src/NewFeature.tsx" },
+  );
+  assert.deepEqual(shared.messages, []);
+  const primitiveLint = new ESLint({
+    cwd,
+    overrideConfigFile: true,
+    overrideConfig: configFor("ui"),
+  });
+  const [primitive] = await primitiveLint.lintText("export const Input = () => <input />;", {
+    filePath: "src/primitives/Input.tsx",
+  });
+  assert.ok(!primitive.messages.some((message) => message.ruleId === "no-restricted-syntax"));
+});
+
 test("filename lint enforces PascalCase components and camelCase non-components", async () => {
   const eslint = new ESLint({
     cwd: fileURLToPath(new URL("../", import.meta.url)),

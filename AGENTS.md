@@ -1,6 +1,8 @@
 # Repository guidance
 
 - Code changes: follow [CODING_STANDARDS.md](CODING_STANDARDS.md).
+- UI changes: read the [shadcn-only component and form-control rules](CODING_STANDARDS.md#react-and-ui)
+  before editing.
 - Pull request creation and updates: follow the
   [Copilot review lifecycle](.github/skills/copilot-pr-code-review/SKILL.md).
   Wait for Copilot's `APPROVED` review on the latest pushed head before reporting

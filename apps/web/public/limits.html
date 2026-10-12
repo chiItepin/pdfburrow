@@ -40,6 +40,13 @@
         allocation failure. Previews are optional, limited to the eight visible items, and paused
         during generation. Cancel stops the job without changing your originals.
       </p>
+      <h2 class="mt-8 text-xl font-semibold">Personal seal limits</h2>
+      <p class="mt-3">
+        Personal seal accepts one PDF of at most 20 MiB, one encrypted key file of at most 16 KiB,
+        and one proof file of at most 16 KiB. It checks PDF headers and exact bytes, not page count
+        or document structure. Page and geometry limits for editing tools do not apply to sealing.
+        Web Crypto operations temporarily lock navigation and cannot be cancelled through the app.
+      </p>
       <h2 class="mt-8 text-xl font-semibold">Browser and device coverage</h2>
       <p class="mt-3">
         This is an experimental build. Automated Chromium, Firefox, and WebKit coverage is not

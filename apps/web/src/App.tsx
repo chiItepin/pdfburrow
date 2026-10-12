@@ -13,15 +13,22 @@ import { ToolGuide } from "./workspace/ToolGuide";
 import { WorkspaceHeader } from "./workspace/WorkspaceHeader";
 import { ToolSettingsProvider } from "./workspace/ToolSettingsSidebar";
 import { useTheme } from "./workspace/ThemeProvider";
+import { usePersonalSeal } from "./seal/usePersonalSeal";
+import { SealWorkspace } from "./seal/SealWorkspace";
 
 export const App = ({ initialRoute }: { initialRoute?: ToolRoute }) => {
   const workspace = useDocumentWorkspace();
+  const seal = usePersonalSeal();
+  const locked = workspace.execution.locked || workspace.interactionLocked || seal.busy;
   const { theme } = useTheme();
   const { route, heading, confirmation, notice, request, keep, discard } = useToolNavigation(
     {
-      hasWork: workspace.draft.inputs.length > 0,
-      locked: workspace.execution.locked || workspace.interactionLocked,
-      discard: workspace.discardForNavigation,
+      hasWork: workspace.draft.inputs.length > 0 || seal.hasWork,
+      locked,
+      discard: () => {
+        workspace.discardForNavigation();
+        seal.discard();
+      },
     },
     initialRoute,
   );
@@ -37,19 +44,10 @@ export const App = ({ initialRoute }: { initialRoute?: ToolRoute }) => {
       >
         Skip to content
       </a>
-      <ToolNavigation
-        route={route}
-        locked={workspace.execution.locked || workspace.interactionLocked}
-        onNavigate={request}
-      />
+      <ToolNavigation route={route} locked={locked} onNavigate={request} />
       <ToolSettingsProvider key={route}>
         <SidebarInset aria-labelledby="page-heading" className="min-h-0">
-          <WorkspaceHeader
-            route={route}
-            locked={workspace.execution.locked || workspace.interactionLocked}
-            heading={heading}
-            onNavigate={request}
-          />
+          <WorkspaceHeader route={route} locked={locked} heading={heading} onNavigate={request} />
           <div
             className="min-h-0 flex-1 overflow-y-auto outline-none [overflow-anchor:none] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring has-[[data-settings-docked]]:mr-80"
             data-workspace-scroll
@@ -63,7 +61,9 @@ export const App = ({ initialRoute }: { initialRoute?: ToolRoute }) => {
                     {notice}
                   </p>
                 )}
-                {route === "markup" ? (
+                {route === "seal" ? (
+                  <SealWorkspace seal={seal} />
+                ) : route === "markup" ? (
                   <MarkupWorkspace workspace={workspace} />
                 ) : route === "merge" ? (
                   <MergeWorkspace workspace={workspace} />
@@ -87,7 +87,7 @@ export const App = ({ initialRoute }: { initialRoute?: ToolRoute }) => {
       </ToolSettingsProvider>
       <ConfirmDiscard
         open={confirmation}
-        description="Changing tools or returning Home clears the current inputs, settings, and outputs from this tab. Original files and downloaded copies are unchanged."
+        description="Changing tools or returning Home clears inputs, settings, outputs and unlocked signing keys from this tab. Save any encrypted key backup and proof first. Original files and downloaded copies are unchanged."
         onKeep={keep}
         onDiscard={discard}
       />

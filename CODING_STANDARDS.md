@@ -59,6 +59,13 @@ use React, TypeScript, shadcn/ui, and a small esbuild build; do not add Vite.
   generation, and download storage. Keep filename normalization in this single implementation.
   `@repo/pdf-engine/image-layout` owns lightweight image geometry and output naming
   without importing browser decoders or PDF generation libraries.
+- `@repo/pdf-engine/personal-seal` owns the versioned detached proof and encrypted-key
+  formats using Web Crypto, without parsing or rewriting PDFs.
+  `@repo/pdf-engine/personal-seal-policy` exposes dependency-free input limits so
+  eager UI validation does not load the cryptographic capability. `web/src/seal` owns
+  tab-only keys, input/output buffers, explicit JSON downloads, and navigation locking.
+  Do not present an included proof key as trusted without an independently supplied
+  fingerprint, or reuse PDF-output naming for JSON key/proof files.
 - Use explicit named exports in package/feature entry barrels. Avoid `export *`,
   barrels in every folder, cross-package `/src/` imports, and internal imports
   through the package's own barrel (which can create cycles).
@@ -71,6 +78,14 @@ use React, TypeScript, shadcn/ui, and a small esbuild build; do not add Vite.
 - Use shadcn/ui primitives from `core-ui` and its shared theme, variants, spacing,
   and focus styles. Do not introduce competing component libraries or duplicate
   buttons/dialog styling inside features.
+- Form controls use shared shadcn components: `Input` for text, passwords and file
+  inputs, `Label` for labels, `RadioGroup`/`RadioGroupItem` for radio choices, and the
+  corresponding shadcn checkbox, textarea and select primitives when needed.
+  Add a missing primitive before implementing the feature; matching theme classes
+  on a raw HTML control is not a substitute. Native elements belong inside shared
+  primitives, not feature JSX. Semantic containers such as `form`, `fieldset` and
+  `legend` remain appropriate. Preserve names, keyboard behavior, refs and disabled
+  states when composing controls.
 - Generate primitives into `packages/core-ui/src/primitives`; review generated
   imports and expose approved additions through the package barrel. Keep
   PDF-specific views in the app, reusable compositions in `core-ui`.

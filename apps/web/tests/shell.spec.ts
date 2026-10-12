@@ -14,6 +14,7 @@ test("sidebar and page breadcrumbs identify every tool without a top navigation 
   await page.goto("./");
   for (const name of [
     "Sign & annotate PDF",
+    "Personal seal",
     "Merge PDFs",
     "Split / Extract",
     "Remove pages",
@@ -30,7 +31,7 @@ test("sidebar and page breadcrumbs identify every tool without a top navigation 
       "aria-current",
       "page",
     );
-    await expect(nav.getByRole("link")).toHaveCount(6);
+    await expect(nav.getByRole("link")).toHaveCount(7);
     await closeToolSidebar(page);
   }
 });

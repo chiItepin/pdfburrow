@@ -34,7 +34,7 @@ export const useToolNavigation = (guard: NavigationGuard, initialRoute?: ToolRou
       confirm: setConfirmation,
       blocked: () =>
         setNotice(
-          "Navigation is locked while work is running. Cancel and wait for it to stop first.",
+          "Navigation is locked while work is running. Wait for it to finish before changing tools.",
         ),
     });
     return () => {

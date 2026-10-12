@@ -16,7 +16,16 @@ for (const theme of ["light", "dark"]) {
   test(`hydration reuses every prerendered page with the ${theme} preference`, async ({ page }) => {
     const errors = observeErrors(page);
     await page.addInitScript((value) => localStorage.setItem("pdfburrow-theme", value), theme);
-    for (const path of ["", "sign/", "merge/", "split/", "remove/", "images/", "404.html"]) {
+    for (const path of [
+      "",
+      "sign/",
+      "seal/",
+      "merge/",
+      "split/",
+      "remove/",
+      "images/",
+      "404.html",
+    ]) {
       let release = () => {};
       const moduleReady = new Promise<void>((resolve) => {
         release = resolve;
@@ -61,6 +70,7 @@ test("legacy bookmarks hydrate the emitted path before applying the requested to
     ["", "split", "Split / Extract"],
     ["", "remove", "Remove pages"],
     ["", "images", "Images to PDF"],
+    ["", "seal", "Personal seal"],
     ["images/", "split", "Split / Extract"],
     ["", "unknown", "Tool not found"],
   ] as const) {

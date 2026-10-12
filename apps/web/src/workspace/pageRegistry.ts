@@ -40,6 +40,17 @@ export const pageRegistry = [
     schema: { type: "SoftwareApplication", name: "PDFBurrow - Sign & annotate PDF" },
   },
   {
+    route: "seal",
+    path: "seal/",
+    source: "react",
+    legacyHash: "#/seal",
+    title: "Seal and verify PDF bytes locally, without uploads - PDFBurrow",
+    description:
+      "Create a detached cryptographic PDF proof using a password-encrypted local signing key, or verify exact PDF bytes and a trusted key fingerprint without uploads.",
+    indexable: true,
+    schema: { type: "SoftwareApplication", name: "PDFBurrow - Personal seal" },
+  },
+  {
     route: "merge",
     path: "merge/",
     source: "react",
