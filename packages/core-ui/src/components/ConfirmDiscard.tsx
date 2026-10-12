@@ -48,7 +48,14 @@ export const ConfirmDiscard = ({
         <Button ref={keepButton} onClick={onKeep}>
           {keepLabel}
         </Button>
-        <Button variant="destructive" onClick={onDiscard}>
+        <Button
+          variant="destructive"
+          onClick={() => {
+            // Restore outside focus before applying edits that may move its target.
+            dialog.current?.close();
+            onDiscard();
+          }}
+        >
           {discardLabel}
         </Button>
       </div>

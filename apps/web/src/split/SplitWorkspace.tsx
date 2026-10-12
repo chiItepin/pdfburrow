@@ -119,12 +119,16 @@ export const SplitWorkspace = ({
                     settings.setPages(pages);
                   }
                 }}
-                onReorder={(order) => {
+                onReorder={(order, onApplied) => {
+                  const apply = () => {
+                    settings.setPageOrder(order);
+                    onApplied();
+                  };
                   if (grouping) {
-                    setJob.requestEdit(() => settings.setPageOrder(order));
+                    setJob.requestEdit(apply);
                   } else {
                     execution.editDraft();
-                    settings.setPageOrder(order);
+                    apply();
                   }
                 }}
                 onGroup={

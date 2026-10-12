@@ -204,3 +204,65 @@ test("grouping and separation toasts confirm applied changes, not pending or can
     { mode: "selected", pages: [1, 3] },
   ]);
 });
+
+test("reorder and reset effects wait for discard confirmation and preserve cancelled windows and focus", async ({
+  page,
+}) => {
+  await installPageSetDiagnostics(page);
+  await page.goto("./split/");
+  await addSplitSource(page, 9);
+  await setToolOption(page, "Page sets");
+  await page.getByRole("checkbox", { name: /I understand these limitations/ }).check();
+  await page.evaluate(() => {
+    window.pageSetFailDownload = true;
+  });
+  await page.getByRole("button", { name: "Download PDF: Page 8", exact: true }).click();
+  await expect(page.getByRole("alert")).toContainText("The download could not be requested");
+  const sourcePages = page.getByRole("list", { name: "Page order", exact: true });
+  const notices = page.getByRole("status");
+  const later = page.getByRole("button", { name: "Move page 8 later", exact: true });
+  await later.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(sourcePages.getByRole("listitem").last()).toHaveAttribute(
+    "aria-label",
+    "Page 8, position 8 of 9",
+  );
+  await expect(notices.filter({ hasText: "Page 8 moved" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Keep working", exact: true }).click();
+  await expect(later).toBeFocused();
+  await expect(sourcePages.getByRole("listitem")).toHaveCount(8);
+  await expect(notices.filter({ hasText: "Page 8 moved" })).toHaveCount(0);
+  await later.click();
+  await page.getByRole("button", { name: "Discard", exact: true }).click();
+  await expect(sourcePages.getByRole("listitem")).toHaveCount(1);
+  await expect(sourcePages.getByRole("listitem")).toHaveAttribute(
+    "aria-label",
+    "Page 8, position 9 of 9",
+  );
+  await expect(notices.filter({ hasText: "Page 8 moved to position 9" })).toBeVisible();
+  await expect(later).toBeFocused();
+  await page.getByRole("button", { name: "Download PDF: Page 1", exact: true }).click();
+  await expect(page.getByRole("alert")).toContainText("The download could not be requested");
+  const reset = page.getByRole("button", { name: "Reset page order", exact: true });
+  await reset.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(sourcePages.getByRole("listitem")).toHaveCount(1);
+  await expect(notices.filter({ hasText: "Source page order restored" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Keep working", exact: true }).click();
+  await expect(reset).toBeFocused();
+  await expect(sourcePages.getByRole("listitem")).toHaveAttribute(
+    "aria-label",
+    "Page 8, position 9 of 9",
+  );
+  await expect(notices.filter({ hasText: "Source page order restored" })).toHaveCount(0);
+  await reset.click();
+  await page.getByRole("button", { name: "Discard", exact: true }).click();
+  await expect(sourcePages.getByRole("listitem")).toHaveCount(8);
+  await expect(sourcePages.getByRole("listitem").last()).toHaveAttribute(
+    "aria-label",
+    "Page 8, position 8 of 9",
+  );
+  await expect(notices.filter({ hasText: "Source page order restored" })).toBeVisible();
+});

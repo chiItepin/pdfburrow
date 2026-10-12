@@ -30,7 +30,7 @@ export const PagePicker = ({
   editable: boolean;
   paused: boolean;
   onSelect: (pages: readonly number[]) => void;
-  onReorder: (pages: readonly number[]) => void;
+  onReorder: (pages: readonly number[], onApplied: () => void) => void;
   announce: (message: string) => void;
   removing?: boolean;
   onGroup?: () => void;
@@ -65,12 +65,13 @@ export const PagePicker = ({
     const reordered = [...order];
     reordered.splice(index, 1);
     reordered.splice(target, 0, page);
-    onReorder(reordered);
-    setWindowIndex(Math.floor(target / 8));
-    announce(
-      `Page ${page} moved to position ${target + 1} of ${pageCount}. ${onGroup ? "Pages in each PDF" : "Selected pages"} export in this order.`,
-    );
-    focusAfterCommit(() => document.getElementById(`${control}-page-${page}`));
+    onReorder(reordered, () => {
+      setWindowIndex(Math.floor(target / 8));
+      announce(
+        `Page ${page} moved to position ${target + 1} of ${pageCount}. ${onGroup ? "Pages in each PDF" : "Selected pages"} export in this order.`,
+      );
+      focusAfterCommit(() => document.getElementById(`${control}-page-${page}`));
+    });
   };
   return (
     <section className="mt-6" aria-label="Source pages">
@@ -112,9 +113,13 @@ export const PagePicker = ({
             variant="ghost"
             disabled={!editable || dragging || !changedOrder}
             onClick={() => {
-              onReorder(Array.from({ length: pageCount }, (_, index) => index + 1));
-              setWindowIndex(0);
-              announce("Source page order restored. Your selection is unchanged.");
+              onReorder(
+                Array.from({ length: pageCount }, (_, index) => index + 1),
+                () => {
+                  setWindowIndex(0);
+                  announce("Source page order restored. Your selection is unchanged.");
+                },
+              );
             }}
           >
             Reset page order
