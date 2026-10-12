@@ -1,7 +1,8 @@
 import { PDFArray, PDFDict, PDFName, PDFObjectCopier, PDFPage } from "pdf-lib";
 import type { PDFDocument, PDFObject, PDFRef } from "pdf-lib";
 import { pdfButtonOption } from "./pdfButtonFields.ts";
-import { appendPdfField, availablePdfFieldName, pdfFieldName } from "./pdfFieldTree.ts";
+import { appendPdfField, pdfFieldName } from "./pdfFieldTree.ts";
+import { createPdfFieldNames } from "./pdfFieldNames.ts";
 
 export const copyPdfPages = async (
   source: PDFDocument,
@@ -17,7 +18,7 @@ export const copyPdfPages = async (
     output.catalog.lookupMaybe(PDFName.of("AcroForm"), PDFDict) ??
     output.context.obj({ Fields: [] });
   const roots = form.lookup(PDFName.of("Fields"), PDFArray);
-  const names = new Set<string>();
+  const names = createPdfFieldNames();
   const pending = roots.asArray();
   while (pending.length) {
     const ref = pending.pop();
@@ -50,8 +51,7 @@ export const copyPdfPages = async (
         const owner = annotation.lookup(PDFName.of("Parent"), PDFDict);
         let target = fields.get(owner);
         if (!target) {
-          const name = availablePdfFieldName(pdfFieldName(owner), names);
-          names.add(name);
+          const name = names.available(pdfFieldName(owner));
           const field = owner.clone();
           field.delete(PDFName.of("Kids"));
           field.delete(PDFName.of("Parent"));

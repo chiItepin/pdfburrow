@@ -72,17 +72,3 @@ export const appendPdfField = (
   }
   children.push(ref);
 };
-
-export const availablePdfFieldName = (original: string, names: ReadonlySet<string>) => {
-  const parts = original.split(".");
-  const conflicts = (name: string) =>
-    [...names].some(
-      (existing) =>
-        existing === name || existing.startsWith(`${name}.`) || name.startsWith(`${existing}.`),
-    );
-  let name = original;
-  for (let suffix = 2; conflicts(name); suffix++) {
-    name = [`${parts[0]}_${suffix}`, ...parts.slice(1)].join(".");
-  }
-  return name;
-};

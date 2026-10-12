@@ -19,6 +19,7 @@ import {
 import { inspectPageReferences } from "./inspectPageReferences.ts";
 import { PdfError } from "./pdfError.ts";
 import { appendPdfField } from "./pdfFieldTree.ts";
+import { createPdfFieldNames } from "./pdfFieldNames.ts";
 
 const assertNoFormActions = (source: PDFDocument) => {
   const pending: PDFObject[] = source.context
@@ -71,7 +72,7 @@ export const preservePdfForms = async (source: PDFDocument): Promise<PDFDocument
     PDFDict,
     { dict: PDFDict; original: PDFDict; ref: PDFRef; options: PDFObject[]; name: string }
   >();
-  const names = new Set<string>();
+  const names = createPdfFieldNames();
   for (const page of source.getPages()) {
     const annotations: PDFObject[] = [];
     for (const reference of page.node.Annots()?.asArray() ?? []) {
@@ -83,14 +84,7 @@ export const preservePdfForms = async (source: PDFDocument): Promise<PDFDocument
       const description = describePdfField(widget, source);
       let field = fields.get(description.owner);
       if (!field) {
-        if (
-          [...names].some(
-            (name) =>
-              name === description.name ||
-              name.startsWith(`${description.name}.`) ||
-              description.name.startsWith(`${name}.`),
-          )
-        ) {
+        if (names.conflicts(description.name)) {
           throw new PdfError(
             "unsupported",
             "Distinct source fields have the same name and cannot be preserved safely.",
