@@ -69,6 +69,28 @@ test("conflicting per-widget field attributes fail rather than silently picking 
   }, /conflicting values or settings/);
 });
 
+test("rich-text values are rejected anywhere in the hierarchy even without a RichText flag", async () => {
+  for (const location of ["field", "widget", "ancestor"]) {
+    await expectRejected((document, field) => {
+      let target = field.acroField.dict;
+      if (location === "widget") {
+        target = field.acroField.getWidgets()[0].dict;
+      } else if (location === "ancestor") {
+        target = document.context.obj({
+          T: PDFHexString.fromText("section"),
+          Kids: [field.ref],
+        });
+        const ref = document.context.register(target);
+        field.acroField.dict.set(PDFName.of("Parent"), ref);
+        document.catalog
+          .lookup(PDFName.of("AcroForm"), PDFDict)
+          .set(PDFName.of("Fields"), document.context.obj([ref]));
+      }
+      target.set(PDFName.of("RV"), PDFHexString.fromText("<body><p>Rich value</p></body>"));
+    }, /field types or formatting.*cannot be preserved safely/);
+  }
+});
+
 test("invalid source page dimensions or rotation cannot be hidden by form normalization", async () => {
   for (const [key, value] of [
     ["MediaBox", [0, 0, -20, 30]],

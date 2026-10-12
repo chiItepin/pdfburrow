@@ -82,6 +82,7 @@ export const describePdfField = (widget: PDFDict, source: PDFDocument) => {
   const flags = field.lookupMaybe(PDFName.of("Ff"), PDFNumber)?.asNumber() ?? 0;
   if (
     !["/Tx", "/Btn", "/Ch"].includes(type ?? "") ||
+    parents.some((parent) => parent.has(PDFName.of("RV"))) ||
     (type === "/Tx" && flags & ((1 << 13) | (1 << 25))) ||
     (type === "/Btn" && flags & (1 << 16)) ||
     (type === "/Ch" && (!(flags & (1 << 17)) || flags & (1 << 21)))

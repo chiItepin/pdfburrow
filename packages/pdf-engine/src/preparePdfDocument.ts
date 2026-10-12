@@ -38,7 +38,7 @@ export const preparePdfDocument = async (
       ...info,
       warnings: [
         editableFormWarning,
-        "Document features detected: bookmarks, attachments, metadata, accessibility, or PDF/A guarantees are not preserved.",
+        "Document-level features such as bookmarks, attachments, metadata, accessibility, and PDF/A guarantees are not preserved.",
         ...info.warnings,
       ],
     },

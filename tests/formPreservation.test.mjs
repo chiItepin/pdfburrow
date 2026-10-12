@@ -57,6 +57,13 @@ test("a form with stale appearances and broken accessibility tags retains curren
   const info = await inspectPdf(input);
   assert.equal(info.pageCount, 1);
   assert.ok(info.warnings.some((warning) => /Form fields.*stay editable/.test(warning)));
+  assert.ok(
+    info.warnings.some((warning) => /Document-level features.*not preserved/.test(warning)),
+  );
+  assert.equal(
+    info.warnings.some((warning) => /Document features detected/.test(warning)),
+    false,
+  );
   await assert.rejects(
     splitDocuments(
       { input, selection: { mode: "selected", pages: [1] }, acknowledged: false },
