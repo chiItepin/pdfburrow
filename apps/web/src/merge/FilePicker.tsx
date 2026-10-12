@@ -25,7 +25,8 @@ export const FilePicker = ({ disabled, buttonRef, onAddFiles }: FilePickerProps)
         Or drop PDF files here. For JPEG or PNG conversion, choose the Images to PDF tool instead.
       </p>
       <p className="mt-2 text-sm text-muted-foreground">
-        Encrypted PDFs, interactive forms, and digital signatures are not supported.
+        Supported form fields stay editable in the output. Encrypted PDFs, XFA forms, and digital
+        signatures are not supported.
       </p>
     </FileDropzone>
   );

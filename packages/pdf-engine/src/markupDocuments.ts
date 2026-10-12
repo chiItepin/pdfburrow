@@ -26,7 +26,7 @@ export const inspectMarkupPdf = async (
   input: PdfInput,
   limits: PdfLimits = {},
 ): Promise<MarkupInfo> => {
-  const { document, info } = await loadValidatedPdf(input, limits);
+  const { document, info } = await loadValidatedPdf(input, limits, "reject");
   inspectMarkupAnnotations(document);
   return { ...info, pages: document.getPages().map(markupGeometry) };
 };
@@ -40,7 +40,7 @@ export const flattenMarkup = async (
     throw new PdfError("invalid", "Acknowledge the flattened PDF limitations before generating.");
   }
   progress({ phase: "validating", completed: 0, total: 1 });
-  const { document } = await loadValidatedPdf(request.input, request.limits ?? {});
+  const { document } = await loadValidatedPdf(request.input, request.limits ?? {}, "reject");
   inspectMarkupAnnotations(document);
   document.registerFontkit(fontkit);
   const font = request.objects.some((object) => object.kind === "note")

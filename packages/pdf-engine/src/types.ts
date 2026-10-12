@@ -15,6 +15,7 @@ export interface PdfInput extends DocumentInput {
 export interface PdfInfo {
   readonly pageCount: number;
   readonly warnings: readonly string[];
+  readonly hasEditableForms?: boolean;
 }
 
 export type FailureCode = "unsupported" | "invalid" | "limit" | "worker" | "generation";

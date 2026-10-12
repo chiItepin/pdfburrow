@@ -1,5 +1,6 @@
 import { PDFDocument } from "pdf-lib";
 import { loadValidatedPdf } from "./pdf.ts";
+import { copyPdfPages } from "./copyPdfPages.ts";
 import { PdfError } from "./pdfError.ts";
 import { enforceLimit } from "./resourceLimits.ts";
 import { planSplit } from "./selection.ts";
@@ -36,7 +37,7 @@ export const splitDocuments = async (
     const indices = planned.ranges.flatMap(({ start, end }) =>
       Array.from({ length: end - start + 1 }, (_, offset) => start + offset - 1),
     );
-    for (const page of await output.copyPages(document, indices)) {
+    for (const page of await copyPdfPages(document, output, indices)) {
       output.addPage(page);
       progress({ phase: "copying", completed: ++completed, total: plan.totalPages });
     }

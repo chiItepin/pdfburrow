@@ -1,6 +1,32 @@
 import { getDocument, PDFWorker } from "pdfjs-dist";
 import { enforceLimit } from "./resourceLimits";
 import type { MarkupGeometry } from "./markupTypes";
+import type { PdfLimits, PdfProgress } from "./types";
+import type { WorkerRequest, WorkerValue } from "./protocol";
+import { runWorker } from "./workerClient";
+
+export const preparePdfPreview = async (
+  blob: Blob,
+  signal: AbortSignal,
+  limits: PdfLimits,
+): Promise<Blob> => {
+  const result = await runWorker<WorkerRequest, WorkerValue, PdfProgress>(
+    new URL("./merge.worker.js", import.meta.url),
+    "pdfburrow-form-preview",
+    { operation: "prepare", input: { id: "preview", name: "preview.pdf", blob }, limits },
+    { signal },
+  );
+  if (result.kind === "cancelled") {
+    throw new DOMException("Preview cancelled.", "AbortError");
+  }
+  if (result.kind === "failure") {
+    throw new Error(result.message);
+  }
+  if (result.value.operation !== "prepare") {
+    throw new Error("The local form preview returned an unexpected result.");
+  }
+  return result.value.output.blob;
+};
 
 export interface PdfPreviewLimits {
   readonly inputBytes?: number;

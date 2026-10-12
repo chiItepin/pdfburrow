@@ -6,7 +6,11 @@ const require = createRequire(import.meta.url);
 const standardFontDataUrl =
   dirname(require.resolve("pdfjs-dist/standard_fonts/LiberationSans-Regular.ttf")) + sep;
 
-export const inspectArtifact = async (bytes: Uint8Array, password?: string) => {
+export const inspectArtifact = async (
+  bytes: Uint8Array,
+  password?: string,
+  includeForms = false,
+) => {
   const task = getDocument({
     data: new Uint8Array(bytes),
     password,
@@ -38,7 +42,7 @@ export const inspectArtifact = async (bytes: Uint8Array, password?: string) => {
           canvas: target.canvas,
           canvasContext: target.context,
           viewport,
-          annotationMode: AnnotationMode.DISABLE,
+          annotationMode: includeForms ? AnnotationMode.ENABLE : AnnotationMode.DISABLE,
           background: "white",
         }).promise;
         const pixels: Uint8ClampedArray = target.context.getImageData(

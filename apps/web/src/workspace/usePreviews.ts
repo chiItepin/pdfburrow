@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { Thumbnail } from "./types";
+import { prepareFormPreview } from "./previewRenderers";
 
 export const usePreviews = (
   ids: readonly string[],
@@ -7,13 +8,17 @@ export const usePreviews = (
   paused: boolean,
   render: (file: File, signal: AbortSignal, id: string) => Promise<Blob>,
   sourceId?: string,
+  formSources: readonly string[] = [],
 ) => {
   const cache = useRef(new Map<string, Thumbnail>());
   const requestRetry = useRef<((id: string) => void) | null>(null);
   const [thumbnails, setThumbnails] = useState(new Map<string, Thumbnail>());
   const key = JSON.stringify(ids);
+  const formKey = JSON.stringify(formSources);
   useEffect(() => {
     const visible: string[] = JSON.parse(key);
+    const forms = new Set<string>(JSON.parse(formKey));
+    const prepared = new Map<File, File>();
     const controller = new AbortController();
     for (const [id, value] of cache.current) {
       if (!visible.includes(id)) {
@@ -53,7 +58,14 @@ export const usePreviews = (
           setThumbnails((current) => new Map(current).set(id, { state: "rendering" }));
           let thumbnail: Thumbnail;
           try {
-            const blob = await render(file, controller.signal, id);
+            let previewFile = file;
+            if (forms.has(sourceId ?? id)) {
+              const previous = prepared.get(file);
+              previewFile = previous ?? (await prepareFormPreview(file, controller.signal));
+              controller.signal.throwIfAborted();
+              prepared.set(file, previewFile);
+            }
+            const blob = await render(previewFile, controller.signal, id);
             if (controller.signal.aborted) {
               return;
             }
@@ -87,8 +99,9 @@ export const usePreviews = (
     return () => {
       requestRetry.current = null;
       controller.abort();
+      prepared.clear();
     };
-  }, [key, getFile, paused, render, sourceId]);
+  }, [key, formKey, getFile, paused, render, sourceId]);
   useEffect(() => {
     const current = cache.current;
     return () => {

@@ -5,7 +5,7 @@ import { MergeResult } from "./MergeResult";
 import { PreservationNotice } from "../workspace/PreservationNotice";
 import type { useDocumentWorkspace } from "../workspace/useDocumentWorkspace";
 import { usePreviews } from "../workspace/usePreviews";
-import { renderPdfPreview } from "../workspace/previewRenderers";
+import { formPreviewSources, renderPdfPreview } from "../workspace/previewRenderers";
 import { describeJobStatus } from "./jobStatus";
 import { mergeTask } from "./mergeTask";
 import { MergeProgress } from "./MergeProgress";
@@ -24,6 +24,8 @@ export const MergeWorkspace = ({
     draft.files.get,
     locked,
     renderPdfPreview,
+    undefined,
+    formPreviewSources(draft.visible),
   );
   const mergeFiles = () => {
     if (!editable || !draft.ready || !draft.acknowledged || !capable) {

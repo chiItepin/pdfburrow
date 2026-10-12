@@ -1,5 +1,6 @@
 import { EncryptedPDFError, PDFDocument } from "pdf-lib";
-import { inspectDocument } from "./inspectDocument.ts";
+import { preparePdfDocument } from "./preparePdfDocument.ts";
+import { copyPdfPages } from "./copyPdfPages.ts";
 import { PdfError } from "./pdfError.ts";
 import { pdfStem } from "./pdfFilename.ts";
 import { enforceLimit } from "./resourceLimits.ts";
@@ -28,18 +29,22 @@ const validateInputLimits = (inputs: readonly PdfInput[], limits: PdfLimits) => 
   }
 };
 
-export const loadValidatedPdf = async (input: PdfInput, limits: PdfLimits) => {
+export const loadValidatedPdf = async (
+  input: PdfInput,
+  limits: PdfLimits,
+  formHandling: "preserve" | "reject" = "preserve",
+) => {
   validateInputLimits([input], limits);
   const header = new Uint8Array(await input.blob.slice(0, 1024).arrayBuffer());
   if (!new TextDecoder("latin1").decode(header).includes("%PDF-")) {
     throw new PdfError("invalid", "This file is not a PDF. Choose a valid, unencrypted PDF.");
   }
   try {
-    const document = await PDFDocument.load(await input.blob.arrayBuffer(), {
+    const source = await PDFDocument.load(await input.blob.arrayBuffer(), {
       updateMetadata: false,
       throwOnInvalidObject: true,
     });
-    const info = inspectDocument(document, limits);
+    const { document, info } = await preparePdfDocument(source, limits, formHandling);
     enforceLimit(
       info.pageCount,
       limits.totalPages,
@@ -71,6 +76,24 @@ export const loadValidatedPdf = async (input: PdfInput, limits: PdfLimits) => {
 export const inspectPdf = async (input: PdfInput, limits: PdfLimits = {}): Promise<PdfInfo> =>
   (await loadValidatedPdf(input, limits)).info;
 
+export const preparePdfCopy = async (
+  input: PdfInput,
+  limits: PdfLimits = {},
+): Promise<PdfOutput> => {
+  const { document } = await loadValidatedPdf(input, limits);
+  const bytes = await document.save();
+  enforceLimit(
+    bytes.byteLength,
+    limits.outputBytes,
+    "Prepared PDF bytes",
+    "Use a smaller source PDF.",
+  );
+  return {
+    blob: new Blob([new Uint8Array(bytes)], { type: "application/pdf" }),
+    suggestedFilename: `${pdfStem(input.name)}-prepared.pdf`,
+  };
+};
+
 export const mergedFilename = (name: string): string => `${pdfStem(name)}-merged.pdf`;
 
 export const mergeDocuments = async (
@@ -94,7 +117,7 @@ export const mergeDocuments = async (
       const { document, info } = await loadValidatedPdf(input, limits);
       pages += info.pageCount;
       enforceLimit(pages, limits.totalPages, "Total pages", "Remove some input files.");
-      const copiedPages = await output.copyPages(document, document.getPageIndices());
+      const copiedPages = await copyPdfPages(document, output, document.getPageIndices());
       for (const copied of copiedPages) {
         output.addPage(copied);
         progress({ phase: "copying", completed: output.getPageCount(), total: pages });

@@ -108,11 +108,11 @@ test("reject missing acknowledgement, no input, wrong content and corrupt PDFs",
   await assert.rejects(inspectPdf(await fixture("empty.pdf", () => {}, 0)), /no pages/);
 });
 
-test("reject form fields, XFA and signatures, but not ordinary drawn signature content", async () => {
+test("preserve supported form fields, reject XFA and signatures, and accept ordinary drawn signature content", async () => {
   const form = await fixture("form.pdf", (doc) => {
     doc.getForm().createTextField("name").addToPage(doc.getPage(0));
   });
-  await assert.rejects(inspectPdf(form), /flattened, noninteractive/);
+  assert.equal((await inspectPdf(form)).hasEditableForms, true);
   const xfa = await fixture("xfa.pdf", (doc) => {
     doc.catalog.set(PDFName.of("AcroForm"), doc.context.obj({ XFA: doc.context.obj([]) }));
   });

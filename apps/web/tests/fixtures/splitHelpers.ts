@@ -3,13 +3,13 @@ import { PDFDocument } from "pdf-lib";
 import { readFile } from "node:fs/promises";
 import { closeToolSettings } from "./toolSettings";
 
-export const addSplitSource = async (page: Page, count = 10) => {
+export const addSplitSource = async (page: Page, count = 10, name = "report.pdf") => {
   const document = await PDFDocument.create();
   for (let index = 0; index < count; index++) {
     document.addPage([300 + index, 400]).drawText(`Page ${index + 1}`, { x: 30, y: 100, size: 12 });
   }
   await page.locator('input[type="file"]').setInputFiles({
-    name: "report.pdf",
+    name,
     mimeType: "application/pdf",
     buffer: Buffer.from(await document.save()),
   });
