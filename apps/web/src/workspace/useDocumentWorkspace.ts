@@ -13,7 +13,7 @@ export const useDocumentWorkspace = () => {
   const [interactionLocked, setInteractionLocked] = useState(false);
   const draft = useInputDraft(announce);
   const execution = useDocumentJob(announce);
-  const focus = useWorkspaceLifecycle(draft.inputs.length, execution.job.phase);
+  const focus = useWorkspaceLifecycle(draft.inputs.length, execution.job.phase, execution.onDemand);
   const focusAfterCommit = useFocusAfterCommit();
   const capable =
     !hydrated ||

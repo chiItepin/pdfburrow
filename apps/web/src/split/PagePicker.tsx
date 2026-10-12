@@ -19,6 +19,8 @@ export const PagePicker = ({
   onReorder,
   announce,
   removing = false,
+  onGroup,
+  formSources = [],
 }: {
   sourceId: string;
   getFile: (id: string) => File | undefined;
@@ -28,9 +30,11 @@ export const PagePicker = ({
   editable: boolean;
   paused: boolean;
   onSelect: (pages: readonly number[]) => void;
-  onReorder: (pages: readonly number[]) => void;
+  onReorder: (pages: readonly number[], onApplied: () => void) => void;
   announce: (message: string) => void;
   removing?: boolean;
+  onGroup?: () => void;
+  formSources?: readonly string[];
 }) => {
   const [windowIndex, setWindowIndex] = useState(0);
   const [dragging, setDragging] = useState(false);
@@ -44,6 +48,7 @@ export const PagePicker = ({
     paused || dragging,
     renderPdfPagePreview,
     sourceId,
+    formSources,
   );
   const movePage = (page: number, target: number, control = "drag") => {
     const index = order.indexOf(page);
@@ -60,12 +65,13 @@ export const PagePicker = ({
     const reordered = [...order];
     reordered.splice(index, 1);
     reordered.splice(target, 0, page);
-    onReorder(reordered);
-    setWindowIndex(Math.floor(target / 8));
-    announce(
-      `Page ${page} moved to position ${target + 1} of ${pageCount}. Selected pages export in this order.`,
-    );
-    focusAfterCommit(() => document.getElementById(`${control}-page-${page}`));
+    onReorder(reordered, () => {
+      setWindowIndex(Math.floor(target / 8));
+      announce(
+        `Page ${page} moved to position ${target + 1} of ${pageCount}. ${onGroup ? "Pages in each PDF" : "Selected pages"} export in this order.`,
+      );
+      focusAfterCommit(() => document.getElementById(`${control}-page-${page}`));
+    });
   };
   return (
     <section className="mt-6" aria-label="Source pages">
@@ -80,7 +86,9 @@ export const PagePicker = ({
       <p id="page-selection-help" className="mt-2 text-sm text-muted-foreground">
         {removing
           ? "Checked pages will be removed. Unchecked pages stay in their original order. Previews are optional."
-          : "Selected pages export in the order shown, not the order you select them. Previews are optional."}
+          : onGroup
+            ? "Select pages to group. Pages in each PDF export in the order shown, not the order you select them. Previews are optional."
+            : "Selected pages export in the order shown, not the order you select them. Previews are optional."}
       </p>
       {!removing && (
         <p id="page-order-help" className="mt-2 text-sm text-muted-foreground">
@@ -95,14 +103,23 @@ export const PagePicker = ({
         <Button variant="ghost" disabled={!editable || dragging} onClick={() => onSelect([])}>
           Clear
         </Button>
+        {onGroup && (
+          <Button disabled={!editable || dragging || selected.length < 2} onClick={onGroup}>
+            Group into one PDF
+          </Button>
+        )}
         {!removing && (
           <Button
             variant="ghost"
             disabled={!editable || dragging || !changedOrder}
             onClick={() => {
-              onReorder(Array.from({ length: pageCount }, (_, index) => index + 1));
-              setWindowIndex(0);
-              announce("Source page order restored. Your selection is unchanged.");
+              onReorder(
+                Array.from({ length: pageCount }, (_, index) => index + 1),
+                () => {
+                  setWindowIndex(0);
+                  announce("Source page order restored. Your selection is unchanged.");
+                },
+              );
             }}
           >
             Reset page order

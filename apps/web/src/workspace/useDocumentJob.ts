@@ -5,6 +5,7 @@ import { useDownloads } from "./useDownloads";
 
 export const useDocumentJob = (announce: (message: string) => void) => {
   const [job, setJob] = useState<DocumentJob>({ phase: "editing" });
+  const [onDemand, setOnDemand] = useState(false);
   const controller = useRef<AbortController | null>(null);
   const downloads = useDownloads(announce);
   const locked = job.phase === "processing" || job.phase === "cancelling" || downloads.busy;
@@ -16,12 +17,17 @@ export const useDocumentJob = (announce: (message: string) => void) => {
     [],
   );
 
-  const start = async (task: DocumentTask) => {
-    if (controller.current || locked || job.phase === "complete") {
-      return;
+  const start = async (task: DocumentTask, options: { downloadOnComplete?: boolean } = {}) => {
+    if (
+      controller.current ||
+      locked ||
+      (job.phase === "complete" && (!onDemand || !options.downloadOnComplete))
+    ) {
+      return false;
     }
     const active = new AbortController();
     controller.current = active;
+    setOnDemand(Boolean(options.downloadOnComplete));
     setJob({ phase: "processing" });
     announce("");
     try {
@@ -34,19 +40,30 @@ export const useDocumentJob = (announce: (message: string) => void) => {
         },
       });
       if (controller.current !== active) {
-        return;
+        return false;
       }
       if (active.signal.aborted || outcome.kind === "cancelled") {
         setJob({ phase: "cancelled" });
       } else if (outcome.kind === "failure") {
         setJob({ phase: "error", message: outcome.message });
       } else {
+        if (options.downloadOnComplete && outcome.value.length !== 1) {
+          throw new Error("An on-demand operation must return exactly one PDF.");
+        }
         downloads.retain(outcome.value);
         setJob({ phase: "complete" });
-        toast.success(outcome.value.length === 1 ? "Your PDF is ready." : "Your PDFs are ready.", {
-          id: "document-job",
-          description: "Choose Download to save your output.",
-        });
+        if (options.downloadOnComplete) {
+          downloads.download(0);
+        } else {
+          toast.success(
+            outcome.value.length === 1 ? "Your PDF is ready." : "Your PDFs are ready.",
+            {
+              id: "document-job",
+              description: "Choose Download to save your output.",
+            },
+          );
+        }
+        return true;
       }
     } catch {
       if (controller.current === active) {
@@ -65,13 +82,15 @@ export const useDocumentJob = (announce: (message: string) => void) => {
         controller.current = null;
       }
     }
+    return false;
   };
   return {
     job,
     locked,
     downloads,
+    onDemand,
     start,
-    editable: !locked && job.phase !== "complete",
+    editable: !locked && (job.phase !== "complete" || onDemand),
     cancel: () => {
       if (controller.current) {
         setJob({ phase: "cancelling" });
@@ -82,6 +101,7 @@ export const useDocumentJob = (announce: (message: string) => void) => {
       if (!locked) {
         toast.dismiss("document-job");
         downloads.clear();
+        setOnDemand(false);
         setJob({ phase: "editing" });
       }
     },

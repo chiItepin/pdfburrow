@@ -1,13 +1,13 @@
-import type { SplitSelection } from "@repo/pdf-engine";
+import type { SplitOperation } from "./splitOperation";
 
 export const ModePicker = ({
   mode,
   disabled,
   onChange,
 }: {
-  mode: Exclude<SplitSelection["mode"], "remove">;
+  mode: SplitOperation;
   disabled: boolean;
-  onChange: (mode: Exclude<SplitSelection["mode"], "remove">) => void;
+  onChange: (mode: SplitOperation) => void;
 }) => (
   <fieldset disabled={disabled} className="mt-6">
     <legend className="font-medium">Choose an operation</legend>
@@ -15,6 +15,7 @@ export const ModePicker = ({
       {(
         [
           ["selected", "Selected pages"],
+          ["sets", "Page sets"],
           ["ranges", "Custom ranges"],
           ["fixed", "Fixed page-count groups"],
           ["every", "Every page"],

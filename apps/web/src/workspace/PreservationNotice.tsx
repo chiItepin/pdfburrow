@@ -16,7 +16,9 @@ export const PreservationNotice = ({
     <p className="mb-3 text-sm">
       This is a page-focused rewrite, not a lossless copy. Annotations and visible marks may change
       or disappear. Bookmarks, attachments, metadata, accessibility tags, and PDF/A guarantees are
-      not preserved. Feature detection is not exhaustive.
+      not preserved. Supported form fields on exported pages stay editable, with their current
+      values. Fonts and field appearance may change. Review your downloaded PDF. Your original stays
+      unchanged. Feature detection is not exhaustive.
     </p>
     <label className="flex items-start gap-3">
       <input

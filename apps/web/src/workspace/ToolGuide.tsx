@@ -19,17 +19,17 @@ const guides = {
       "Review the preservation notice, merge your PDFs, and choose Download PDF.",
     ],
     detail:
-      "Each file contributes all its pages. The output keeps page sizes and rotations without rasterizing pages. Encrypted PDFs, forms, and detected digitally signed files are not supported; annotations, bookmarks, and other document features may not be preserved.",
+      "Each file contributes all its pages. The output keeps page sizes and rotations without rasterizing pages. Supported form fields stay editable; same-named fields from separate inputs are renamed to stay independent. Review the downloaded PDF. Encrypted PDFs, XFA forms, and detected digitally signed files are not supported; annotations, bookmarks, and other document features may not be preserved.",
   },
   split: {
     title: "How to split a PDF or extract pages",
     steps: [
       "Add one PDF and wait for local validation.",
-      "Select and arrange pages, enter custom ranges, choose fixed page-count groups, or split every page.",
-      "Review the predicted outputs and preservation notice, generate your PDFs, then download them individually or prepare a ZIP.",
+      "Select and arrange pages, enter ranges, choose fixed groups, split every page, or choose Page sets.",
+      "Review the preservation notice. Generate outputs in the existing operations, or use Your downloads in Page sets to download one PDF at a time.",
     ],
     detail:
-      "Selected pages can be arranged in a new order. Custom ranges can be combined into one PDF or saved separately. Splitting rewrites page content, not every document feature; encrypted PDFs, forms, and detected digital signatures are not supported.",
+      "In Page sets, every page starts as a separate PDF. Select pages and choose Group into one PDF to download them together, or Separate pages to restore individual PDFs. Your downloads labels each PDF by its original page numbers, in export order. Each Download PDF creates only that document; other operations offer individual downloads or a ZIP after generation. Selected pages can be reordered, and custom ranges combined or saved separately. Supported form fields on exported pages stay editable, with their current values. Review the downloaded PDF. Encrypted PDFs, XFA forms, and detected digital signatures are not supported.",
   },
   images: {
     title: "How to convert JPEG and PNG images to PDF",
@@ -49,7 +49,7 @@ const guides = {
       "Review the output prediction and preservation notice, select Remove pages, then download your new PDF.",
     ],
     detail:
-      "Your original stays unchanged. Removal rewrites the remaining pages without rasterizing them, but annotations, bookmarks, and other document features may not be preserved. Encrypted PDFs, forms, and detected digital signatures are not supported.",
+      "Your original stays unchanged. Removal rewrites the remaining pages without rasterizing them. Supported form fields on remaining pages stay editable, with their current values. Review the downloaded PDF. Annotations, bookmarks, and other document features may not be preserved. Encrypted PDFs, XFA forms, and detected digital signatures are not supported.",
   },
 };
 

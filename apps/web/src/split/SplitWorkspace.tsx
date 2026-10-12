@@ -1,15 +1,19 @@
-import { Button, ConfirmDiscard, FileDropzone } from "@repo/core-ui";
+import { Button, ConfirmDiscard, FileDropzone, toast, useFocusAfterCommit } from "@repo/core-ui";
 import { InputCard } from "../workspace/InputCard";
-import { PreservationNotice } from "../workspace/PreservationNotice";
 import type { useDocumentWorkspace } from "../workspace/useDocumentWorkspace";
 import { PagePicker } from "./PagePicker";
+import { formPreviewSources } from "../workspace/previewRenderers";
 import { SelectionSettings } from "./SelectionSettings";
 import { useSplitSettings } from "./useSplitSettings";
 import { useSplitJob } from "./useSplitJob";
 import { SplitResult } from "./SplitResult";
 import { ModePicker } from "./ModePicker";
-import { OutputPrediction } from "./OutputPrediction";
 import { ToolSettingsSidebar } from "../workspace/ToolSettingsSidebar";
+import { usePageSets } from "./usePageSets";
+import { usePageSetJob } from "./usePageSetJob";
+import { PageSetActions } from "./PageSetActions";
+import { SplitActions } from "./SplitActions";
+import { pageSetLabel } from "./pageSets";
 
 export const SplitWorkspace = ({
   workspace,
@@ -19,11 +23,15 @@ export const SplitWorkspace = ({
   tool?: "split" | "remove";
 }) => {
   const { draft, execution, focus, capable, confirmation } = workspace;
-  const { draftHeading, resultHeading, jobError } = focus;
+  const { draftHeading, resultHeading } = focus;
   const { job, locked, editable } = execution;
   const input = draft.inputs[0];
   const removing = tool === "remove";
   const settings = useSplitSettings(input?.name ?? "", draft.ready ? draft.pageCount : 0, tool);
+  const grouping = !removing && settings.mode === "sets";
+  const pageSets = usePageSets(draft.ready ? draft.pageCount : 0, settings.order);
+  const setJob = usePageSetJob(workspace);
+  const focusAfterCommit = useFocusAfterCommit();
   const { generate, status } = useSplitJob(workspace, settings.selection, Boolean(settings.plan));
   return (
     <>
@@ -70,7 +78,7 @@ export const SplitWorkspace = ({
               <p className="mt-3 text-sm text-muted-foreground">
                 {input
                   ? "Remove the source or start over to choose another PDF."
-                  : "Or drop one PDF here. No uploads. Encrypted PDFs, interactive forms, and digital signatures are not supported."}
+                  : "Or drop one PDF here. No uploads. Supported form fields stay editable in the output. Encrypted PDFs, XFA forms, and digital signatures are not supported."}
               </p>
             </FileDropzone>
             {input && (
@@ -83,89 +91,78 @@ export const SplitWorkspace = ({
                   reorderable={false}
                   checking={draft.validationId === input.id}
                   onMove={workspace.moveFile}
-                  onRemove={workspace.removeFile}
+                  onRemove={(id) =>
+                    grouping
+                      ? setJob.requestEdit(() => workspace.removeFile(id))
+                      : workspace.removeFile(id)
+                  }
                   onRetry={draft.retryValidation}
                 />
               </ol>
             )}
-            {input && draft.ready && settings.mode === "selected" && (
+            {input && draft.ready && (settings.mode === "selected" || grouping) && (
               <PagePicker
                 sourceId={input.id}
+                formSources={formPreviewSources(draft.inputs)}
                 getFile={draft.files.get}
                 pageCount={draft.pageCount}
                 order={settings.order}
-                selected={settings.pages}
+                selected={grouping ? pageSets.selected : settings.pages}
                 removing={removing}
                 editable={editable}
                 paused={locked}
                 onSelect={(pages) => {
-                  execution.editDraft();
-                  settings.setPages(pages);
+                  if (grouping) {
+                    pageSets.select(pages);
+                  } else {
+                    execution.editDraft();
+                    settings.setPages(pages);
+                  }
                 }}
-                onReorder={(order) => {
-                  execution.editDraft();
-                  settings.setPageOrder(order);
+                onReorder={(order, onApplied) => {
+                  const apply = () => {
+                    settings.setPageOrder(order);
+                    onApplied();
+                  };
+                  if (grouping) {
+                    setJob.requestEdit(apply);
+                  } else {
+                    execution.editDraft();
+                    apply();
+                  }
                 }}
+                onGroup={
+                  grouping
+                    ? () =>
+                        setJob.requestEdit(() => {
+                          const pages = settings.order.filter((page) =>
+                            pageSets.selected.includes(page),
+                          );
+                          pageSets.group();
+                          workspace.announce(`${pageSetLabel(pages)} will download together.`);
+                          toast.success("Pages grouped.", {
+                            id: "page-set-edit",
+                            description: `${pages.length} pages will download together. Choose Download PDF in Your downloads when ready.`,
+                          });
+                          focusAfterCommit(() => document.getElementById("page-sets-heading"));
+                        })
+                    : undefined
+                }
                 announce={workspace.announce}
               />
             )}
           </div>
-          <section
-            className="tool-actions"
-            aria-label={removing ? "Removal output" : "Split output"}
-          >
-            {removing && draft.ready && (
-              <p className="mb-3 text-sm" role="status" aria-live="polite">
-                {settings.plan
-                  ? `${settings.pages.length} page${settings.pages.length === 1 ? "" : "s"} will be removed. ${settings.plan.totalPages} will be kept in source order.`
-                  : settings.error}
-              </p>
-            )}
-            {settings.plan && <OutputPrediction plan={settings.plan} />}
-            {input && (
-              <PreservationNotice
-                action="generate"
-                disabled={!editable}
-                acknowledged={draft.acknowledged}
-                onAcknowledge={draft.setAcknowledged}
-              />
-            )}
-            {job.phase !== "complete" && (
-              <div className="mt-4 flex flex-wrap gap-3">
-                <Button
-                  size="lg"
-                  disabled={
-                    !draft.ready || !settings.plan || !draft.acknowledged || locked || !capable
-                  }
-                  onClick={generate}
-                >
-                  {job.phase === "error"
-                    ? "Retry generation"
-                    : removing
-                      ? "Remove pages"
-                      : "Generate PDFs"}
-                </Button>
-                {locked && (
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    disabled={job.phase === "cancelling"}
-                    onClick={execution.cancel}
-                  >
-                    Cancel generation
-                  </Button>
-                )}
-              </div>
-            )}
-            <p role="status" aria-live="polite" className="mt-4 min-h-6 text-sm">
-              {status}
-            </p>
-            {job.phase === "error" && (
-              <p ref={jobError} tabIndex={-1} role="alert" className="mt-3 text-destructive">
-                {job.message}
-              </p>
-            )}
-          </section>
+          {grouping && draft.ready ? (
+            <PageSetActions workspace={workspace} pageSets={pageSets} setJob={setJob} />
+          ) : (
+            <SplitActions
+              workspace={workspace}
+              settings={settings}
+              removing={removing}
+              generate={generate}
+              status={status}
+            />
+          )}
           <ToolSettingsSidebar
             title={removing ? "Remove pages settings" : "Split / Extract settings"}
           >
@@ -181,17 +178,23 @@ export const SplitWorkspace = ({
                     mode={settings.mode}
                     disabled={!editable}
                     onChange={(mode) => {
-                      execution.editDraft();
-                      settings.setMode(mode);
+                      setJob.requestEdit(() => settings.setMode(mode));
                     }}
                   />
-                  <SelectionSettings
-                    settings={settings}
-                    pageCount={draft.pageCount}
-                    disabled={!editable}
-                    onEdit={execution.editDraft}
-                    announce={workspace.announce}
-                  />
+                  {grouping ? (
+                    <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+                      Every page starts as a separate PDF. Select pages and group them to download
+                      together. Download only the PDFs you need.
+                    </p>
+                  ) : (
+                    <SelectionSettings
+                      settings={settings}
+                      pageCount={draft.pageCount}
+                      disabled={!editable}
+                      onEdit={execution.editDraft}
+                      announce={workspace.announce}
+                    />
+                  )}
                 </>
               )
             ) : (
@@ -204,7 +207,7 @@ export const SplitWorkspace = ({
           </ToolSettingsSidebar>
         </div>
       </section>
-      {job.phase === "complete" && settings.plan && (
+      {!grouping && job.phase === "complete" && settings.plan && (
         <SplitResult
           plan={settings.plan}
           removing={removing}
@@ -213,6 +216,12 @@ export const SplitWorkspace = ({
           onEdit={workspace.requestEdit}
         />
       )}
+      <ConfirmDiscard
+        open={setJob.confirmation}
+        description="The latest PDF's download has not been requested. Continuing clears that generated PDF; your source and page groups stay available."
+        onKeep={setJob.keep}
+        onDiscard={setJob.discard}
+      />
       <ConfirmDiscard
         open={confirmation !== null}
         description={

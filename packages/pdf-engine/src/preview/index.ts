@@ -1,1 +1,1 @@
-export { previewPdf, previewPdfPage } from "../preview";
+export { previewPdf, previewPdfPage, preparePdfPreview } from "../preview";

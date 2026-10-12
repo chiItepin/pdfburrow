@@ -1,7 +1,11 @@
 import { useEffect, useRef } from "react";
 import type { DocumentJob } from "./types";
 
-export const useWorkspaceLifecycle = (inputCount: number, phase: DocumentJob["phase"]) => {
+export const useWorkspaceLifecycle = (
+  inputCount: number,
+  phase: DocumentJob["phase"],
+  onDemand = false,
+) => {
   const draftHeading = useRef<HTMLHeadingElement>(null);
   const resultHeading = useRef<HTMLHeadingElement>(null);
   const jobError = useRef<HTMLParagraphElement>(null);
@@ -17,7 +21,7 @@ export const useWorkspaceLifecycle = (inputCount: number, phase: DocumentJob["ph
     return () => window.removeEventListener("beforeunload", warnBeforeLeave);
   }, [inputCount]);
   useEffect(() => {
-    if (phase === "complete") {
+    if (phase === "complete" && !onDemand) {
       resultHeading.current?.focus();
     }
     if (phase === "cancelled") {
@@ -26,6 +30,6 @@ export const useWorkspaceLifecycle = (inputCount: number, phase: DocumentJob["ph
     if (phase === "error") {
       jobError.current?.focus();
     }
-  }, [phase]);
+  }, [phase, onDemand]);
   return { draftHeading, resultHeading, jobError };
 };

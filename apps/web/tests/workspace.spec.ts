@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { PDFDocument, PDFName, StandardFonts, degrees } from "pdf-lib";
+import { PDFDict, PDFDocument, PDFName, StandardFonts, degrees } from "pdf-lib";
 import { readFile } from "node:fs/promises";
 
 async function pdf(name: string, pages = 1, form = false) {
@@ -12,8 +12,15 @@ async function pdf(name: string, pages = 1, form = false) {
   }
   if (form) {
     document.getForm().createTextField("name").addToPage(document.getPage(0));
+    document.catalog
+      .lookup(PDFName.of("AcroForm"), PDFDict)
+      .set(PDFName.of("XFA"), document.context.obj([]));
   }
-  return { name, mimeType: "application/pdf", buffer: Buffer.from(await document.save()) };
+  return {
+    name,
+    mimeType: "application/pdf",
+    buffer: Buffer.from(await document.save({ updateFieldAppearances: !form })),
+  };
 }
 
 async function ready(page: Page, supplied?: Awaited<ReturnType<typeof pdf>>[]) {
@@ -120,7 +127,7 @@ test("unsupported input blocks merging and removal resets acknowledgement and pr
   await page.getByRole("checkbox").check();
   await page.locator('input[type="file"]').setInputFiles([await pdf("form.pdf", 1, true)]);
   await expect(page.getByRole("checkbox")).not.toBeChecked();
-  await expect(page.getByText(/Interactive form fields detected/)).toBeVisible();
+  await expect(page.getByText(/Interactive form fields use XFA/)).toBeVisible();
   await expect(page.getByRole("button", { name: "Merge PDFs", exact: true })).toBeDisabled();
   await page.getByRole("button", { name: "Remove form.pdf" }).click();
   await expect(page.getByRole("button", { name: "Remove valid.pdf" })).toBeFocused();

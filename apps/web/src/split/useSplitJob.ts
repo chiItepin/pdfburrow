@@ -4,15 +4,23 @@ import { pdfLimits } from "../workspace/resourcePolicy";
 
 export const useSplitJob = (
   workspace: ReturnType<typeof useDocumentWorkspace>,
-  selection: SplitSelection,
+  selection: SplitSelection | undefined,
   valid: boolean,
 ) => {
   const { draft, execution, capable } = workspace;
   const { job, editable } = execution;
   const input = draft.inputs[0];
-  const removing = selection.mode === "remove";
+  const removing = selection?.mode === "remove";
   const generate = () => {
-    if (!input || !editable || !draft.ready || !draft.acknowledged || !valid || !capable) {
+    if (
+      !input ||
+      !selection ||
+      !editable ||
+      !draft.ready ||
+      !draft.acknowledged ||
+      !valid ||
+      !capable
+    ) {
       return;
     }
     void execution.start(async (options) => {

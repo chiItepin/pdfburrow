@@ -1,4 +1,4 @@
-import { inspectPdf, mergeDocuments } from "./pdf";
+import { inspectPdf, mergeDocuments, preparePdfCopy } from "./pdf";
 import { PdfError } from "./pdfError";
 import type { WorkerMessage, WorkerRequest, WorkerValue } from "./protocol";
 const send = (message: WorkerMessage) => {
@@ -7,15 +7,19 @@ const send = (message: WorkerMessage) => {
 self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
   try {
     const request = event.data;
-    const value: WorkerValue =
-      request.operation === "validate"
-        ? { operation: "validate", info: await inspectPdf(request.input, request.limits) }
-        : {
-            operation: "merge",
-            output: await mergeDocuments(request.request, (progress) =>
-              send({ type: "progress", progress }),
-            ),
-          };
+    let value: WorkerValue;
+    if (request.operation === "validate") {
+      value = { operation: "validate", info: await inspectPdf(request.input, request.limits) };
+    } else if (request.operation === "prepare") {
+      value = { operation: "prepare", output: await preparePdfCopy(request.input, request.limits) };
+    } else {
+      value = {
+        operation: "merge",
+        output: await mergeDocuments(request.request, (progress) =>
+          send({ type: "progress", progress }),
+        ),
+      };
+    }
     send({ type: "result", result: { kind: "success", value } });
   } catch (error) {
     send({

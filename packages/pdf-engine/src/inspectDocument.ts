@@ -13,7 +13,11 @@ import { inspectPageTree } from "./inspectPageTree.ts";
 import type { PdfInfo, PdfLimits } from "./types";
 import { enforceLimit } from "./resourceLimits.ts";
 
-export const inspectDocument = (document: PDFDocument, limits: PdfLimits = {}): PdfInfo => {
+export const inspectDocument = (
+  document: PDFDocument,
+  limits: PdfLimits = {},
+  allowForms = false,
+): PdfInfo => {
   if (document.context.trailerInfo.Encrypt) {
     throw new PdfError(
       "unsupported",
@@ -33,6 +37,7 @@ export const inspectDocument = (document: PDFDocument, limits: PdfLimits = {}): 
     .map(([, object]) => object);
   pending.push(document.catalog);
   const visited = new Set<PDFObject>();
+  let missingObjects = false;
   let hasForms = false;
   let hasSignatures = document.catalog.has(PDFName.of("Perms"));
   while (pending.length) {
@@ -44,12 +49,10 @@ export const inspectDocument = (document: PDFDocument, limits: PdfLimits = {}): 
     if (object instanceof PDFRef) {
       const target = document.context.lookup(object);
       if (!target) {
-        throw new PdfError(
-          "invalid",
-          "A required PDF object is missing. Export a new copy using another PDF tool.",
-        );
+        missingObjects = true;
+      } else {
+        pending.push(target);
       }
-      pending.push(target);
     } else if (object instanceof PDFInvalidObject) {
       throw new PdfError(
         "invalid",
@@ -67,7 +70,7 @@ export const inspectDocument = (document: PDFDocument, limits: PdfLimits = {}): 
       if (type === "/Sig" || fieldType === "/Sig") {
         hasSignatures = true;
       }
-      if (fieldType || object.get(PDFName.of("Subtype"))?.toString() === "/Widget") {
+      if (fieldType || object.lookup(PDFName.of("Subtype"))?.toString() === "/Widget") {
         hasForms = true;
       }
       for (const [key, value] of object.entries()) {
@@ -109,9 +112,24 @@ export const inspectDocument = (document: PDFDocument, limits: PdfLimits = {}): 
     );
   }
   if (hasForms) {
+    if (acroForm?.has(PDFName.of("XFA"))) {
+      throw new PdfError(
+        "unsupported",
+        "Interactive form fields use XFA, which cannot be preserved safely here. Use a standard AcroForm PDF. No flattened substitute will be generated.",
+      );
+    }
+    if (!allowForms) {
+      throw new PdfError(
+        "unsupported",
+        "Interactive form fields detected. This operation cannot preserve their editability.",
+        "forms",
+      );
+    }
+  }
+  if (missingObjects) {
     throw new PdfError(
-      "unsupported",
-      "Interactive form fields detected. Export a flattened, noninteractive copy using another PDF tool.",
+      "invalid",
+      "A required PDF object is missing. Export a new copy using another PDF tool.",
     );
   }
   if (document.context.trailerInfo.Info) {
@@ -173,5 +191,9 @@ export const inspectDocument = (document: PDFDocument, limits: PdfLimits = {}): 
       throw new PdfError("invalid", "A page content stream is invalid.");
     }
   }
-  return { pageCount: pages.length, warnings: [...warnings] };
+  return {
+    pageCount: pages.length,
+    warnings: [...warnings],
+    ...(hasForms ? { hasEditableForms: true } : {}),
+  };
 };

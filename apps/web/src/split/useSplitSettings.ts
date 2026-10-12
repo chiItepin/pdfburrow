@@ -2,6 +2,7 @@ import { useState } from "react";
 import { planSplit } from "@repo/pdf-engine/selection";
 import type { SplitPlan, SplitSelection } from "@repo/pdf-engine";
 import { pdfLimits } from "../workspace/resourcePolicy";
+import type { SplitOperation } from "./splitOperation";
 
 export interface RangeRow {
   readonly id: string;
@@ -14,7 +15,7 @@ export const useSplitSettings = (
   pageCount: number,
   tool: "split" | "remove" = "split",
 ) => {
-  const [mode, setMode] = useState<Exclude<SplitSelection["mode"], "remove">>("selected");
+  const [mode, setMode] = useState<SplitOperation>("selected");
   const [pages, setPages] = useState<readonly number[]>([]);
   const [pageOrder, setPageOrder] = useState<readonly number[] | null>(null);
   const order = pageOrder ?? Array.from({ length: pageCount }, (_, index) => index + 1);
@@ -22,23 +23,28 @@ export const useSplitSettings = (
   const [ranges, setRanges] = useState<readonly RangeRow[]>([]);
   const [combined, setCombined] = useState(true);
   const [size, setSize] = useState("1");
-  const selection: SplitSelection =
+  const selection: SplitSelection | undefined =
     tool === "remove"
       ? { mode: "remove", pages }
-      : mode === "selected"
-        ? { mode, pages: order.filter((page) => selected.has(page)) }
-        : mode === "ranges"
-          ? {
-              mode,
-              ranges: ranges.map(({ start, end }) => ({ start: Number(start), end: Number(end) })),
-              combined,
-            }
-          : mode === "fixed"
-            ? { mode, size: Number(size) }
-            : { mode };
+      : mode === "sets"
+        ? undefined
+        : mode === "selected"
+          ? { mode, pages: order.filter((page) => selected.has(page)) }
+          : mode === "ranges"
+            ? {
+                mode,
+                ranges: ranges.map(({ start, end }) => ({
+                  start: Number(start),
+                  end: Number(end),
+                })),
+                combined,
+              }
+            : mode === "fixed"
+              ? { mode, size: Number(size) }
+              : { mode };
   let plan: SplitPlan | undefined;
   let error = "";
-  if (pageCount > 0) {
+  if (pageCount > 0 && selection) {
     try {
       plan = planSplit(name, pageCount, selection, pdfLimits);
     } catch (failure) {

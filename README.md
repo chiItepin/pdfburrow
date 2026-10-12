@@ -103,7 +103,7 @@ independent of UI zoom, crop origins, and page-local UserUnit.
 
 Markup additionally rejects **any nonempty page annotation array**, including links,
 hidden and nonprinting annotations. Obtain a flattened, noninteractive source externally;
-Merge's annotation warning policy is unchanged. Encryption, forms, digital signatures,
+Merge's annotation warning policy is unchanged. Markup still rejects forms. Encryption, digital signatures,
 structural/geometry checks and the existing provisional PDF resource limits still apply.
 One page preview is rendered at a time with a bounded 1600-pixel maximum dimension;
 this is not a calibrated memory guarantee.
@@ -203,18 +203,47 @@ not a measured virtualization crossover.
   rasterizing pages. Output naming is `<first-input-stem>-merged.pdf`, with unsafe
   characters replaced and an empty-stem fallback of `document`.
 - Required worker validation rejects encrypted, zero-page, unparseable,
-  structurally invalid, form-bearing, and detected digitally signed inputs.
+  structurally invalid, XFA, unsupported form variants, and detected digitally signed inputs.
   Page-tree checks reject missing/unknown children, repeated or cyclic references,
   inconsistent parents, and incorrect page counts before the writer can silently
   omit pages. Valid nested trees retain inherited page geometry and resources.
   Rejected files remain visible and block merging until retried or removed.
-  No password bypass, repair, flattening, or silent skipping is implemented.
+  No password bypass, general repair, or silent skipping is implemented.
+  Standard AcroForm text fields, checkboxes, radio buttons, and single-select
+  dropdowns stay editable on exported pages, retaining current/default values,
+  field flags, names, options, and shared-widget relationships. There is no
+  flattening mode or automatic flattened fallback in Merge, Split, Page sets, or
+  Remove pages. If field preservation is unsafe, validation or generation fails
+  explicitly without publishing a substitute.
+  Visible page widgets, rather than a possibly stale catalog field list, define
+  the fields to preserve. Current appearances are regenerated and text is fitted
+  to field boxes; fonts and appearance can change. Outputs retain vector/text
+  content and page geometry. Fields with no widgets on exported pages are excluded;
+  remaining widgets of one field share its value. Repeated pages get separate
+  widget annotations connected to the same logical field, without copying omitted
+  pages through field references. Export options stay aligned with selected widgets.
+  Distinct input documents never share a field merely because its name matches:
+  merged-name collisions receive deterministic `_2`, `_3`, etc. suffixes on
+  the first name segment (for example, `claim.name` becomes `claim_2.name`).
+  Field-name hierarchies remain valid rather than storing dotted partial names.
+  Password, rich-text, push-button, list/multiselect, scripted/calculated, and
+  unsupported text-encoding fields remain blocked rather than silently losing data.
+  XFA and digital signatures remain unsupported. Missing references to discarded
+  catalog features (such as accessibility tags) do not block a preserved form,
+  but the resulting document must pass the original strict structural checks.
+  Required page content and resource references are not repaired or ignored.
+  Flat PDFs with missing references remain rejected.
 - Every PDF input set requires acknowledgement: this is page-focused rewriting,
   not lossless preservation. Annotations and visible marks may change or
   disappear; bookmarks, attachments, metadata, accessibility, and PDF/A guarantees
-  are not preserved. Detection is not exhaustive.
+  are not preserved. Editable-form behavior is disclosed on file cards and in the
+  acknowledgement; review downloaded PDFs. Original files
+  are unchanged. Detection is not exhaustive.
 - Adding/removing files clears acknowledgement; reordering does not. Optional
   first-page thumbnails do not establish export support or replace validation.
+  Form thumbnails use the same local preparation path as generation, in a
+  cancellable worker. A preview queue reuses its prepared copy across visible
+  pages and releases it with the queue; originals remain in the file registry.
 - File cards use shared shadcn Attachment components with uncropped page previews.
   Queued, rendering, paused, and failed previews have distinct feedback.
   **Retry preview** queues only that thumbnail without restarting an in-flight
@@ -278,6 +307,34 @@ Remove the source or start over to choose another PDF.
 - **Fixed page-count groups:** choose a whole number from 1 through the source page
   count. Consecutive groups retain a shorter final group.
 - **Every page:** create one PDF per source page, in source order.
+- **Page sets** (optional under **Choose an operation**): every page starts as a
+  separate PDF. Select any pages and choose **Group into one PDF** to combine them;
+  pages are not duplicated. Grouping pages already together preserves the other
+  members. **Separate pages** restores individual PDFs. **Your downloads** shows
+  the number of PDFs and labels each by its source pages (for example, **Pages 1 + 3**
+  or **Page 2**), not an internal set number. Source page cards show only their
+  original page numbers and previews, without PDF membership labels.
+  Grouping and separating pages show Sonner confirmations after the change is
+  applied; pending or cancelled discard confirmations do not report success.
+  Pages in each PDF follow the arranged thumbnail order.
+  Each PDF has its own **Download PDF** button: that click generates only that PDF
+  locally and requests its download. There is no bulk-generation or ZIP step in
+  this operation. Validation and preservation acknowledgement still apply.
+  Switching operations retains sets for the same source; changing sources clears
+  them. Selected pages remains the default operation.
+
+Page set downloads use page-based names such as `<source>-pages-1-3.pdf` or
+`<source>-page-2.pdf`, with the shared filename sanitizer. For groups above eight
+pages, filenames use the count and first exported page, such as
+`<source>-20-pages-from-1.pdf`, to avoid long page lists. Internal identities remain
+stable but are not shown. Only the latest generated set is retained for download retries; other sets
+are generated when requested. If a download request fails, its PDF stays available
+and clearing it requires confirmation. A ready PDF can be downloaded again if the
+browser did not save it; a download request is not proof of a saved file.
+Generation/cancellation locks editing and navigation. Cancellation or failure preserves
+sets without publishing partial outputs. The existing job limits apply to the clicked
+set, not the number of conceptual sets: a supported source above 50 pages can still
+expose individual page sets without generating 50-plus outputs at once.
 
 Bounded numeric controls have no comma-separated expression grammar. Incomplete,
 reversed, fractional and out-of-bounds settings disable generation and remove the
