@@ -8,15 +8,16 @@ import {
   recordBytes,
   sealAlgorithm,
   sealIntent,
-  sealPdfLimit,
 } from "./sealFormat.ts";
 import type { SealProof, SealRecord } from "./sealFormat.ts";
 import { importSealPublicKey, keyFingerprint } from "./sealKeys.ts";
 import type { SealSigner } from "./sealKeys.ts";
+import { sealPdfLimit } from "./sealPolicy.ts";
 
 export { createSealKey, unlockSealKey } from "./sealKeys.ts";
 export type { SealSigner } from "./sealKeys.ts";
-export { sealFileLimit, sealPdfLimit, sealIntent } from "./sealFormat.ts";
+export { sealIntent } from "./sealFormat.ts";
+export { sealFileLimit, sealPdfLimit } from "./sealPolicy.ts";
 
 export type SealVerification =
   | { readonly state: "invalid"; readonly message: string }

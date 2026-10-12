@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { createRequire } from "node:module";
+import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { createSealSession } from "../apps/web/src/seal/sealSession.ts";
 
@@ -82,4 +84,49 @@ test("rejected oversized sidecars preserve retained files and session state", ()
   assert.throws(() => session.select("key", new File([], "empty.json")), /nonempty/);
   assert.equal(session.snapshot().keyFileName, "");
   session.clear();
+});
+
+test("seal sessions load limits eagerly but defer cryptographic capability modules", async () => {
+  const requireWeb = createRequire(new URL("../apps/web/package.json", import.meta.url));
+  const { build } = requireWeb("esbuild");
+  const { metafile } = await build({
+    entryPoints: [fileURLToPath(new URL("../apps/web/src/seal/sealSession.ts", import.meta.url))],
+    outdir: "unused-seal-test-output",
+    bundle: true,
+    splitting: true,
+    format: "esm",
+    write: false,
+    metafile: true,
+  });
+  const entry = Object.entries(metafile.outputs).find(([, output]) =>
+    output.entryPoint?.endsWith("/sealSession.ts"),
+  );
+  assert.ok(entry);
+  const initial = new Set();
+  const visit = (path) => {
+    if (initial.has(path)) {
+      return;
+    }
+    initial.add(path);
+    const output = metafile.outputs[path];
+    assert.ok(output);
+    for (const dependency of output.imports) {
+      if (!dependency.external && dependency.kind !== "dynamic-import") {
+        visit(dependency.path);
+      }
+    }
+  };
+  visit(entry[0]);
+  const eagerInputs = [...initial].flatMap((path) => Object.keys(metafile.outputs[path].inputs));
+  const deferredInputs = Object.entries(metafile.outputs)
+    .filter(([path]) => !initial.has(path))
+    .flatMap(([, output]) => Object.keys(output.inputs));
+  for (const filename of ["personalSeal.ts", "sealKeys.ts", "sealFormat.ts"]) {
+    assert.ok(!eagerInputs.some((path) => path.endsWith(`/${filename}`)), `${filename} is eager`);
+    assert.ok(
+      deferredInputs.some((path) => path.endsWith(`/${filename}`)),
+      `${filename} is not deferred`,
+    );
+  }
+  assert.ok(eagerInputs.some((path) => path.endsWith("/sealPolicy.ts")));
 });

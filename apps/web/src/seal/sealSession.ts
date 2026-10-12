@@ -1,5 +1,5 @@
 import { safeFilenameStem } from "@repo/pdf-engine/filename";
-import { sealFileLimit, sealPdfLimit } from "@repo/pdf-engine/personal-seal";
+import { sealFileLimit, sealPdfLimit } from "@repo/pdf-engine/personal-seal-policy";
 import type { SealSigner, SealVerification } from "@repo/pdf-engine/personal-seal";
 
 type OutputKind = "key" | "proof";

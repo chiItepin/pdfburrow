@@ -60,7 +60,9 @@ use React, TypeScript, shadcn/ui, and a small esbuild build; do not add Vite.
   `@repo/pdf-engine/image-layout` owns lightweight image geometry and output naming
   without importing browser decoders or PDF generation libraries.
 - `@repo/pdf-engine/personal-seal` owns the versioned detached proof and encrypted-key
-  formats using Web Crypto, without parsing or rewriting PDFs. `web/src/seal` owns
+  formats using Web Crypto, without parsing or rewriting PDFs.
+  `@repo/pdf-engine/personal-seal-policy` exposes dependency-free input limits so
+  eager UI validation does not load the cryptographic capability. `web/src/seal` owns
   tab-only keys, input/output buffers, explicit JSON downloads, and navigation locking.
   Do not present an included proof key as trusted without an independently supplied
   fingerprint, or reuse PDF-output naming for JSON key/proof files.

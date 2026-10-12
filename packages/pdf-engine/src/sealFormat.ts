@@ -1,7 +1,7 @@
+import { sealFileLimit, sealPdfLimit } from "./sealPolicy.ts";
+
 export const sealAlgorithm = "ECDSA-P256-SHA256";
 export const sealIntent = "I approve the contents of this PDF.";
-export const sealFileLimit = 16 * 1024;
-export const sealPdfLimit = 20 * 1024 * 1024;
 
 export interface SealRecord {
   readonly format: "pdfburrow-personal-seal";
