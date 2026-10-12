@@ -1,6 +1,16 @@
 import type { ToolRoute } from "./routes";
 
 const guides = {
+  seal: {
+    title: "How to seal or verify a PDF",
+    steps: [
+      "Choose a final PDF, then create a key with a long passphrase or unlock an encrypted key backup.",
+      "Save the encrypted key backup, create a proof, and download it. Share the unchanged PDF and proof together.",
+      "To verify, choose the PDF and proof, optionally supply a separately trusted key fingerprint, and select Verify proof.",
+    ],
+    detail:
+      "ECDSA P-256 signs the SHA-256 document digest, byte count, approval statement, random nonce and public key in a versioned record. Proofs are detached, not PDF-reader certificate signatures. Keys and passwords are never automatically persisted. A valid proof alone does not verify identity, legal validity or signing time; independently confirm the signer fingerprint. PDF contents are not parsed or assessed for safety.",
+  },
   markup: {
     title: "How to sign and annotate a PDF",
     steps: [

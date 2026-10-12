@@ -1,4 +1,4 @@
-import { Files, Images, Scissors, FileMinus, Signature } from "lucide-react";
+import { Files, Images, Scissors, FileMinus, Signature, ShieldCheck } from "lucide-react";
 
 export const tools = [
   {
@@ -7,6 +7,12 @@ export const tools = [
     description:
       "Draw your signature, highlight passages, and add notes without uploading your PDF.",
     icon: Signature,
+  },
+  {
+    route: "seal",
+    label: "Personal seal",
+    description: "Sign exact PDF bytes with a local key, or verify a separate cryptographic proof.",
+    icon: ShieldCheck,
   },
   {
     route: "merge",

@@ -122,6 +122,39 @@ export const configFor = (layer) => {
           },
         ]
       : []),
+    ...(layer === "web"
+      ? tseslint.config({
+          files: ["src/**/*.tsx"],
+          // Pre-existing controls only. Remove entries as screens migrate; never add exemptions.
+          ignores: [
+            "src/images/ImageSettings.tsx",
+            "src/markup/GoToPage.tsx",
+            "src/markup/MarkupOutput.tsx",
+            "src/markup/MarkupProperties.tsx",
+            "src/markup/NoteEditor.tsx",
+            "src/markup/ObjectControls.tsx",
+            "src/markup/SignatureCapture.tsx",
+            "src/markup/ZoomLevel.tsx",
+            "src/split/ModePicker.tsx",
+            "src/split/RangeEditor.tsx",
+            "src/split/SelectionSettings.tsx",
+            "src/split/SortablePage.tsx",
+            "src/workspace/PreservationNotice.tsx",
+            "src/workspace/ToolNavigation.tsx",
+          ],
+          rules: {
+            "no-restricted-syntax": [
+              "error",
+              {
+                selector:
+                  "JSXOpeningElement[name.type='JSXIdentifier'][name.name=/^(input|textarea|select|button|label)$/]",
+                message:
+                  "Use shadcn components from @repo/core-ui. Add missing shared primitives first; do not hand-style native controls in feature JSX.",
+              },
+            ],
+          },
+        })
+      : []),
   );
 };
 

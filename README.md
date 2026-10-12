@@ -1,6 +1,6 @@
 # PDFBurrow
 
-A React + TypeScript local document workspace with **Sign & annotate PDF**, **Merge PDFs**,
+A React + TypeScript local document workspace with **Sign & annotate PDF**, **Personal seal**, **Merge PDFs**,
 **Split / Extract**, **Remove pages**, and **Images to PDF**. Add visual signatures
 and markup, combine whole PDFs, choose or remove pages from one source, or convert
 ordered static JPEG/PNG images, then explicitly download
@@ -117,9 +117,55 @@ the PDF, all marks, history and outputs and cannot be undone. Cancellation termi
 writer worker and retains the draft. No release, deployment, lossless-preservation or
 device-safety guarantee is implied.
 
+## Personal seal
+
+Choose **Personal seal** or open `seal/` (`#/seal` also works). This is separate from
+drawn markup: it signs exact final PDF bytes without rewriting the file. Finish any
+edits first, then choose the final PDF (at most 20 MiB).
+
+Create a reusable signing key with a 12-1024-character password, confirmed twice.
+Use a long, unique passphrase. Explicitly **Download encrypted key** and confirm
+it was saved before **Create proof**. Alternatively, import an existing encrypted
+key and unlock it. There is no password or key recovery, account, upload, automatic
+download, or browser persistence. The unlocked private key is nonextractable and
+retained only in tab memory. Reset, confirmed tool navigation, refresh, or closing
+the tab loses it. Clearing references is not forensic memory erasure.
+
+**Download proof** saves `<source>.proof.json`. Share the unchanged PDF and proof
+together; the PDF is already your original file and does not need another download.
+Share the full `SHA256:` public-key fingerprint through a separate trusted channel.
+Verification accepts the PDF, proof and optional trusted fingerprint. It distinguishes
+document mismatch, invalid signature, unconfirmed signer, matching trusted key, and
+valid proof from an unexpected key. A valid proof without an independently trusted
+fingerprint cannot establish who signed: both PDF and proof could be replaced.
+Matching a fingerprint establishes key continuity, not verified personal identity.
+
+The version-1 proof uses ECDSA P-256/SHA-256 (64-byte IEEE P1363 signature).
+It signs UTF-8 JSON in the fixed field order `format`, `version`, `algorithm`,
+`publicKey`, `document` (in order: `sha256`, `bytes`), `intent`, `nonce`.
+`format` is `pdfburrow-personal-seal`; `algorithm` is `ECDSA-P256-SHA256`;
+`publicKey` is canonical base64 SPKI; the lowercase hexadecimal document digest
+covers every PDF byte; `intent` is exactly `I approve the contents of this PDF.`;
+`nonce` is 16 random bytes encoded as lowercase hex. The detached JSON adds a
+canonical base64 `signature` field. Verification rejects unsupported fields,
+versions, encodings and sizes, and reconstructs the signed record independently
+of the supplied JSON property order.
+
+Key backups use PKCS#8 encrypted with AES-256-GCM, a random 16-byte salt and
+12-byte IV, a 128-bit authentication tag, and PBKDF2-HMAC-SHA-256 with exactly
+600,000 iterations. Versioned metadata and the public key are authenticated as
+additional data. Key and proof inputs are bounded to 16 KiB before reading.
+This is an experimental custom detached proof format, **not CMS/PAdES or an
+embedded signature recognized by PDF readers**. It provides no trusted timestamp,
+certificate identity, revocation service, legal-validity or device-safety guarantee.
+The seal tool checks only a PDF header and bytes, not page count, document structure,
+embedded signatures or content safety; it does not alter existing PDF signatures.
+Crypto operations lock tool navigation until completion; they do not offer cancellation.
+Passkey/touch-to-seal signing is a subsequent phase, not implemented here.
+
 ## Shared workspace
 
-- The responsive shadcn sidebar contains Home and the five document tools; on
+- The responsive shadcn sidebar contains Home and the six document tools; on
   phones it opens as a keyboard-accessible drawer. The page header uses breadcrumbs,
   with a compact ellipsis menu on narrow screens. Every navigation entry preserves
   the same discard confirmation and processing lock.

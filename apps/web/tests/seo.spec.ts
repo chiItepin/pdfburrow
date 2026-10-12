@@ -6,6 +6,7 @@ const siteOrigin = process.env.PDFBURROW_SITE_ORIGIN ?? "https://chiitepin.githu
 const pages = [
   ["", "Home"],
   ["sign/", "Sign & annotate PDF"],
+  ["seal/", "Personal seal"],
   ["merge/", "Merge PDFs"],
   ["split/", "Split / Extract"],
   ["remove/", "Remove pages"],
@@ -117,7 +118,7 @@ test("direct tool URLs survive refresh, stay local and keep metadata synchronize
     await page.goto(`./${path}`);
     await page.reload();
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(heading);
-    await expect(page.locator('input[type="file"]')).toBeAttached();
+    await expect(page.locator('input[type="file"]').first()).toBeAttached();
     await expect(page.getByRole("link", { name: "Privacy", exact: true })).toHaveAttribute(
       "href",
       `${basePath}privacy.html`,

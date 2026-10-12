@@ -1,4 +1,8 @@
 export { Button } from "./primitives/Button";
+export { Input } from "./primitives/Input";
+export { Label } from "./primitives/Label";
+export { Field, FieldLabel, FieldDescription } from "./primitives/Field";
+export { RadioGroup, RadioGroupItem } from "./primitives/RadioGroup";
 export { NativeSelect, NativeSelectOption } from "./primitives/NativeSelect";
 export {
   Menubar,

@@ -16,7 +16,8 @@
     "./bundle": "./src/bundle/index.ts",
     "./image-preview": "./src/image-preview/index.ts",
     "./markup": "./src/markup/index.ts",
-    "./markup-layout": "./src/markupLayout.ts"
+    "./markup-layout": "./src/markupLayout.ts",
+    "./personal-seal": "./src/personalSeal.ts"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json && tsc -p tsconfig.worker.json",
