@@ -127,6 +127,7 @@ export const useDownloads = (announce: (message: string) => void) => {
     prepareBundle,
     needsDownload: store.needsDownload,
     usage: store.usage,
+    values: store.values,
     cancel: () => {
       if (controller.current) {
         setPackaging({ phase: "cancelling" });

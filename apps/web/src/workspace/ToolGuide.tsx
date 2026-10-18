@@ -1,6 +1,16 @@
 import type { ToolRoute } from "./routes";
 
 const guides = {
+  forms: {
+    title: "How to fill and sign a PDF form",
+    steps: [
+      "Add one standard AcroForm PDF and wait for local validation.",
+      "Fill the highlighted controls on each page, or use the accessible Field list. Required markers are reminders; you can save an incomplete form.",
+      "Generate an editable filled PDF and download it, or explicitly flatten a copy and continue to the visual signature editor.",
+    ],
+    detail:
+      "Values live only in this tab. Text fields, checkboxes, radio buttons and fixed-option dropdowns are supported. Read-only fields stay locked. XFA, scripts, calculations, digital signatures, hidden or nonprinting controls, and additional annotations or links are rejected. Field appearance may change; review the output. Flattening removes field editability, not the ability to alter a PDF. Visual signatures are not cryptographic signatures.",
+  },
   seal: {
     title: "How to seal or verify a PDF",
     steps: [

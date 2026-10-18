@@ -15,23 +15,25 @@ import { ToolSettingsProvider } from "./workspace/ToolSettingsSidebar";
 import { useTheme } from "./workspace/ThemeProvider";
 import { usePersonalSeal } from "./seal/usePersonalSeal";
 import { SealWorkspace } from "./seal/SealWorkspace";
+import { FormWorkspace } from "./forms/FormWorkspace";
 
 export const App = ({ initialRoute }: { initialRoute?: ToolRoute }) => {
   const workspace = useDocumentWorkspace();
   const seal = usePersonalSeal();
   const locked = workspace.execution.locked || workspace.interactionLocked || seal.busy;
   const { theme } = useTheme();
-  const { route, heading, confirmation, notice, request, keep, discard } = useToolNavigation(
-    {
-      hasWork: workspace.draft.inputs.length > 0 || seal.hasWork,
-      locked,
-      discard: () => {
-        workspace.discardForNavigation();
-        seal.discard();
+  const { route, heading, confirmation, notice, request, keep, discard, transfer } =
+    useToolNavigation(
+      {
+        hasWork: workspace.draft.inputs.length > 0 || seal.hasWork,
+        locked,
+        discard: () => {
+          workspace.discardForNavigation();
+          seal.discard();
+        },
       },
-    },
-    initialRoute,
-  );
+      initialRoute,
+    );
   return (
     <SidebarProvider className="h-dvh min-h-0 overflow-hidden bg-background md:m-4 md:h-[calc(100dvh-2rem)] md:rounded-xl md:border md:border-y-0">
       <a
@@ -61,7 +63,24 @@ export const App = ({ initialRoute }: { initialRoute?: ToolRoute }) => {
                     {notice}
                   </p>
                 )}
-                {route === "seal" ? (
+                {route === "forms" ? (
+                  <FormWorkspace
+                    workspace={workspace}
+                    onSign={(output) =>
+                      transfer("markup", () => {
+                        workspace.discardForNavigation();
+                        workspace.draft.addFiles(
+                          [
+                            new File([output.blob], output.suggestedFilename, {
+                              type: "application/pdf",
+                            }),
+                          ],
+                          "markup",
+                        );
+                      })
+                    }
+                  />
+                ) : route === "seal" ? (
                   <SealWorkspace seal={seal} />
                 ) : route === "markup" ? (
                   <MarkupWorkspace workspace={workspace} />

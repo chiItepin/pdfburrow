@@ -53,6 +53,8 @@ export const useToolNavigation = (guard: NavigationGuard, initialRoute?: ToolRou
     request: (next: ToolRoute) => {
       controller.current?.request(next);
     },
+    transfer: (next: ToolRoute, replaceDraft: () => void) =>
+      controller.current?.transfer(next, replaceDraft) ?? false,
     keep: () => {
       controller.current?.keep();
     },

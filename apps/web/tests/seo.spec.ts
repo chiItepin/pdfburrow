@@ -5,6 +5,7 @@ const basePath = process.env.PDFBURROW_BASE_PATH ?? "/pdfburrow/";
 const siteOrigin = process.env.PDFBURROW_SITE_ORIGIN ?? "https://chiitepin.github.io";
 const pages = [
   ["", "Home"],
+  ["forms/", "Fill & sign"],
   ["sign/", "Sign & annotate PDF"],
   ["seal/", "Personal seal"],
   ["merge/", "Merge PDFs"],

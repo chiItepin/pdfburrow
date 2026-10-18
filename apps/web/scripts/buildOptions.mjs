@@ -24,6 +24,8 @@ export const buildOptions = (development) => ({
     main: "src/Main.tsx",
     merge: "../../packages/pdf-engine/src/merge/index.ts",
     markup: "../../packages/pdf-engine/src/markup/index.ts",
+    forms: "../../packages/pdf-engine/src/forms/index.ts",
+    "forms.worker": "../../packages/pdf-engine/src/forms.worker.ts",
     "markup.worker": "../../packages/pdf-engine/src/markup.worker.ts",
     split: "../../packages/pdf-engine/src/split/index.ts",
     "split.worker": "../../packages/pdf-engine/src/split.worker.ts",

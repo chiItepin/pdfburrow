@@ -10,6 +10,9 @@ Document work performed on the user's device without PDFBurrow uploading inputs,
 **Input**:
 An original document or image supplied by the user for processing.
 
+**Input preparation**:
+The assessment and supported adjustments that make an Input suitable for a selected document operation. It is distinct from an optional preview and from the Job that produces an Output; the original Input remains unchanged.
+
 **Output**:
 A generated PDF produced from the user's inputs and selected operation.
 

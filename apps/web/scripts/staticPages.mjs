@@ -56,6 +56,7 @@ export const writeStaticPages = async () => {
         "react-dom/*",
         "@repo/pdf-engine/merge",
         "@repo/pdf-engine/markup",
+        "@repo/pdf-engine/forms",
         "@repo/pdf-engine/markup-layout",
         "@repo/pdf-engine/split",
         "@repo/pdf-engine/images",
