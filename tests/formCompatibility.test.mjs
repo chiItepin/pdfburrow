@@ -9,7 +9,7 @@ import { createCompatibilityForm } from "../apps/web/tests/fixtures/formCompatib
 import { inspectArtifact } from "../apps/web/tests/fixtures/pdfArtifacts.ts";
 
 const require = createRequire(new URL("../packages/pdf-engine/package.json", import.meta.url));
-const { PDFDocument, PDFName, PDFRef } = require("pdf-lib");
+const { PDFDocument, PDFDict, PDFName, PDFRef } = require("pdf-lib");
 const inputFor = async (document) => ({
   id: "compatibility",
   name: "compatibility.pdf",
@@ -20,6 +20,19 @@ const requestFor = (input, info) => ({
   acknowledged: true,
   flatten: false,
   values: info.fields.map(({ name, value }) => ({ name, value })),
+});
+
+test("the stale-catalog fixture contains conflicting catalog and visible-widget values", async () => {
+  const input = await inputFor(await createCompatibilityForm());
+  const source = await PDFDocument.load(await input.blob.arrayBuffer());
+  const catalogField = source.getForm().getTextField("Name");
+  assert.equal(catalogField.getText(), "Stale catalog value");
+  const widget = source.getPage(0).node.Annots().lookup(0, PDFDict);
+  const visibleField = widget.lookup(PDFName.of("Parent"), PDFDict);
+  assert.notEqual(visibleField, catalogField.acroField.dict);
+  assert.equal(visibleField.lookup(PDFName.of("V")).decodeText(), "Current value");
+  const prepared = await inspectFillablePdf(input);
+  assert.equal(prepared.fields.find((field) => field.name === "Name").value, "Current value");
 });
 
 for (const feature of ["brokenTags", "staleCatalog", "alternateCheckboxes"]) {

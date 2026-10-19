@@ -81,6 +81,38 @@ test("protected internals cannot escape through runtime re-exports or opaque imp
   }
 });
 
+test("protected imports remain direct calls inside their owners, not alias exports", async () => {
+  for (const [module, name, owner] of internals) {
+    for (const escape of [
+      "export const bypass = run;",
+      "const alias = run; export { alias as bypass };",
+      "export const bypass = { run };",
+      "export const bypass = run.bind(null);",
+      "export const bypass = () => Promise.resolve(run);",
+    ]) {
+      const exporter = `import { ${name} as run } from "./${module}.ts"; ${escape}`;
+      const importer = `import { bypass } from "./${owner}.ts"; export const use = () => bypass();`;
+      const results = await Promise.all([
+        eslint.lintText(exporter, { filePath: `src/${owner}.ts` }),
+        eslint.lintText(importer, { filePath: "src/newCapability.ts" }),
+      ]);
+      assert.ok(
+        results
+          .flat()
+          .flatMap((result) => result.messages)
+          .some((message) => message.ruleId === ruleId),
+        `${owner}: ${escape}`,
+      );
+      await check(exporter, true, `src/${owner}.ts`);
+    }
+    await check(
+      `import { ${name} as run } from "./${module}.ts"; export type Preparation = typeof run; export const use = () => run();`,
+      false,
+      `src/${owner}.ts`,
+    );
+  }
+});
+
 test("preparation types and the public field-description helper remain accessible", async () => {
   for (const [module, name] of internals) {
     await check(
@@ -168,6 +200,7 @@ test("creation, instances, unrelated imports, previews, and type references rema
     'import type { PDFDocument } from "pdf-lib"; export const save = (doc: PDFDocument) => doc.save();',
     'import { type PDFDocument, PDFName } from "pdf-lib"; export const entry = PDFName.of("Name"); export type Doc = PDFDocument;',
     'import type { PDFDocument } from "pdf-lib"; export type Constructor = typeof PDFDocument;',
+    'import { PDFDocument } from "pdf-lib"; export type Constructor = typeof PDFDocument; export const make = PDFDocument.create;',
     'import { type PDFDocument } from "pdf-lib/es/index.js"; export type Doc = PDFDocument;',
     'export type { PDFDocument } from "pdf-lib";',
     'export { type PDFDocument, PDFName } from "pdf-lib";',

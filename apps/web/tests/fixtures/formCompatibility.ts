@@ -37,7 +37,7 @@ export const createCompatibilityForm = async ({
         return document.context.register(copy);
       });
       detached.set(PDFName.of("Kids"), document.context.obj(widgets));
-      if (field === text) {
+      if (field.ref === text.ref) {
         detached.set(PDFName.of("V"), PDFHexString.fromText("Stale catalog value"));
       }
       return ref;

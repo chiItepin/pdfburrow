@@ -16,6 +16,7 @@ const internals = new Map([
 
 /** @param {import("eslint").JSSyntaxElement} node */
 const isTypeOnly = (node) =>
+  node.type === "TSTypeQuery" ||
   ("importKind" in node && node.importKind === "type") ||
   ("exportKind" in node && node.exportKind === "type") ||
   ("isTypeOnly" in node && node.isTypeOnly === true);
@@ -49,6 +50,8 @@ const preparationBoundary = {
         "Use explicit named ESM imports from the public module so PDF preparation ownership can be checked; use loadValidatedPdf for existing PDFs.",
       reexport:
         "Do not re-export PDFDocument or protected preparation functions. Expose loadValidatedPdf or a capability instead.",
+      reference:
+        "Call protected preparation functions directly inside their owner; do not alias or pass the function. Use loadValidatedPdf for existing PDFs.",
       literal: "Use a string-literal module specifier so PDF preparation ownership can be checked.",
     },
   },
@@ -72,7 +75,7 @@ const preparationBoundary = {
 
     /**
      * Check references to the imported binding, not identifiers with the same spelling.
-     * Restrict constructor escape instead of attempting alias/data-flow analysis.
+     * Restrict binding escape instead of attempting alias/data-flow analysis.
      * @param {import("eslint").Scope.Variable} variable
      * @param {boolean} documentConstructor
      */
@@ -81,16 +84,19 @@ const preparationBoundary = {
         const node = reference.identifier;
         const ancestors = sourceCode.getAncestors(node);
         const parent = ancestors.at(-1);
-        const declaration = ancestors.at(-2);
         if (
           ("isValueReference" in reference && !reference.isValueReference) ||
-          (parent?.type === "ExportSpecifier" &&
-            (isTypeOnly(parent) || (declaration && isTypeOnly(declaration))))
+          ancestors.some(isTypeOnly)
         ) {
           continue;
         }
         if (parent?.type === "ExportSpecifier" || parent?.type === "ExportDefaultDeclaration") {
           context.report({ node, messageId: "reexport" });
+        } else if (
+          !documentConstructor &&
+          (parent?.type !== "CallExpression" || parent.callee !== node)
+        ) {
+          context.report({ node, messageId: "reference" });
         } else if (documentConstructor && filename !== loader) {
           const creating =
             parent?.type === "MemberExpression" &&
