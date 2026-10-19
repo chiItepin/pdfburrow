@@ -1,5 +1,6 @@
 import { EncryptedPDFError, PDFDocument } from "pdf-lib";
 import { preparePdfDocument } from "./preparePdfDocument.ts";
+import type { FormHandling } from "./preparePdfDocument.ts";
 import { copyPdfPages } from "./copyPdfPages.ts";
 import { PdfError } from "./pdfError.ts";
 import { pdfStem } from "./pdfFilename.ts";
@@ -32,7 +33,7 @@ const validateInputLimits = (inputs: readonly PdfInput[], limits: PdfLimits) => 
 export const loadValidatedPdf = async (
   input: PdfInput,
   limits: PdfLimits,
-  formHandling: "preserve" | "reject" = "preserve",
+  formHandling: FormHandling = "preserve",
 ) => {
   validateInputLimits([input], limits);
   const header = new Uint8Array(await input.blob.slice(0, 1024).arrayBuffer());

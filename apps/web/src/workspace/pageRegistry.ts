@@ -24,9 +24,20 @@ export const pageRegistry = [
     legacyHash: "#/",
     title: "PDFBurrow - Free PDF tools, no uploads",
     description:
-      "Sign and annotate PDFs, merge files, split or remove pages, or convert images to PDF in your browser. Free local tools with no uploads and no signup.",
+      "Fill PDF forms, sign and annotate PDFs, merge files, split or remove pages, or convert images to PDF in your browser. Free local tools with no uploads and no signup.",
     indexable: true,
     schema: { type: "WebSite", name: "PDFBurrow" },
+  },
+  {
+    route: "forms",
+    path: "forms/",
+    source: "react",
+    legacyHash: "#/forms",
+    title: "Fill PDF forms and sign locally, without uploads - PDFBurrow",
+    description:
+      "Fill standard PDF form fields on your device. Download an editable filled PDF, or explicitly flatten a copy and add a visual signature without uploads.",
+    indexable: true,
+    schema: { type: "SoftwareApplication", name: "PDFBurrow - Fill & sign" },
   },
   {
     route: "markup",

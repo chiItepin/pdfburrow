@@ -25,6 +25,7 @@ export default defineConfig({
     {
       name: "desktop-chromium",
       testMatch: [
+        "forms.spec.ts",
         "markup.spec.ts",
         "markupResize.spec.ts",
         "markupPan.spec.ts",
@@ -58,6 +59,7 @@ export default defineConfig({
     {
       name: "mobile-chromium",
       testMatch: [
+        "forms.spec.ts",
         "markup.spec.ts",
         "markupResize.spec.ts",
         "markupPan.spec.ts",
@@ -91,6 +93,7 @@ export default defineConfig({
     {
       name: "desktop-firefox",
       testMatch: [
+        "forms.spec.ts",
         "markup.spec.ts",
         "markupResize.spec.ts",
         "markupPan.spec.ts",
@@ -121,6 +124,7 @@ export default defineConfig({
     {
       name: "desktop-webkit",
       testMatch: [
+        "forms.spec.ts",
         "markup.spec.ts",
         "markupResize.spec.ts",
         "markupPan.spec.ts",
@@ -151,6 +155,7 @@ export default defineConfig({
     {
       name: "development-chromium",
       testMatch: [
+        "forms.spec.ts",
         "markup.spec.ts",
         "markupResize.spec.ts",
         "markupPan.spec.ts",

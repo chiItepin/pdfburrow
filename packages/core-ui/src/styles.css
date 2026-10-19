@@ -34,7 +34,8 @@
   --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-:root {
+:root,
+[data-theme="light"] {
   color-scheme: light;
   --background: #ffffff;
   --foreground: #20282d;

@@ -9,7 +9,7 @@ export const ToolIntroduction = ({
   route,
   onNavigate,
 }: {
-  route: Exclude<ToolRoute, "merge" | "split" | "remove" | "images" | "markup" | "seal">;
+  route: Exclude<ToolRoute, "merge" | "split" | "remove" | "images" | "markup" | "seal" | "forms">;
   onNavigate: (route: ToolRoute) => void;
 }) => (
   <section className="max-w-3xl py-10 sm:py-12" aria-label="Tool availability">
@@ -18,7 +18,7 @@ export const ToolIntroduction = ({
     </h2>
     <p className="mt-3 max-w-prose leading-relaxed text-muted-foreground">
       {route === "home"
-        ? "Sign and annotate a PDF, seal or verify its exact bytes, combine files, split and extract pages, remove unwanted pages, or turn JPEG and PNG images into PDFs. Free to use, with no signup."
+        ? "Fill PDF forms, sign and annotate a PDF, seal or verify its exact bytes, combine files, split and extract pages, remove unwanted pages, or turn JPEG and PNG images into PDFs. Free to use, with no signup."
         : "This address does not identify a PDFBurrow tool. No documents or settings can be restored from a link."}
     </p>
     <div className="mt-8 divide-y border-y">

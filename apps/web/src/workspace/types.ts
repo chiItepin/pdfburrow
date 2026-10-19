@@ -1,5 +1,6 @@
 import type {
   ImageInfo,
+  FormInfo,
   MarkupInfo,
   Outcome,
   PdfInfo,
@@ -11,10 +12,10 @@ export type InputRow = {
   id: string;
   name: string;
   size: number;
-  kind: "pdf" | "image" | "markup";
+  kind: "pdf" | "image" | "markup" | "form";
 } & (
   | { status: "pending" }
-  | { status: "ready"; info: PdfInfo | ImageInfo | MarkupInfo }
+  | { status: "ready"; info: PdfInfo | ImageInfo | MarkupInfo | FormInfo }
   | { status: "error"; message: string }
 );
 

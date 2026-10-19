@@ -1,6 +1,6 @@
 # PDFBurrow
 
-A React + TypeScript local document workspace with **Sign & annotate PDF**, **Personal seal**, **Merge PDFs**,
+A React + TypeScript local document workspace with **Fill & sign**, **Sign & annotate PDF**, **Personal seal**, **Merge PDFs**,
 **Split / Extract**, **Remove pages**, and **Images to PDF**. Add visual signatures
 and markup, combine whole PDFs, choose or remove pages from one source, or convert
 ordered static JPEG/PNG images, then explicitly download
@@ -45,6 +45,57 @@ eligible components and hooks without manual `useMemo`/`useCallback`; unsupporte
 async cleanup patterns keep their ordinary behavior and are reported in build
 diagnostics. The engine remains React-free. File/output stores use lazy state
 initialization for stable ownership, not a memoization cache.
+
+## Fill and sign a PDF form
+
+Choose **Fill & sign** or open `forms/` (`#/forms` also works). Add one standard
+AcroForm PDF, then edit highlighted controls on the page or switch to **Field list**
+for larger, labeled controls. Page navigation and zoom keep multi-page forms usable;
+Tab moves between controls and arrow keys choose radio options. Shared fields keep
+one value across their page widgets. Checkbox groups with different export values
+retain their individual choices: selecting one clears the others, and unchecking
+it clears the group.
+
+Text (including multiline), checkboxes, radio buttons and fixed-option dropdowns
+are supported. Read-only fields stay locked, text length limits are enforced, and
+required fields are marked. Required-field reminders do not block saving an
+incomplete form for someone else to finish. Form text uses the local standard PDF
+font's Western European character repertoire; unsupported characters produce an
+explicit error, never a substituted glyph.
+
+**Generate filled PDF**, then **Download filled PDF**, saves `<source>-filled.pdf`
+with real editable fields and their entered values. Original files are unchanged.
+Review the result: field fonts and appearances may change, and document-level
+features, metadata, accessibility and PDF/A guarantees are not preserved.
+
+For a visual signature, choose **Prepare for visual signature**, confirm **Flatten
+copy**, then **Continue to visual signing**. The generated copy's fields become
+fixed page content without rasterizing whole pages, and it is passed locally to
+the existing annotation editor. Save an editable filled PDF first if needed:
+continuing replaces the form draft in this tab. Flattening is not tamper protection;
+a visual signature is not a cryptographic signature. The flattened copy can also
+be downloaded directly.
+
+Validation rejects XFA, scripted/calculated behavior, digital signature fields,
+encrypted PDFs, unsupported field types, custom-entry dropdowns, hidden or
+nonprinting controls, fields with no visible counterpart, individually rotated widgets,
+controls outside the visible page, and additional annotations or links. It does
+not silently remove unsupported controls or flatten as a fallback. Flat/scanned
+forms without interactive fields belong in **Sign & annotate PDF**, not this tool.
+Filling uses the same page-focused preparation as Merge, Split, Remove pages and
+form previews: visible widgets repair a stale catalog, and broken references in
+discarded accessibility tags do not block otherwise supported forms. Required
+page content and resources are still validated and must not be missing. Filling
+adds editing-specific checks after that shared preparation; it does not maintain
+a separate normalization path.
+The provisional limits are 500 fields and 1,000 widgets in addition to the shared
+PDF limits; these are not calibrated memory guarantees. Flattened copies must
+also fit the signature editor's 20 MiB input limit before handoff.
+
+All values, previews and generated outputs remain in tab memory. Refresh loses
+the draft; tool navigation and reset require confirmation. Generation is
+cancellable and retains entered values. No upload, account, persistence or
+automatic download is introduced.
 
 ## Sign and annotate a PDF
 
@@ -172,7 +223,7 @@ Passkey/touch-to-seal signing is a subsequent phase, not implemented here.
 
 ## Shared workspace
 
-- The responsive shadcn sidebar contains Home and the six document tools; on
+- The responsive shadcn sidebar contains Home and the seven document tools; on
   phones it opens as a keyboard-accessible drawer. The page header uses breadcrumbs,
   with a compact ellipsis menu on narrow screens. Every navigation entry preserves
   the same discard confirmation and processing lock.
@@ -183,7 +234,7 @@ Passkey/touch-to-seal signing is a subsequent phase, not implemented here.
   Saved appearance is applied before the workspace loads and keeps supported
   browser chrome in sync with theme changes.
 - Choose a tool before adding files. Under the configured base, Home is `/`;
-  signing/markup is `sign/`; merge is `merge/`; split/extraction is `split/`;
+  form filling is `forms/`; signing/markup is `sign/`; merge is `merge/`; split/extraction is `split/`;
   page removal is `remove/`;
   JPEG/PNG conversion is `images/`.
   Hash routes `#/`, `#/markup`, `#/merge`, `#/split`, `#/remove`, and `#/images`
@@ -204,7 +255,7 @@ Passkey/touch-to-seal signing is a subsequent phase, not implemented here.
   removal, focus restoration, and status announcements remain available.
 - `apps/web/src/workspace` owns the file registry, required PDF/image validation queue,
   windowed inputs, preview cache, document job lifecycle, and output/download
-  ownership. All five tools share one draft/job owner and download lifecycle;
+  ownership. All six document-editing tools share one draft/job owner and download lifecycle;
   PDF tools additionally share preservation acknowledgement. Each feature supplies its operation and settings.
   `core-ui` owns the reusable file dropzone and dialog.
 - Shared downloads retain only metadata in React state and keep Blob references
@@ -540,6 +591,12 @@ npm run test:privacy
 tests, and a production build. Browser tests use separate production and
 development servers on ports 4173 and 4174. Concurrent worktrees can select distinct
 `PDFBURROW_TEST_PORT` and `PDFBURROW_TEST_DEV_PORT` values; existing servers are never reused.
+
+Pull requests run `npm run check` in a read-only, non-deploying workflow. This
+includes preparation-owner lint rules and acceptance/rejection checks for every
+PDF preparation policy. Adding a policy without compatibility expectations fails
+the check. Pages publication remains tag-driven; this workflow does not configure
+required merge checks or change repository permissions.
 
 Tests inspect real output counts/order, all page boxes/rotation, decoded
 text/vector streams, every-page render equivalence, keyboard/focus behavior,

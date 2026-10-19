@@ -136,6 +136,17 @@ export const createNavigation = (callbacks: NavigationCallbacks) => {
   window.addEventListener("popstate", pop);
   return {
     request,
+    transfer: (route: ToolRoute, replaceDraft: () => void) => {
+      if (restoring || pending || replay || callbacks.guard().locked) {
+        callbacks.blocked();
+        return false;
+      }
+      const entry: Entry = { owner: "pdfburrow", index: current.index + 1, route };
+      replaceDraft();
+      write(entry, false);
+      accept(entry, false);
+      return true;
+    },
     keep: () => {
       pending = null;
       callbacks.confirm(false);

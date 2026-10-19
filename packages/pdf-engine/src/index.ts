@@ -1,3 +1,4 @@
+export type { FormField, FormWidget, FormInfo, FormValue, FillFormRequest } from "./formTypes";
 export type {
   DocumentInput,
   PdfInput,

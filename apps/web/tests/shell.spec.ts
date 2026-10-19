@@ -13,6 +13,7 @@ test("sidebar and page breadcrumbs identify every tool without a top navigation 
 }) => {
   await page.goto("./");
   for (const name of [
+    "Fill & sign",
     "Sign & annotate PDF",
     "Personal seal",
     "Merge PDFs",
@@ -31,7 +32,7 @@ test("sidebar and page breadcrumbs identify every tool without a top navigation 
       "aria-current",
       "page",
     );
-    await expect(nav.getByRole("link")).toHaveCount(7);
+    await expect(nav.getByRole("link")).toHaveCount(8);
     await closeToolSidebar(page);
   }
 });

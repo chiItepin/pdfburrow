@@ -5,6 +5,7 @@ import reactHooks from "eslint-plugin-react-hooks";
 import jsxA11y from "eslint-plugin-jsx-a11y";
 import prettier from "eslint-config-prettier";
 import { filenameRules } from "./filenameRules.mjs";
+import { pdfPreparationRules } from "./pdfPreparationRules.mjs";
 
 /** @param {"web" | "ui" | "engine" | "tooling"} layer */
 export const configFor = (layer) => {
@@ -110,6 +111,28 @@ export const configFor = (layer) => {
       languageOptions: { globals: globals.node },
       rules: { "no-restricted-imports": "off" },
     },
+    ...(layer === "engine"
+      ? tseslint.config({
+          files: ["src/**/*.{ts,tsx,mts,cts,js,mjs,cjs}"],
+          plugins: { "repo-pdf": pdfPreparationRules },
+          rules: {
+            "repo-pdf/preparation-boundary": "error",
+            "no-restricted-globals": [
+              "error",
+              {
+                name: "require",
+                message:
+                  "Engine source is ESM. Use named imports so preparation ownership is checked.",
+              },
+              {
+                name: "module",
+                message:
+                  "Engine source is ESM. Use named imports so preparation ownership is checked.",
+              },
+            ],
+          },
+        })
+      : []),
     ...(layer === "web" || layer === "ui"
       ? [
           {

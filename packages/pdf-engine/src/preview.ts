@@ -1,4 +1,4 @@
-import { getDocument, PDFWorker } from "pdfjs-dist";
+import { AnnotationMode, getDocument, PDFWorker } from "pdfjs-dist";
 import { enforceLimit } from "./resourceLimits";
 import type { MarkupGeometry } from "./markupTypes";
 import type { PdfLimits, PdfProgress } from "./types";
@@ -30,6 +30,7 @@ export const preparePdfPreview = async (
 
 export interface PdfPreviewLimits {
   readonly inputBytes?: number;
+  readonly hideForms?: boolean;
 }
 /** The caller serializes previews and releases returned object URLs. */
 export const previewPdfPage = async (
@@ -78,7 +79,12 @@ export const previewPdfPage = async (
     });
     canvas.width = Math.ceil(viewport.width);
     canvas.height = Math.ceil(viewport.height);
-    await page.render({ canvas, viewport, background: "white" }).promise;
+    await page.render({
+      canvas,
+      viewport,
+      background: "white",
+      annotationMode: limits.hideForms ? AnnotationMode.DISABLE : AnnotationMode.ENABLE,
+    }).promise;
     signal.throwIfAborted();
     const image = await new Promise<Blob>((resolve, reject) => {
       canvas.toBlob(

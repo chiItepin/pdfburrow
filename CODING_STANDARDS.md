@@ -52,6 +52,25 @@ use React, TypeScript, shadcn/ui, and a small esbuild build; do not add Vite.
   `@repo/pdf-engine/image-preview`, and `@repo/pdf-engine/bundle` for lazy runtime APIs.
   `@repo/pdf-engine/markup` owns local markup validation/generation workers;
   `@repo/pdf-engine/markup-layout` owns shared note measurement and physical-point object geometry.
+  `@repo/pdf-engine/forms` owns AcroForm validation and filled/flattened generation
+  in a disposable local worker. Form values and page-widget geometry are type-only
+  root exports; field filling must not eagerly load the PDF writer.
+  All PDF editing capabilities use `loadValidatedPdf` for structural checks and
+  form normalization. Filling uses its `"fill"` policy, which applies
+  editing-specific constraints to the shared prepared document; do not add raw
+  validation bypasses or make each tool coordinate form repair independently.
+  Source lint enforces preparation ownership: only `pdf.ts` loads original PDFs
+  and calls `preparePdfDocument`; only `preparePdfDocument.ts` calls structural
+  inspection, form normalization, and fill-only preparation checks. PDF creation,
+  optional rendering, and exact-byte personal seals remain separate.
+  Protected functions retain their canonical named exports. Runtime alias exports
+  and function-value captures are prohibited in both their defining modules and
+  permitted importers.
+  `formHandlingPolicies` is the single list of preparation policies. Every policy
+  must have explicit acceptance and rejection expectations in
+  `tests/preparationPolicies.test.mjs`, including required-content rejection.
+  The non-deploying pull-request workflow runs `npm run check`, including these
+  ownership rules and policy expectations. Pages publication stays tag-driven.
   Do not combine preview libraries and PDF generation in an eager root barrel.
   `@repo/pdf-engine/selection` is a lightweight, React-free planner shared by the
   split settings preview and worker; it does not load PDF libraries on the main thread.

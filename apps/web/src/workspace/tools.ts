@@ -1,6 +1,20 @@
-import { Files, Images, Scissors, FileMinus, Signature, ShieldCheck } from "lucide-react";
+import {
+  Files,
+  Images,
+  Scissors,
+  FileMinus,
+  Signature,
+  ShieldCheck,
+  ClipboardPen,
+} from "lucide-react";
 
 export const tools = [
+  {
+    route: "forms",
+    label: "Fill & sign",
+    description: "Complete PDF form fields, then download or prepare a copy for visual signing.",
+    icon: ClipboardPen,
+  },
   {
     route: "markup",
     label: "Sign & annotate PDF",

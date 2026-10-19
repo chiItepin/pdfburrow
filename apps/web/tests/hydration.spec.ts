@@ -18,6 +18,7 @@ for (const theme of ["light", "dark"]) {
     await page.addInitScript((value) => localStorage.setItem("pdfburrow-theme", value), theme);
     for (const path of [
       "",
+      "forms/",
       "sign/",
       "seal/",
       "merge/",
@@ -71,6 +72,7 @@ test("legacy bookmarks hydrate the emitted path before applying the requested to
     ["", "remove", "Remove pages"],
     ["", "images", "Images to PDF"],
     ["", "seal", "Personal seal"],
+    ["", "forms", "Fill & sign"],
     ["images/", "split", "Split / Extract"],
     ["", "unknown", "Tool not found"],
   ] as const) {
@@ -85,6 +87,7 @@ test("legacy bookmarks hydrate the emitted path before applying the requested to
 
 for (const [path, capability, warning] of [
   ["merge/", "Worker", "This browser cannot run the local PDF worker."],
+  ["forms/", "Worker", "This browser cannot run local PDF workers."],
   ["split/", "Worker", "This browser cannot run the local PDF worker."],
   ["remove/", "Worker", "This browser cannot run the local PDF worker."],
   ["images/", "createImageBitmap", "This browser cannot convert images locally."],

@@ -9,6 +9,7 @@ export const useMarkupPage = (
   page: number,
   geometry: MarkupGeometry,
   paused: boolean,
+  hideForms = false,
 ) => {
   const [preview, setPreview] = useState<PagePreview>({ state: "loading" });
   const [attempt, retry] = useState(0);
@@ -25,7 +26,7 @@ export const useMarkupPage = (
           file,
           controller.signal,
           page,
-          { inputBytes: pdfLimits.perInputBytes },
+          { inputBytes: pdfLimits.perInputBytes, hideForms },
           1600,
         );
         if (controller.signal.aborted) {
@@ -63,7 +64,7 @@ export const useMarkupPage = (
         URL.revokeObjectURL(url);
       }
     };
-  }, [file, page, geometry, paused, attempt]);
+  }, [file, page, geometry, paused, attempt, hideForms]);
   return {
     preview,
     retry: () => {

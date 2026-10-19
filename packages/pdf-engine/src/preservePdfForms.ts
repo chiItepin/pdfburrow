@@ -1,13 +1,4 @@
-import {
-  PDFArray,
-  PDFDict,
-  PDFDocument,
-  PDFDropdown,
-  PDFHexString,
-  PDFName,
-  PDFStream,
-  PDFTextField,
-} from "pdf-lib";
+import { PDFAcroTerminal, PDFArray, PDFDict, PDFDocument, PDFName, PDFStream } from "pdf-lib";
 import type { PDFObject, PDFRef } from "pdf-lib";
 import { copyPdfPages } from "./copyPdfPages.ts";
 import { pdfButtonOption, preservePdfButtonState } from "./pdfButtonFields.ts";
@@ -20,6 +11,7 @@ import { inspectPageReferences } from "./inspectPageReferences.ts";
 import { PdfError } from "./pdfError.ts";
 import { appendPdfField } from "./pdfFieldTree.ts";
 import { createPdfFieldNames } from "./pdfFieldNames.ts";
+import { updatePdfFieldAppearances } from "./pdfFieldAppearances.ts";
 
 const assertNoFormActions = (source: PDFDocument) => {
   const pending: PDFObject[] = source.context
@@ -58,7 +50,10 @@ const assertNoFormActions = (source: PDFDocument) => {
   }
 };
 
-export const preservePdfForms = async (source: PDFDocument): Promise<PDFDocument> => {
+export const preservePdfForms = async (
+  source: PDFDocument,
+  requireVisibleFields = false,
+): Promise<PDFDocument> => {
   inspectPageReferences(source);
   assertNoFormActions(source);
   const originalForm = source.catalog.lookupMaybe(PDFName.of("AcroForm"), PDFDict);
@@ -73,6 +68,7 @@ export const preservePdfForms = async (source: PDFDocument): Promise<PDFDocument
     { dict: PDFDict; original: PDFDict; ref: PDFRef; options: PDFObject[]; name: string }
   >();
   const names = createPdfFieldNames();
+  const widgets = new Set<PDFDict>();
   for (const page of source.getPages()) {
     const annotations: PDFObject[] = [];
     for (const reference of page.node.Annots()?.asArray() ?? []) {
@@ -81,6 +77,13 @@ export const preservePdfForms = async (source: PDFDocument): Promise<PDFDocument
         annotations.push(reference);
         continue;
       }
+      if (widgets.has(widget)) {
+        throw new PdfError(
+          "invalid",
+          "A form widget is assigned to more than one page or control.",
+        );
+      }
+      widgets.add(widget);
       const description = describePdfField(widget, source);
       let field = fields.get(description.owner);
       if (!field) {
@@ -128,6 +131,20 @@ export const preservePdfForms = async (source: PDFDocument): Promise<PDFDocument
       "Form fields cannot be associated with source pages. No flattened substitute will be generated.",
     );
   }
+  if (requireVisibleFields) {
+    const visibleNames = new Set([...fields.values()].map((field) => field.name));
+    for (const [field] of source.catalog.getAcroForm()?.getAllFields() ?? []) {
+      if (
+        field instanceof PDFAcroTerminal &&
+        !visibleNames.has(field.getFullyQualifiedName() ?? "")
+      ) {
+        throw new PdfError(
+          "unsupported",
+          "Fields without visible page controls cannot be filled safely. Use a standard AcroForm copy without these features.",
+        );
+      }
+    }
+  }
   const acroForm = source.context.obj({ Fields: [] });
   for (const field of fields.values()) {
     appendPdfField(source, acroForm, field.dict, field.ref, field.name);
@@ -141,38 +158,7 @@ export const preservePdfForms = async (source: PDFDocument): Promise<PDFDocument
       entry.dict.set(PDFName.of("Opt"), source.context.obj(entry.options));
     }
   }
-  for (const field of form.getFields()) {
-    if (field instanceof PDFTextField || field instanceof PDFDropdown) {
-      field.acroField.setDefaultAppearance(
-        `${field.acroField.getDefaultAppearance() ?? ""}\n/${font.name} 0 Tf`,
-      );
-    }
-    // Refresh appearances without changing /V or the field's editability and option values.
-    if (field instanceof PDFDropdown) {
-      const value = field.acroField.dict.get(PDFName.of("V"));
-      const selected = field.getSelected();
-      const option = field.acroField
-        .getOptions()
-        .find((item) => item.value.decodeText() === selected[0]);
-      try {
-        if (option?.display) {
-          field.acroField.dict.set(
-            PDFName.of("V"),
-            PDFHexString.fromText(option.display.decodeText()),
-          );
-        }
-        field.defaultUpdateAppearances(font);
-      } finally {
-        if (value) {
-          field.acroField.dict.set(PDFName.of("V"), value);
-        } else {
-          field.acroField.dict.delete(PDFName.of("V"));
-        }
-      }
-    } else {
-      field.defaultUpdateAppearances(font);
-    }
-  }
+  updatePdfFieldAppearances(source);
   await source.flush();
   const document = await PDFDocument.create();
   for (const page of await copyPdfPages(source, document, source.getPageIndices())) {
