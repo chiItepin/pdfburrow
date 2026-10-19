@@ -161,7 +161,8 @@ test("raw PDF loading and constructor escape forms are restricted to the actual 
   for (const use of uses) {
     const code = `import { PDFDocument } from "pdf-lib"; export const open = (bytes, key) => ${use};`;
     await check(code, true);
-    await check(code, false, "src/pdf.ts");
+    const directLoad = ["PDFDocument.load(bytes)", 'PDFDocument["load"](bytes)'].includes(use);
+    await check(code, !directLoad, "src/pdf.ts");
     await check(code, true, "src/nested/pdf.ts");
     await check(code, true, "src/pdf.js");
   }
@@ -188,6 +189,40 @@ test("raw PDF loading and constructor escape forms are restricted to the actual 
     'const source = "./inspectDocument"; export const library = import(source);',
   ]) {
     await check(code, true);
+  }
+});
+
+test("the loader cannot export raw loading aliases to other engine modules", async () => {
+  for (const [escape, name] of [
+    ["export const openRaw = PDFDocument.load;", "openRaw"],
+    ["export const RawDocument = PDFDocument;", "RawDocument"],
+    ["const RawDocument = PDFDocument; export const openRaw = RawDocument.load;", "openRaw"],
+    ["const { load: openRaw } = PDFDocument; export { openRaw };", "openRaw"],
+    ["export const openRaw = PDFDocument.load.bind(PDFDocument);", "openRaw"],
+  ]) {
+    const results = await Promise.all([
+      eslint.lintText(`import { PDFDocument } from "pdf-lib"; ${escape}`, {
+        filePath: "src/pdf.ts",
+      }),
+      eslint.lintText(`import { ${name} } from "./pdf.ts"; export const run = ${name};`, {
+        filePath: "src/newCapability.ts",
+      }),
+    ]);
+    assert.ok(
+      results
+        .flat()
+        .flatMap((result) => result.messages)
+        .some((message) => message.ruleId === ruleId),
+      escape,
+    );
+  }
+  for (const code of [
+    'import * as library from "pdf-lib"; export const openRaw = library.PDFDocument.load;',
+    'import library from "pdf-lib"; export const openRaw = library.PDFDocument.load;',
+    'export const openRaw = (await import("pdf-lib")).PDFDocument.load;',
+    'import Doc from "pdf-lib/es/api/PDFDocument.js"; export const openRaw = Doc.load;',
+  ]) {
+    await check(code, true, "src/pdf.ts");
   }
 });
 

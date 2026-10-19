@@ -45,7 +45,7 @@ const preparationBoundary = {
       owner:
         "{{name}} is owned by src/{{owner}}. Use loadValidatedPdf instead of importing preparation internals.",
       constructor:
-        "Outside src/pdf.ts, use PDFDocument only through .create; do not alias, destructure, or pass the constructor. Use loadValidatedPdf for existing PDFs.",
+        "Use PDFDocument through .create, or a direct .load call in src/pdf.ts; do not alias, destructure, or pass the constructor or loader. Use loadValidatedPdf for existing PDFs.",
       named:
         "Use explicit named ESM imports from the public module so PDF preparation ownership can be checked; use loadValidatedPdf for existing PDFs.",
       reexport:
@@ -97,12 +97,18 @@ const preparationBoundary = {
           (parent?.type !== "CallExpression" || parent.callee !== node)
         ) {
           context.report({ node, messageId: "reference" });
-        } else if (documentConstructor && filename !== loader) {
-          const creating =
+        } else if (documentConstructor) {
+          const member =
             parent?.type === "MemberExpression" &&
             parent.object === node &&
-            (parent.computed ? literalText(parent.property) : nameOf(parent.property)) === "create";
-          if (!creating) {
+            (parent.computed ? literalText(parent.property) : nameOf(parent.property));
+          const call = ancestors.at(-2);
+          const loading =
+            filename === loader &&
+            member === "load" &&
+            call?.type === "CallExpression" &&
+            call.callee === parent;
+          if (member !== "create" && !loading) {
             context.report({ node, messageId: "constructor" });
           }
         }
@@ -114,7 +120,7 @@ const preparationBoundary = {
     const checkOpaqueImport = (node, source) => {
       if (source === undefined) {
         context.report({ node, messageId: "literal" });
-      } else if (internalFor(source) || (isPdfLibrary(source) && filename !== loader)) {
+      } else if (internalFor(source) || isPdfLibrary(source)) {
         context.report({ node, messageId: "named" });
       }
     };
@@ -133,7 +139,7 @@ const preparationBoundary = {
           return;
         }
         const internal = internalFor(source);
-        if (source.startsWith("pdf-lib/") && filename !== loader) {
+        if (source.startsWith("pdf-lib/")) {
           context.report({ node, messageId: "named" });
           return;
         }

@@ -21,7 +21,7 @@ export const FormControl = ({
     disabled: disabled || field.readOnly,
   };
   const className = inline
-    ? "h-full min-h-0 w-full rounded-none border-primary bg-primary/10 px-1 py-0 text-inherit shadow-none md:text-inherit dark:bg-primary/10 max-sm:min-h-0 pointer-coarse:min-h-0"
+    ? "h-full min-h-0 w-full rounded-none border-primary bg-primary/10 px-1 py-0 text-inherit text-[length:inherit] shadow-none md:text-[length:inherit] dark:bg-primary/10 max-sm:min-h-0 pointer-coarse:min-h-0"
     : "";
   if (field.kind === "checkbox") {
     return (

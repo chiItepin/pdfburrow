@@ -187,6 +187,42 @@ test("preview failures do not prevent editing and saving through the field list"
   );
 });
 
+test("inline input, textarea and select text follows the page overlay zoom", async ({ page }) => {
+  await openForm(page);
+  const controls = [
+    page.getByRole("textbox", { name: "Full name (required)", exact: true }),
+    page.getByRole("textbox", { name: "Notes", exact: true }),
+    page.getByRole("combobox", { name: "Status", exact: true }),
+  ];
+  for (const zoom of ["1", "2", "1.5"]) {
+    await page.getByRole("combobox", { name: "Page zoom", exact: true }).selectOption(zoom);
+    for (const control of controls) {
+      await expect
+        .poll(() =>
+          control
+            .evaluate((element) => {
+              const overlay = element.closest("[title]");
+              if (!overlay) {
+                throw new Error("The form control is missing its page overlay.");
+              }
+              return {
+                actual: getComputedStyle(element).fontSize,
+                expected: getComputedStyle(overlay).fontSize,
+              };
+            })
+            .then(({ actual, expected }) => actual === expected),
+        )
+        .toBe(true);
+    }
+  }
+  await page.getByRole("button", { name: "Field list", exact: true }).click();
+  for (const control of controls) {
+    expect(
+      await control.evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize)),
+    ).toBeGreaterThanOrEqual(14);
+  }
+});
+
 test("repairs stale form metadata and edits alternate checkbox choices on the page and field list", async ({
   page,
 }) => {
