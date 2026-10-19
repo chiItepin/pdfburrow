@@ -63,6 +63,9 @@ use React, TypeScript, shadcn/ui, and a small esbuild build; do not add Vite.
   and calls `preparePdfDocument`; only `preparePdfDocument.ts` calls structural
   inspection, form normalization, and fill-only preparation checks. PDF creation,
   optional rendering, and exact-byte personal seals remain separate.
+  Protected functions retain their canonical named exports. Runtime alias exports
+  and function-value captures are prohibited in both their defining modules and
+  permitted importers.
   `formHandlingPolicies` is the single list of preparation policies. Every policy
   must have explicit acceptance and rejection expectations in
   `tests/preparationPolicies.test.mjs`, including required-content rejection.

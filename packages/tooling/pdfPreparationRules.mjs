@@ -74,12 +74,13 @@ const preparationBoundary = {
         : undefined;
 
     /**
-     * Check references to the imported binding, not identifiers with the same spelling.
+     * Check binding references, not identifiers with the same spelling.
      * Restrict binding escape instead of attempting alias/data-flow analysis.
      * @param {import("eslint").Scope.Variable} variable
      * @param {boolean} documentConstructor
+     * @param {string | undefined} canonicalExport
      */
-    const checkReferences = (variable, documentConstructor) => {
+    const checkReferences = (variable, documentConstructor, canonicalExport = undefined) => {
       for (const reference of variable.references) {
         const node = reference.identifier;
         const ancestors = sourceCode.getAncestors(node);
@@ -87,6 +88,13 @@ const preparationBoundary = {
         if (
           ("isValueReference" in reference && !reference.isValueReference) ||
           ancestors.some(isTypeOnly)
+        ) {
+          continue;
+        }
+        if (
+          canonicalExport &&
+          ((reference.init && variable.identifiers.includes(node)) ||
+            (parent?.type === "ExportSpecifier" && nameOf(parent.exported) === canonicalExport))
         ) {
           continue;
         }
@@ -126,6 +134,46 @@ const preparationBoundary = {
     };
 
     return {
+      "Program:exit": (node) => {
+        const internal = internals.get(filename.replace(/\.(?:[cm]?[jt]s|tsx)$/u, ""));
+        if (!internal) {
+          return;
+        }
+        const scope = sourceCode.getScope(node);
+        const moduleScope =
+          scope.type === "module"
+            ? scope
+            : scope.childScopes.find((child) => child.type === "module");
+        const names = new Set([internal.name]);
+        for (const statement of node.body) {
+          if (
+            statement.type !== "ExportNamedDeclaration" ||
+            statement.source ||
+            isTypeOnly(statement)
+          ) {
+            continue;
+          }
+          for (const specifier of statement.specifiers) {
+            const local = nameOf(specifier.local);
+            if (local && !isTypeOnly(specifier) && nameOf(specifier.exported) === internal.name) {
+              names.add(local);
+            }
+          }
+        }
+        for (const variable of moduleScope?.variables ?? []) {
+          if (!names.has(variable.name)) {
+            continue;
+          }
+          checkReferences(variable, false, internal.name);
+          for (const definition of variable.defs) {
+            if (
+              sourceCode.getAncestors(definition.node).at(-1)?.type === "ExportDefaultDeclaration"
+            ) {
+              context.report({ node: definition.node, messageId: "reexport" });
+            }
+          }
+        }
+      },
       ImportDeclaration: (node) => {
         if (isTypeOnly(node)) {
           return;

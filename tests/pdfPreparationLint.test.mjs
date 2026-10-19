@@ -113,6 +113,77 @@ test("protected imports remain direct calls inside their owners, not alias expor
   }
 });
 
+test("protected local definitions cannot escape through exported aliases or value captures", async () => {
+  for (const [module, name] of internals) {
+    for (const declaration of [`const ${name} = () => {};`, `function ${name}() {}`]) {
+      for (const escape of [
+        `export { ${name} as bypass };`,
+        `export const bypass = ${name};`,
+        `const alias = ${name}; export { alias as bypass };`,
+        `export const bypass = { run: ${name} };`,
+        `export const bypass = ${name}.bind(null);`,
+        `export const bypass = () => Promise.resolve(${name});`,
+        `export default ${name};`,
+      ]) {
+        const exporter = `${declaration} ${escape}`;
+        const imported = escape.startsWith("export default") ? "default as bypass" : "bypass";
+        const importer = `import { ${imported} } from "./${module}.ts"; export const use = () => bypass();`;
+        const results = await Promise.all([
+          eslint.lintText(exporter, { filePath: `src/${module}.ts` }),
+          eslint.lintText(importer, { filePath: "src/newCapability.ts" }),
+        ]);
+        assert.ok(
+          results
+            .flat()
+            .flatMap((result) => result.messages)
+            .some((message) => message.ruleId === ruleId),
+          `${module}: ${escape}`,
+        );
+        await check(exporter, true, `src/${module}.ts`);
+      }
+    }
+    await check(`export default function ${name}() {}`, true, `src/${module}.ts`);
+    await check(
+      `const local = () => {}; export { local as ${name}, local as bypass };`,
+      true,
+      `src/${module}.ts`,
+    );
+    await check(
+      `const local = () => {}; export { local as ${name} }; export const bypass = local;`,
+      true,
+      `src/${module}.ts`,
+    );
+  }
+});
+
+test("protected local definitions retain canonical exports, direct calls and type-only use", async () => {
+  for (const [module, name] of internals) {
+    for (const declaration of [`const ${name} = () => {};`, `function ${name}() {}`]) {
+      for (const code of [
+        `export ${declaration}`,
+        `${declaration} export { ${name} };`,
+        `${declaration} export const run = () => ${name}();`,
+        `${declaration} export type Signature = typeof ${name};`,
+        `${declaration} export { type ${name} as Signature };`,
+        `export ${declaration} export const other = (${name}: () => void) => ({ ${name} });`,
+      ]) {
+        await check(code, false, `src/${module}.ts`);
+      }
+      await check(`${declaration} export { ${name} as bypass };`, false, `src/nested/${module}.ts`);
+    }
+    await check(
+      `const local = () => {}; export { local as ${name} }; export type Signature = typeof local;`,
+      false,
+      `src/${module}.ts`,
+    );
+  }
+  await check(
+    "const describeFormFields = () => {}; export { describeFormFields as describe };",
+    false,
+    "src/inspectFillableForm.ts",
+  );
+});
+
 test("preparation types and the public field-description helper remain accessible", async () => {
   for (const [module, name] of internals) {
     await check(
